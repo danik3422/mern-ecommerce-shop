@@ -1,0 +1,51 @@
+.navbar {
+	height: 60px;
+}
+
+.navbar__wrapper {
+	padding: 10px 20px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.navbar__left {
+	flex: 1;
+	display: flex;
+	align-items: center;
+}
+
+.navbar__language {
+	font-size: 15px;
+	cursor: pointer;
+}
+.navbar__search-container {
+	border: 0.5px solid lightgray;
+	display: flex;
+	align-items: center;
+	margin-left: 25px;
+	padding: 5px;
+}
+
+.navbar__center {
+	flex: 1;
+	text-align: center;
+}
+.logo {
+	font-size: 30px;
+	font-weight: bold;
+	text-transform: uppercase;
+}
+.navbar__right {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+}
+
+.navbar__btn {
+	font-size: 14p;
+	text-transform: uppercase;
+	margin: 25px;
+	cursor: pointer;
+}
