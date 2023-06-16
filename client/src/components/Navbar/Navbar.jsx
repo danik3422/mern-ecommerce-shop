@@ -6,7 +6,7 @@ import style from './Navbar.module.css'
 
 const Navbar = () => {
 	return (
-		<div className={style.navbar}>
+		<>
 			<div className={style['navbar__wrapper']}>
 				<div className={style['navbar__left']}>
 					<span className={style['navbar__language']}>EN</span>
@@ -34,7 +34,7 @@ const Navbar = () => {
 					</button>
 				</div>
 			</div>
-		</div>
+		</>
 	)
 }
 

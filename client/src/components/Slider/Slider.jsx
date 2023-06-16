@@ -19,7 +19,6 @@ const Slider = () => {
 
 			<div
 				className={style['slider__wrapper']}
-				slideIndex={slideIndex}
 				style={{
 					transform: `translateX(${slideIndex * -100}vw)`,
 				}}
@@ -31,7 +30,7 @@ const Slider = () => {
 						key={item.id}
 					>
 						<div className={style['slider__img-container']}>
-							<img className={style['slider__img']} scr={item.img} />
+							<img className={style['slider__img']} scr={item.img} alt='' />
 						</div>
 						<div className={style['slider__info']}>
 							<h1 className={style['slider__title']}>{item.title}</h1>

@@ -2,20 +2,20 @@ import React from 'react'
 import Categories from '../components/Categories/Categories'
 import Footer from '../components/Footer/Footer'
 import Navbar from '../components/Navbar/Navbar'
-import Newsletter from '../components/NewsLetter/Newsletter'
+import NewsLetter from '../components/NewsLetter/NewsLetter'
 import Products from '../components/Products/Products'
 import Slider from '../components/Slider/Slider'
-
+import './../styles/main.scss'
 const Home = () => {
 	return (
-		<div>
+		<>
 			<Navbar />
 			<Slider />
 			<Categories />
 			<Products />
-			<Newsletter />
+			<NewsLetter />
 			<Footer />
-		</div>
+		</>
 	)
 }
 

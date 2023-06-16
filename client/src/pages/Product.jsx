@@ -1,19 +1,13 @@
-import { Add, Remove } from '@material-ui/icons'
 import styled from 'styled-components'
 import Footer from '../components/Footer/Footer'
 import Navbar from '../components/Navbar/Navbar'
 
-const Container = styled.div``
-const Wrapper = styled.div`
-	padding: 20px;
-	display: flex;
-`
-const ImageContainer = styled.div`
-	flex: 1;
-`
+import { Add, Remove } from '@material-ui/icons'
+import './../styles/main.scss'
+
 const Image = styled.img`
 	width: 100%;
-	height: 90vh;
+	height: 80vh;
 	object-fit: cover;
 `
 const InfoContainer = styled.div`
@@ -94,12 +88,12 @@ const Button = styled.button`
 
 const Product = () => {
 	return (
-		<Container>
+		<>
 			<Navbar />
-			<Wrapper>
-				<ImageContainer>
+			<div className='product__wrapper'>
+				<div className='product__img-container'>
 					<Image src='https://i.ibb.co/S6qMxwr/jean.jpg' />
-				</ImageContainer>
+				</div>
 
 				<InfoContainer>
 					<Title>Denim</Title>
@@ -137,9 +131,9 @@ const Product = () => {
 						<Button>Add to cart</Button>
 					</AddContainer>
 				</InfoContainer>
-			</Wrapper>
+			</div>
 			<Footer />
-		</Container>
+		</>
 	)
 }
 

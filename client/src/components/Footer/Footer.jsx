@@ -10,7 +10,7 @@ import style from './Footer.module.css'
 
 const Footer = () => {
 	return (
-		<div className={style.footer}>
+		<>
 			<div className={style['footer__wrapper']}>
 				<div className={style['footer__left']}>
 					<h1 className={style['footer__logo']}>CLOTHE SHOP</h1>
@@ -57,10 +57,11 @@ const Footer = () => {
 					<img
 						className={style['footer__payments']}
 						src='https://i.ibb.co/Qfvn4z6/payment.png'
+						alt=''
 					/>
 				</div>
 			</div>
-		</div>
+		</>
 	)
 }
 

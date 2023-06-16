@@ -1,15 +1,8 @@
 import axios from 'axios'
 import { useEffect, useState } from 'react'
-import styled from 'styled-components'
 import { popularProducts } from '../../data'
 import Product from '../Product/Product'
-
-const Container = styled.div`
-	padding: 20px;
-	display: flex;
-	flex-wrap: wrap;
-	justify-content: space-between;
-`
+import style from './Products.module.css'
 
 const Products = ({ category, filters, sort }) => {
 	const [products, setProducts] = useState([])
@@ -24,11 +17,11 @@ const Products = ({ category, filters, sort }) => {
 	}, [category])
 
 	return (
-		<Container>
+		<div className={style.container}>
 			{popularProducts.map((item) => (
 				<Product item={item} key={item.id} />
 			))}
-		</Container>
+		</div>
 	)
 }
 
