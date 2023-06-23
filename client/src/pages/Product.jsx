@@ -5,40 +5,6 @@ import Navbar from '../components/Navbar/Navbar'
 import { Add, Remove } from '@material-ui/icons'
 import './../styles/main.scss'
 
-const Image = styled.img`
-	width: 100%;
-	height: 80vh;
-	object-fit: cover;
-`
-const InfoContainer = styled.div`
-	flex: 1;
-	padding: 0px 50px;
-`
-const Title = styled.h1`
-	font-weight: 200;
-`
-const Description = styled.p`
-	margin: 20px 0px;
-`
-const Price = styled.span`
-	font-weight: 100;
-	font-size: 40px;
-`
-
-const FilterContainer = styled.div`
-	width: 50%;
-	margin: 30px 0px;
-	display: flex;
-	justify-content: space-between;
-`
-const Filter = styled.div`
-	display: flex;
-	align-items: center;
-`
-const FilterTitle = styled.span`
-	font-size: 20px;
-	font-weight: 200;
-`
 const FilterColor = styled.div`
 	margin: 0px 5px;
 	width: 20px;
@@ -47,44 +13,6 @@ const FilterColor = styled.div`
 	background-color: ${(props) => props.color};
 	cursor: pointer;
 `
-const FilterSize = styled.select`
-	margin-left: 10px;
-	padding: 5px;
-`
-const FilterSizeOption = styled.option``
-const AddContainer = styled.div`
-	width: 50%;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-`
-const AmountContainer = styled.div`
-	display: flex;
-	align-items: center;
-	font-weight: 700;
-`
-const Amount = styled.span`
-	width: 30px;
-	height: 30px;
-	border-radius: 10px;
-	border: 1px solid black;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	margin: 0px 5 px;
-`
-const Button = styled.button`
-	padding: 15px;
-	border: 1px solid black;
-	background-color: white;
-	font-weight: 500;
-	text-transform: uppercase;
-	cursor: pointer;
-
-	&:hover {
-		background-color: #f8f4f4;
-	}
-`
 
 const Product = () => {
 	return (
@@ -92,45 +20,49 @@ const Product = () => {
 			<Navbar />
 			<div className='product__wrapper'>
 				<div className='product__img-container'>
-					<Image src='https://i.ibb.co/S6qMxwr/jean.jpg' />
+					<img
+						className='product__img'
+						src='https://i.ibb.co/S6qMxwr/jean.jpg'
+						alt=''
+					/>
 				</div>
 
-				<InfoContainer>
-					<Title>Denim</Title>
-					<Description>
+				<div className='product__info'>
+					<h1 className='product__title'>Denim</h1>
+					<p className='product__description'>
 						Lorem ipsum dolor sit amet consectetur adipisicing elit. Commodi
 						architecto expedita corrupti voluptate placeat saepe voluptatem id
 						iure error iusto?
-					</Description>
-					<Price>$ 20</Price>
-					<FilterContainer>
-						<Filter>
-							<FilterTitle>Color</FilterTitle>
+					</p>
+					<span className='product__price'>$ 20</span>
+					<div className='product__filter-wrapper'>
+						<div className='product__filter-color'>
+							<span className='product__filter-title'>Color</span>
 							<FilterColor color='black' />
 							<FilterColor color='darkblue' />
 							<FilterColor color='gray' />
-						</Filter>
+						</div>
 
-						<Filter>
-							<FilterTitle>Size</FilterTitle>
-							<FilterSize>
-								<FilterSizeOption>XS</FilterSizeOption>
-								<FilterSizeOption>S</FilterSizeOption>
-								<FilterSizeOption>M</FilterSizeOption>
-								<FilterSizeOption>L</FilterSizeOption>
-								<FilterSizeOption>XL</FilterSizeOption>
-							</FilterSize>
-						</Filter>
-					</FilterContainer>
-					<AddContainer>
-						<AmountContainer>
+						<div className='product__filter-size'>
+							<span className='product__filter-title'>Size</span>
+							<select className='product__filter-size'>
+								<option>XS</option>
+								<option>S</option>
+								<option>M</option>
+								<option>L</option>
+								<option>XL</option>
+							</select>
+						</div>
+					</div>
+					<div className='product__add-wrapper'>
+						<div className='product__amount'>
 							<Remove />
-							<Amount>1</Amount>
+							<span className='product__add-price'>1</span>
 							<Add />
-						</AmountContainer>
-						<Button>Add to cart</Button>
-					</AddContainer>
-				</InfoContainer>
+						</div>
+						<button className='product__add-btn'>Add to cart</button>
+					</div>
+				</div>
 			</div>
 			<Footer />
 		</>

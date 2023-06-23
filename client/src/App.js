@@ -6,10 +6,12 @@ import Product from './pages/Product'
 import ProductList from './pages/ProductList'
 import Register from './pages/Register'
 import './styles/main.scss'
+import ScrollToTop from './utils/scrollToTop'
 
 const App = () => {
 	return (
 		<BrowserRouter>
+			<ScrollToTop />
 			<Routes>
 				<Route path='/' element={<Home />} />
 				<Route path='/products/:category' element={<ProductList />} />

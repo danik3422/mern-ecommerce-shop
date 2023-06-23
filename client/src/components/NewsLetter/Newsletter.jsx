@@ -6,7 +6,7 @@ const NewsLetter = () => {
 		<div className={style.container}>
 			<h1 className={style['news__title']}>Newsletter</h1>
 			<p className={style['news__desc']}>
-				Subscribe to <news></news>leteer
+				Subscribe to <news></news>letter
 			</p>
 			<div className={style['news__input-container']}>
 				<input

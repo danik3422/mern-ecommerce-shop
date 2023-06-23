@@ -6,6 +6,7 @@ import {
 	Room,
 	Twitter,
 } from '@material-ui/icons'
+import { Link } from 'react-router-dom'
 import style from './Footer.module.css'
 
 const Footer = () => {
@@ -13,7 +14,10 @@ const Footer = () => {
 		<>
 			<div className={style['footer__wrapper']}>
 				<div className={style['footer__left']}>
-					<h1 className={style['footer__logo']}>CLOTHE SHOP</h1>
+					<Link to='/'>
+						<h1 className={style['footer__logo']}>CLOTHE SHOP</h1>
+					</Link>
+
 					<p className={style['footer__description']}>
 						Here you can find our social links
 					</p>

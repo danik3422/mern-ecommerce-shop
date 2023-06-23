@@ -11,7 +11,7 @@ const LogIn = () => {
 						<a className='login__link' href='!#'>
 							Forgotten your password?
 						</a>
-						<a className='login__link' href='!#'>
+						<a className='login__link' href='/register'>
 							Create a new account
 						</a>
 					</div>

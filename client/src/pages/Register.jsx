@@ -2,7 +2,16 @@ const Register = () => {
 	return (
 		<div className='register'>
 			<div className='register__wrapper'>
-				<h1 className='register__title'>Create an account</h1>
+				<div className='register__header'>
+					<h1 className='register__title'>Create an account</h1>
+					<p className='register__text'>
+						Already have an account?
+						<a className='register__link' href='/login'>
+							<span>Sign in!</span>
+						</a>
+					</p>
+				</div>
+
 				<form className='register__form'>
 					<input className='register__input' placeholder='First name' />
 					<input className='register__input' placeholder='Last name' />

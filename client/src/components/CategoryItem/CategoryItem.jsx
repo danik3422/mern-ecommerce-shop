@@ -8,9 +8,7 @@ const CategoryItem = ({ item }) => {
 				<img className={style['category__img']} src={item.img} alt='' />
 				<div className={style['category__data']}>
 					<h1 className={style['category__data-title']}>{item.title}</h1>
-					<button className={style['category__data-btn']} href='/shoplist'>
-						Shop now
-					</button>
+					<button className={style['category__data-btn']}>Shop now</button>
 				</div>
 			</Link>
 		</div>

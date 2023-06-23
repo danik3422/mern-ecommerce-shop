@@ -1,44 +1,16 @@
 import { Add, Remove } from '@material-ui/icons'
+import { Link } from 'react-router-dom'
 import styled from 'styled-components'
 import Footer from '../components/Footer/Footer'
 import Navbar from '../components/Navbar/Navbar'
+import CheckoutBtn from '../components/UI/CheckoutBtn/CheckoutBtn'
 
-const Container = styled.div``
-const Wrapper = styled.div`
-	padding: 20px;
-`
-const Title = styled.h1`
-	font-weight: 300;
-	text-align: center;
-`
-const Top = styled.div`
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 20px;
-`
-const TopButton = styled.button`
-	padding: 10px;
-	font-weight: 600;
-	cursor: pointer;
-	border: ${(props) => props.type === 'filled' && 'none'};
-	background-color: ${(props) =>
-		props.type === 'filled' ? 'black' : 'transparent'};
-	color: ${(props) => props.type === 'filled' && 'white'};
-	text-transform: uppercase;
-`
-
-const TopTexts = styled.div``
 const TopText = styled.span`
 	text-decoration: underline;
 	cursor: pointer;
 	margin: 0px 10px;
 `
 
-const Bottom = styled.div`
-	display: flex;
-	justify-content: space-between;
-`
 const Info = styled.div`
 	flex: 3;
 `
@@ -99,7 +71,6 @@ const Summary = styled.div`
 	flex: 1;
 	border: 0.5px solid lightgrey;
 	padding: 20px;
-	height: 50vh;
 `
 
 const SummaryTitle = styled.h1`
@@ -125,97 +96,102 @@ const SummaryButton = styled.button`
 
 const Cart = () => {
 	return (
-		<Container>
+		<>
 			<Navbar />
-			<Wrapper>
-				<Title>Your bag</Title>
-				<Top>
-					<TopButton>Continue Shopping</TopButton>
-					<TopTexts>
-						<TopText>Shopping bag(4)</TopText>
-						<TopText>Your wishlist(0)</TopText>
-					</TopTexts>
+			<div className='cart__container'>
+				<div className='cart__wrapper'>
+					<h1 className='cart__title'>Your bag</h1>
+					<div className='cart__header'>
+						<Link to='/'>
+							<CheckoutBtn>Continue Shopping</CheckoutBtn>
+						</Link>
 
-					<TopButton type='filled'>Checkout now</TopButton>
-				</Top>
-				<Bottom>
-					<Info>
-						<Product>
-							<ProductDetails>
-								<Image src='https://hips.hearstapps.com/vader-prod.s3.amazonaws.com/1614188818-TD1MTHU_SHOE_ANGLE_GLOBAL_MENS_TREE_DASHERS_THUNDER_b01b1013-cd8d-48e7-bed9-52db26515dc4.png?crop=1xw:1.00xh;center,top&resize=480%3A%2A' />
-								<Details>
-									<ProductName>
-										<b>Product:</b> JESSIE THUNDER SHOES
-									</ProductName>
-									<ProductId>
-										<b>ID:</b> 93813718293
-									</ProductId>
-									<ProductColor color='black' />
-									<ProductSize>
-										<b>Size:</b> 37.5
-									</ProductSize>
-								</Details>
-							</ProductDetails>
-							<PriceDetail>
-								<ProductAmountContainer>
-									<Add />
-									<ProductAmount>2</ProductAmount>
-									<Remove />
-								</ProductAmountContainer>
-								<ProductPrice>$ 40</ProductPrice>
-							</PriceDetail>
-						</Product>
-						<Hr />
-						<Product>
-							<ProductDetails>
-								<Image src='https://hips.hearstapps.com/vader-prod.s3.amazonaws.com/1614188818-TD1MTHU_SHOE_ANGLE_GLOBAL_MENS_TREE_DASHERS_THUNDER_b01b1013-cd8d-48e7-bed9-52db26515dc4.png?crop=1xw:1.00xh;center,top&resize=480%3A%2A' />
-								<Details>
-									<ProductName>
-										<b>Product:</b> JESSIE THUNDER SHOES
-									</ProductName>
-									<ProductId>
-										<b>ID:</b> 93813718293
-									</ProductId>
-									<ProductColor color='black' />
-									<ProductSize>
-										<b>Size:</b> 37.5
-									</ProductSize>
-								</Details>
-							</ProductDetails>
-							<PriceDetail>
-								<ProductAmountContainer>
-									<Add />
-									<ProductAmount>2</ProductAmount>
-									<Remove />
-								</ProductAmountContainer>
-								<ProductPrice>$ 40</ProductPrice>
-							</PriceDetail>
-						</Product>
-					</Info>
-					<Summary>
-						<SummaryTitle>Order Summary</SummaryTitle>
-						<SummaryItem>
-							<SummaryItemText>Subtotal</SummaryItemText>
-							<SummaryItemPrice>$ 90</SummaryItemPrice>
-						</SummaryItem>
-						<SummaryItem>
-							<SummaryItemText>Estimated Shipping</SummaryItemText>
-							<SummaryItemPrice>$ 4.90</SummaryItemPrice>
-						</SummaryItem>
-						<SummaryItem>
-							<SummaryItemText>Shipping Discount</SummaryItemText>
-							<SummaryItemPrice>$ -5.90</SummaryItemPrice>
-						</SummaryItem>
-						<SummaryItem type='total'>
-							<SummaryItemText>Total</SummaryItemText>
-							<SummaryItemPrice>$ 90</SummaryItemPrice>
-						</SummaryItem>
-						<SummaryButton>Chekout Now</SummaryButton>
-					</Summary>
-				</Bottom>
-			</Wrapper>
+						<div>
+							<TopText>Shopping bag(4)</TopText>
+							<TopText>Your wishlist(0)</TopText>
+						</div>
+
+						<CheckoutBtn type='filled'>Checkout now</CheckoutBtn>
+					</div>
+					<div className='cart__footer'>
+						<div className='cart__info'>
+							<Product>
+								<ProductDetails>
+									<Image src='https://hips.hearstapps.com/vader-prod.s3.amazonaws.com/1614188818-TD1MTHU_SHOE_ANGLE_GLOBAL_MENS_TREE_DASHERS_THUNDER_b01b1013-cd8d-48e7-bed9-52db26515dc4.png?crop=1xw:1.00xh;center,top&resize=480%3A%2A' />
+									<Details>
+										<ProductName>
+											<b>Product:</b> JESSIE THUNDER SHOES
+										</ProductName>
+										<ProductId>
+											<b>ID:</b> 93813718293
+										</ProductId>
+										<ProductColor color='black' />
+										<ProductSize>
+											<b>Size:</b> 37.5
+										</ProductSize>
+									</Details>
+								</ProductDetails>
+								<PriceDetail>
+									<ProductAmountContainer>
+										<Add />
+										<ProductAmount>2</ProductAmount>
+										<Remove />
+									</ProductAmountContainer>
+									<ProductPrice>$ 40</ProductPrice>
+								</PriceDetail>
+							</Product>
+							<Hr />
+							<Product>
+								<ProductDetails>
+									<Image src='https://hips.hearstapps.com/vader-prod.s3.amazonaws.com/1614188818-TD1MTHU_SHOE_ANGLE_GLOBAL_MENS_TREE_DASHERS_THUNDER_b01b1013-cd8d-48e7-bed9-52db26515dc4.png?crop=1xw:1.00xh;center,top&resize=480%3A%2A' />
+									<Details>
+										<ProductName>
+											<b>Product:</b> JESSIE THUNDER SHOES
+										</ProductName>
+										<ProductId>
+											<b>ID:</b> 93813718293
+										</ProductId>
+										<ProductColor color='black' />
+										<ProductSize>
+											<b>Size:</b> 37.5
+										</ProductSize>
+									</Details>
+								</ProductDetails>
+								<PriceDetail>
+									<ProductAmountContainer>
+										<Add />
+										<ProductAmount>2</ProductAmount>
+										<Remove />
+									</ProductAmountContainer>
+									<ProductPrice>$ 40</ProductPrice>
+								</PriceDetail>
+							</Product>
+						</div>
+						<Summary>
+							<SummaryTitle>Order Summary</SummaryTitle>
+							<SummaryItem>
+								<SummaryItemText>Subtotal</SummaryItemText>
+								<SummaryItemPrice>$ 90</SummaryItemPrice>
+							</SummaryItem>
+							<SummaryItem>
+								<SummaryItemText>Estimated Shipping</SummaryItemText>
+								<SummaryItemPrice>$ 4.90</SummaryItemPrice>
+							</SummaryItem>
+							<SummaryItem>
+								<SummaryItemText>Shipping Discount</SummaryItemText>
+								<SummaryItemPrice>$ -5.90</SummaryItemPrice>
+							</SummaryItem>
+							<SummaryItem type='total'>
+								<SummaryItemText>Total</SummaryItemText>
+								<SummaryItemPrice>$ 90</SummaryItemPrice>
+							</SummaryItem>
+							<SummaryButton>Chekout Now</SummaryButton>
+						</Summary>
+					</div>
+				</div>
+			</div>
 			<Footer />
-		</Container>
+		</>
 	)
 }
 
