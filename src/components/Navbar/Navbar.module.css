@@ -1,0 +1,33 @@
+.navbar {
+}
+
+.navbar__wrapper {
+	max-width: 90rem;
+	margin: 0 auto;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 5px 20px;
+}
+
+.navbar__logo {
+	text-align: center;
+}
+.logo {
+	font-size: 30px;
+	font-weight: bold;
+	text-transform: uppercase;
+	cursor: pointer;
+}
+.navbar__panel {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+}
+
+.navbar__btn {
+	font-size: 14p;
+	text-transform: uppercase;
+	margin: 25px;
+	cursor: pointer;
+}
