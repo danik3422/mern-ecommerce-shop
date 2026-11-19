@@ -1,80 +1,91 @@
-# E-Commerce Shop
+# MERN E-Commerce Shop
 
-Clothing store built with the MERN stack: React (Create React App) on the frontend, Express + MongoDB on the backend.
+Clothing store: React client (Vite) and Express + MongoDB API in one npm workspace.
 
 ## Project structure
 
 ```
 .
-├── public/            # static HTML, Netlify-style _redirects for SPA routing
-├── src/               # React app
-│   ├── api.js         # axios instance (base URL, auth header)
-│   ├── context/       # AuthContext (login/register), CartContext (cart in localStorage)
-│   ├── components/
-│   └── pages/
-├── server/            # Express API
-│   ├── index.js
-│   ├── middleware/    # JWT checks, async error wrapper
-│   ├── models/
-│   ├── routes/
-│   └── seed.js        # demo products
-└── docker-compose.yml # local MongoDB
+├── client/                    # React app (Vite)
+│   ├── index.html
+│   └── src/
+│       ├── api/               # HTTP layer: one module per resource
+│       ├── auth/              # AuthProvider + useAuth (session in localStorage)
+│       ├── cart/              # CartProvider, pure cart logic, pricing, useCartItems
+│       ├── components/
+│       ├── pages/
+│       ├── styles/
+│       └── utils/
+├── server/                    # Express API
+│   ├── src/
+│   │   ├── app.js             # builds the Express app (used by tests)
+│   │   ├── server.js          # connects to MongoDB, starts HTTP, graceful shutdown
+│   │   ├── config/            # validated environment, database connection
+│   │   ├── routes/            # URL → middleware → controller
+│   │   ├── controllers/       # request handlers
+│   │   ├── services/          # business logic: pricing, line items, tokens, passwords
+│   │   ├── validation/        # zod schemas for every request
+│   │   ├── middleware/        # auth, validation, rate limit, error handling
+│   │   ├── models/            # Mongoose models
+│   │   └── utils/
+│   ├── scripts/seed.js
+│   └── tests/                 # API tests (supertest + in-memory MongoDB)
+├── docker-compose.yml         # local MongoDB
+└── .github/workflows/ci.yml   # lint, format, tests, build
 ```
 
 ## Getting started
 
-Requirements: Node.js 18+, and MongoDB (Docker or a MongoDB Atlas cluster).
+Requirements: Node.js 22.12+ (see `.nvmrc`) and Docker (or a MongoDB Atlas cluster).
 
 ```bash
-# 1. install dependencies
-npm install
-npm install --prefix server
-
-# 2. configure the API
-cp server/.env.example server/.env   # then edit MONGO_URL and JWT_SEC
-
-# 3. start MongoDB locally (skip if you use Atlas)
-docker compose up -d
-
-# 4. load demo products (WARNING: replaces all products in the DB)
-npm run seed
-
-# 5. run API (port 8000) and frontend (port 3000) together
-npm run dev
+npm install                                  # installs both workspaces
+cp server/.env.example server/.env           # then set JWT_SECRET: openssl rand -hex 32
+docker compose up -d                         # local MongoDB on port 27017
+npm run seed                                 # demo products (replaces all products!)
+npm run dev                                  # API on :8000, client on :3000
 ```
 
-Open http://localhost:3000.
+Open http://localhost:3000. In development the client calls `/api/...` and Vite proxies it
+to the API. For production builds set `VITE_API_URL` (see `client/.env.example`), and on the
+server set `CLIENT_URL` (CORS) and `TRUST_PROXY` if the API runs behind a proxy.
 
-In development the frontend calls `/api/...`, and CRA proxies it to `http://localhost:8000`
-(`proxy` in `package.json`). For a production build set `REACT_APP_API_URL`
-(for example `https://api.example.com/api`) and set `CLIENT_URL` on the server for CORS.
+To get an admin account, run the seed with `SEED_ADMIN_PASSWORD=<password> npm run seed`
+and sign in as `admin`.
 
-> Port 5000 is not used on purpose: on macOS it is taken by the AirPlay Receiver.
+## Scripts (run from the repository root)
 
-## Scripts
-
-| Command          | What it does                              |
-| ---------------- | ----------------------------------------- |
-| `npm run dev`    | API + frontend together                   |
-| `npm start`      | frontend only                             |
-| `npm run server` | API only (nodemon)                        |
-| `npm run seed`   | fill the DB with demo products            |
-| `npm run build`  | production build of the frontend          |
+| Command          | What it does                                   |
+| ---------------- | ---------------------------------------------- |
+| `npm run dev`    | API and client with hot reload                 |
+| `npm test`       | all tests (server + client)                    |
+| `npm run lint`   | ESLint                                         |
+| `npm run format` | Prettier                                       |
+| `npm run check`  | lint + format check + tests + build (as in CI) |
+| `npm run build`  | production build of the client → `client/dist` |
+| `npm start`      | API in production mode                         |
+| `npm run seed`   | fill the database with demo products           |
 
 ## API
 
-All routes are prefixed with `/api`. Protected routes expect `Authorization: Bearer <token>`.
+All routes are under `/api`. Protected routes need `Authorization: Bearer <accessToken>`.
+Errors always look like `{ message, details? }`; `details` lists invalid fields.
 
-| Method | Route                     | Access        |
-| ------ | ------------------------- | ------------- |
-| POST   | `/auth/register`          | public        |
-| POST   | `/auth/login`             | public (username or email) |
-| GET    | `/products?category=&new=`| public        |
-| GET    | `/products/find/:id`      | public        |
-| POST/PUT/DELETE | `/products[/:id]`| admin         |
-| GET/PUT/DELETE  | `/carts/.../:userId`| owner or admin |
-| POST   | `/orders`                 | logged-in user (amount is calculated on the server) |
-| GET    | `/orders/find/:userId`    | owner or admin |
-| GET    | `/orders`, `/orders/income`, `/users`, `/users/stats` | admin |
+| Method                | Route                                  | Access | Notes                                                                             |
+| --------------------- | -------------------------------------- | ------ | --------------------------------------------------------------------------------- |
+| GET                   | `/health`                              | public | 503 when the database is down                                                     |
+| POST                  | `/auth/register`                       | public | rate limited                                                                      |
+| POST                  | `/auth/login`                          | public | `{ login, password }`, login = username or email; rate limited                    |
+| GET                   | `/products`                            | public | `category, color, size, ids, sort, page, limit` → `{ items, page, pages, total }` |
+| GET                   | `/products/:id`                        | public |                                                                                   |
+| POST / PATCH / DELETE | `/products[/:id]`                      | admin  |                                                                                   |
+| GET / PUT / DELETE    | `/cart`                                | user   | the signed-in user's cart                                                         |
+| POST                  | `/orders`                              | user   | prices and shipping are calculated on the server                                  |
+| GET                   | `/orders/mine`                         | user   |                                                                                   |
+| GET                   | `/orders`, `/orders/income`            | admin  |                                                                                   |
+| PATCH                 | `/orders/:id/status`                   | admin  |                                                                                   |
+| GET / PATCH / DELETE  | `/users/me`                            | user   | changing email/password needs `currentPassword`                                   |
+| GET                   | `/users`, `/users/stats`, `/users/:id` | admin  |                                                                                   |
+| PATCH / DELETE        | `/users/:id`                           | admin  | PATCH `{ isAdmin }`                                                               |
 
-To make a user an admin, set `isAdmin: true` on their document in MongoDB.
+Deleting an account removes the user and their cart; orders are kept as business records.
