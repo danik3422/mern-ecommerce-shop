@@ -1,8 +1,9 @@
 # dependencies
 node_modules/
 
-# builds
-/build
+# builds and reports
+dist/
+coverage/
 
 # env / secrets
 .env
@@ -15,4 +16,4 @@ node_modules/
 .idea/
 
 # logs
-npm-debug.log*
+*.log
