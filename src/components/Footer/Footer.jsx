@@ -10,6 +10,16 @@ import {
 import { Link } from 'react-router-dom'
 import style from './Footer.module.css'
 
+const footerLinks = [
+	['Home', '/'],
+	['Cart', '/cart'],
+	['All products', '/products'],
+	['Women', '/products/women'],
+	['Coats', '/products/coats'],
+	['Accessories', '/products/accessories'],
+	['My Account', '/login'],
+]
+
 const Footer = () => {
 	return (
 		<>
@@ -23,33 +33,30 @@ const Footer = () => {
 						Here you can find our social links
 					</p>
 					<div className={style['footer__social']}>
-						<a href='https://pl-pl.facebook.com/' target='__blank'>
+						<a href='https://pl-pl.facebook.com/' target='_blank' rel='noreferrer'>
 							<Facebook />
 						</a>
-						<a href='https://www.instagram.com/' target='__blank'>
+						<a href='https://www.instagram.com/' target='_blank' rel='noreferrer'>
 							<Instagram />
 						</a>
-						<a href='https://twitter.com/' target='__blank'>
+						<a href='https://twitter.com/' target='_blank' rel='noreferrer'>
 							<Twitter />
 						</a>
 					</div>
 				</div>
 				<div className={style['footer__center']}>
 					<ul className={style['footer__center-list']}>
-						<li className={style['footer__center-item']}>Home</li>
-						<li className={style['footer__center-item']}>Cart</li>
-						<li className={style['footer__center-item']}>Man Fashion</li>
-						<li className={style['footer__center-item']}>Woman Fashion</li>
-						<li className={style['footer__center-item']}>Accessories</li>
-						<li className={style['footer__center-item']}>My Account</li>
-						<li className={style['footer__center-item']}>Wishlist</li>
-						<li className={style['footer__center-item']}>Terms</li>
+						{footerLinks.map(([title, to]) => (
+							<li className={style['footer__center-item']} key={title}>
+								<Link to={to}>{title}</Link>
+							</li>
+						))}
 					</ul>
 				</div>
 				<div className={style['footer__right']}>
 					<div className={style['footer__contacts']}>
 						<LocationOn style={{ marginRight: '10px' }} />
-						Stokłosy 3, Warszaw
+						Stokłosy 3, Warsaw
 					</div>
 					<div className={style['footer__contacts']}>
 						<Phone style={{ marginRight: '10px' }} />
@@ -62,7 +69,7 @@ const Footer = () => {
 					<img
 						className={style['footer__payments']}
 						src='https://i.ibb.co/Qfvn4z6/payment.png'
-						alt=''
+						alt='Accepted payment methods'
 					/>
 				</div>
 			</div>

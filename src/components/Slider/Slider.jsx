@@ -1,15 +1,18 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { sliderItems } from '../../data'
 import { ArrowBtn } from '../UI/ArrowBtn/ArrowBtn'
 import style from './Slider.module.css'
 
 const Slider = () => {
+	const navigate = useNavigate()
 	const [slideIndex, setSlideIndex] = useState(0)
+	const last = sliderItems.length - 1
 	const handleClick = (direction) => {
 		if (direction === 'left') {
-			setSlideIndex(slideIndex > 0 ? slideIndex - 1 : 2)
+			setSlideIndex(slideIndex > 0 ? slideIndex - 1 : last)
 		} else {
-			setSlideIndex(slideIndex < 2 ? slideIndex + 1 : 0)
+			setSlideIndex(slideIndex < last ? slideIndex + 1 : 0)
 		}
 	}
 
@@ -30,12 +33,19 @@ const Slider = () => {
 						key={item.id}
 					>
 						<div className={style['slider__img-container']}>
-							<img className={style['slider__img']} scr={item.img} alt='' />
+							{item.img && (
+								<img className={style['slider__img']} src={item.img} alt='' />
+							)}
 						</div>
 						<div className={style['slider__info']}>
 							<h1 className={style['slider__title']}>{item.title}</h1>
 							<p className={style['slider__description']}>{item.description}</p>
-							<button className={style['slider__btn']}>Show now</button>
+							<button
+								className={style['slider__btn']}
+								onClick={() => navigate('/products')}
+							>
+								Shop now
+							</button>
 						</div>
 					</div>
 				))}

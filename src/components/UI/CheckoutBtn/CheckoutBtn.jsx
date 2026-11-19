@@ -1,16 +1,20 @@
 import style from './CheckoutBtn.module.css'
-const CheckoutBtn = (props) => {
+
+const CheckoutBtn = ({ type, children, ...rest }) => {
 	return (
 		<button
+			type='button'
 			className={style.btn}
 			style={
-				props.type === 'filled'
+				type === 'filled'
 					? { backgroundColor: 'black', color: 'white', border: 'none' }
-					: { backgroundColor: 'transparent' }
+					: { backgroundColor: 'transparent', border: '1px solid black' }
 			}
+			{...rest}
 		>
-			{props.children}
+			{children}
 		</button>
 	)
 }
+
 export default CheckoutBtn

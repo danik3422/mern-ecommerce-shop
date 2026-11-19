@@ -1,18 +1,24 @@
 import { Add, Remove } from '@mui/icons-material'
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
+import { api, getErrorMessage } from '../api'
 import Footer from '../components/Footer/Footer'
 import Navbar from '../components/Navbar/Navbar'
 import CheckoutBtn from '../components/UI/CheckoutBtn/CheckoutBtn'
+import { useAuth } from '../context/AuthContext'
+import { useCart } from '../context/CartContext'
+
+const SHIPPING = 4.9
+const FREE_SHIPPING_FROM = 50
+const money = (n) => `$ ${n.toFixed(2)}`
+
 const TopText = styled.span`
 	text-decoration: underline;
 	cursor: pointer;
 	margin: 0px 10px;
 `
 
-const Info = styled.div`
-	flex: 3;
-`
 const Product = styled.div`
 	display: flex;
 	justify-content: space-between;
@@ -45,6 +51,11 @@ const PriceDetail = styled.div`
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
+`
+const IconButton = styled.button`
+	display: inline-flex;
+	background: none;
+	cursor: pointer;
 `
 const ProductAmountContainer = styled.div`
 	display: flex;
@@ -91,9 +102,61 @@ const SummaryButton = styled.button`
 	color: white;
 	font-weight: 600;
 	cursor: pointer;
+
+	&:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+`
+const AddressInput = styled.input`
+	width: 100%;
+	padding: 10px;
+	margin-bottom: 15px;
+	border: 1px solid lightgrey;
+`
+const Message = styled.p`
+	margin-top: 15px;
+	color: ${(props) => (props.$error ? 'crimson' : 'green')};
 `
 
 const Cart = () => {
+	const { items, count, total, setQuantity, clear } = useCart()
+	const { user } = useAuth()
+	const navigate = useNavigate()
+	const [address, setAddress] = useState('')
+	const [status, setStatus] = useState({ type: 'idle', message: '' })
+
+	const shipping = items.length ? SHIPPING : 0
+	const discount = total >= FREE_SHIPPING_FROM ? -shipping : 0
+	const grandTotal = total + shipping + discount
+
+	const checkout = async () => {
+		if (!user) return navigate('/login', { state: { from: '/cart' } })
+		if (!address.trim()) {
+			return setStatus({ type: 'error', message: 'Please enter a shipping address' })
+		}
+		setStatus({ type: 'loading', message: '' })
+		try {
+			const { data } = await api.post('/orders', {
+				products: items.map(({ _id, quantity, color, size }) => ({
+					productId: _id,
+					quantity,
+					color,
+					size,
+				})),
+				address: { line: address.trim() },
+			})
+			clear()
+			setAddress('')
+			setStatus({
+				type: 'success',
+				message: `Order placed! Total ${money(data.amount)}. Order id: ${data._id}`,
+			})
+		} catch (err) {
+			setStatus({ type: 'error', message: getErrorMessage(err) })
+		}
+	}
+
 	return (
 		<>
 			<Navbar />
@@ -101,90 +164,107 @@ const Cart = () => {
 				<div className='cart__wrapper'>
 					<h1 className='cart__title'>Your bag</h1>
 					<div className='cart__header'>
-						<Link to='/'>
-							<CheckoutBtn>Continue Shopping</CheckoutBtn>
-						</Link>
-
+						<CheckoutBtn onClick={() => navigate('/products')}>
+							Continue Shopping
+						</CheckoutBtn>
 						<div>
-							<TopText>Shopping bag(4)</TopText>
+							<TopText>Shopping bag({count})</TopText>
 							<TopText>Your wishlist(0)</TopText>
 						</div>
-
-						<CheckoutBtn type='filled'>Checkout now</CheckoutBtn>
+						<CheckoutBtn
+							type='filled'
+							onClick={checkout}
+							disabled={!items.length || status.type === 'loading'}
+						>
+							Checkout now
+						</CheckoutBtn>
 					</div>
 					<div className='cart__footer'>
 						<div className='cart__info'>
-							<Product>
-								<ProductDetails>
-									<Image src='https://hips.hearstapps.com/vader-prod.s3.amazonaws.com/1614188818-TD1MTHU_SHOE_ANGLE_GLOBAL_MENS_TREE_DASHERS_THUNDER_b01b1013-cd8d-48e7-bed9-52db26515dc4.png?crop=1xw:1.00xh;center,top&resize=480%3A%2A' />
-									<Details>
-										<ProductName>
-											<b>Product:</b> JESSIE THUNDER SHOES
-										</ProductName>
-										<ProductId>
-											<b>ID:</b> 93813718293
-										</ProductId>
-										<ProductColor color='black' />
-										<ProductSize>
-											<b>Size:</b> 37.5
-										</ProductSize>
-									</Details>
-								</ProductDetails>
-								<PriceDetail>
-									<ProductAmountContainer>
-										<Add />
-										<ProductAmount>2</ProductAmount>
-										<Remove />
-									</ProductAmountContainer>
-									<ProductPrice>$ 40</ProductPrice>
-								</PriceDetail>
-							</Product>
-							<Hr />
-							<Product>
-								<ProductDetails>
-									<Image src='https://hips.hearstapps.com/vader-prod.s3.amazonaws.com/1614188818-TD1MTHU_SHOE_ANGLE_GLOBAL_MENS_TREE_DASHERS_THUNDER_b01b1013-cd8d-48e7-bed9-52db26515dc4.png?crop=1xw:1.00xh;center,top&resize=480%3A%2A' />
-									<Details>
-										<ProductName>
-											<b>Product:</b> JESSIE THUNDER SHOES
-										</ProductName>
-										<ProductId>
-											<b>ID:</b> 93813718293
-										</ProductId>
-										<ProductColor color='black' />
-										<ProductSize>
-											<b>Size:</b> 37.5
-										</ProductSize>
-									</Details>
-								</ProductDetails>
-								<PriceDetail>
-									<ProductAmountContainer>
-										<Add />
-										<ProductAmount>2</ProductAmount>
-										<Remove />
-									</ProductAmountContainer>
-									<ProductPrice>$ 40</ProductPrice>
-								</PriceDetail>
-							</Product>
+							{!items.length && <p>Your bag is empty.</p>}
+							{items.map((item, index) => (
+								<div key={item.key}>
+									{index > 0 && <Hr />}
+									<Product>
+										<ProductDetails>
+											<Link to={`/product/${item._id}`}>
+												<Image src={item.img} alt={item.title} />
+											</Link>
+											<Details>
+												<ProductName>
+													<b>Product:</b> {item.title}
+												</ProductName>
+												<ProductId>
+													<b>ID:</b> {item._id}
+												</ProductId>
+												{item.color && <ProductColor color={item.color} />}
+												{item.size && (
+													<ProductSize>
+														<b>Size:</b> {item.size}
+													</ProductSize>
+												)}
+											</Details>
+										</ProductDetails>
+										<PriceDetail>
+											<ProductAmountContainer>
+												<IconButton
+													type='button'
+													onClick={() => setQuantity(item.key, item.quantity + 1)}
+													aria-label='Increase quantity'
+												>
+													<Add />
+												</IconButton>
+												<ProductAmount>{item.quantity}</ProductAmount>
+												<IconButton
+													type='button'
+													onClick={() => setQuantity(item.key, item.quantity - 1)}
+													aria-label='Decrease quantity'
+												>
+													<Remove />
+												</IconButton>
+											</ProductAmountContainer>
+											<ProductPrice>{money(item.price * item.quantity)}</ProductPrice>
+										</PriceDetail>
+									</Product>
+								</div>
+							))}
 						</div>
 						<Summary>
 							<SummaryTitle>Order Summary</SummaryTitle>
 							<SummaryItem>
 								<SummaryItemText>Subtotal</SummaryItemText>
-								<SummaryItemPrice>$ 90</SummaryItemPrice>
+								<SummaryItemPrice>{money(total)}</SummaryItemPrice>
 							</SummaryItem>
 							<SummaryItem>
 								<SummaryItemText>Estimated Shipping</SummaryItemText>
-								<SummaryItemPrice>$ 4.90</SummaryItemPrice>
+								<SummaryItemPrice>{money(shipping)}</SummaryItemPrice>
 							</SummaryItem>
 							<SummaryItem>
-								<SummaryItemText>Shipping Discount</SummaryItemText>
-								<SummaryItemPrice>$ -5.90</SummaryItemPrice>
+								<SummaryItemText>
+									Shipping Discount (from {money(FREE_SHIPPING_FROM)})
+								</SummaryItemText>
+								<SummaryItemPrice>{money(discount)}</SummaryItemPrice>
 							</SummaryItem>
 							<SummaryItem type='total'>
 								<SummaryItemText>Total</SummaryItemText>
-								<SummaryItemPrice>$ 90</SummaryItemPrice>
+								<SummaryItemPrice>{money(grandTotal)}</SummaryItemPrice>
 							</SummaryItem>
-							<SummaryButton>Chekout Now</SummaryButton>
+							{user && items.length > 0 && (
+								<AddressInput
+									placeholder='Shipping address'
+									value={address}
+									onChange={(e) => setAddress(e.target.value)}
+								/>
+							)}
+							<SummaryButton
+								onClick={checkout}
+								disabled={!items.length || status.type === 'loading'}
+							>
+								{user ? 'Checkout now' : 'Sign in to checkout'}
+							</SummaryButton>
+							{status.message && (
+								<Message $error={status.type === 'error'}>{status.message}</Message>
+							)}
 						</Summary>
 					</div>
 				</div>

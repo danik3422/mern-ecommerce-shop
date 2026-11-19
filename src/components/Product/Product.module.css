@@ -37,11 +37,15 @@
 	transition: all 0.7s ease;
 	cursor: pointer;
 }
-.product__info:hover {
+.product__info:hover,
+.product__info:focus-within {
 	opacity: 1;
 }
 
 .product__info-icon {
+	border: none;
+	cursor: pointer;
+	color: inherit;
 	width: 40px;
 	height: 40px;
 	border-radius: 50%;
@@ -55,4 +59,14 @@
 .product__info-icon:hover {
 	background-color: #e9f5f5;
 	transform: scale(1.2);
+}
+
+.product__caption {
+	position: absolute;
+	left: 12px;
+	right: 12px;
+	bottom: 10px;
+	display: flex;
+	justify-content: space-between;
+	z-index: 2;
 }
