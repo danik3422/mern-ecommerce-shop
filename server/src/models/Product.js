@@ -1,10 +1,26 @@
 import mongoose from 'mongoose'
 
-/** Every product has at least one size; one-size items use the label "One size". */
+/** Every variant has at least one size; one-size items use the label "One size". */
 const sizeSchema = new mongoose.Schema(
 	{
 		label: { type: String, required: true, trim: true },
 		stock: { type: Number, required: true, min: 0, default: 0 },
+	},
+	{ _id: false },
+)
+
+/** A color of the product with its own photos and stock per size. */
+const variantSchema = new mongoose.Schema(
+	{
+		color: { type: String, required: true, trim: true, lowercase: true },
+		images: {
+			type: [String],
+			validate: [(images) => images.length > 0, 'At least one image is required'],
+		},
+		sizes: {
+			type: [sizeSchema],
+			validate: [(sizes) => sizes.length > 0, 'At least one size is required'],
+		},
 	},
 	{ _id: false },
 )
@@ -16,15 +32,10 @@ const productSchema = new mongoose.Schema(
 		slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
 		brand: { type: String, required: true, trim: true, index: true },
 		description: { type: String, required: true },
-		images: {
-			type: [String],
-			validate: [(images) => images.length > 0, 'At least one image is required'],
-		},
 		categories: { type: [String], index: true },
-		colors: { type: [String], default: [] },
-		sizes: {
-			type: [sizeSchema],
-			validate: [(sizes) => sizes.length > 0, 'At least one size is required'],
+		variants: {
+			type: [variantSchema],
+			validate: [(variants) => variants.length > 0, 'At least one color is required'],
 		},
 		price: { type: Number, required: true, min: 0 },
 		// the price before a discount; shown crossed out when higher than `price`
@@ -39,5 +50,8 @@ const productSchema = new mongoose.Schema(
 	},
 	{ timestamps: true, versionKey: false },
 )
+
+productSchema.index({ 'variants.color': 1 })
+productSchema.index({ 'variants.sizes.label': 1 })
 
 export const Product = mongoose.model('Product', productSchema)

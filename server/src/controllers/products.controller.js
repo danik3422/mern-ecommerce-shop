@@ -40,14 +40,18 @@ const buildFilter = ({
 }) => {
 	const filter = scopeFilter(scope)
 	if (brand?.length) filter.brand = { $in: brand }
-	if (color?.length) filter.colors = { $in: color }
-
-	// together with "in stock", a size filter means "available in one of these sizes"
-	if (size?.length || inStock) {
-		const sizeMatch = {}
-		if (size?.length) sizeMatch.label = { $in: size }
-		if (inStock) sizeMatch.stock = { $gt: 0 }
-		filter.sizes = { $elemMatch: sizeMatch }
+	// color, size and "in stock" must hold for the same variant:
+	// "blue in M, in stock" does not match a product that has only black M in stock
+	if (color?.length || size?.length || inStock) {
+		const variantMatch = {}
+		if (color?.length) variantMatch.color = { $in: color }
+		if (size?.length || inStock) {
+			const sizeMatch = {}
+			if (size?.length) sizeMatch.label = { $in: size }
+			if (inStock) sizeMatch.stock = { $gt: 0 }
+			variantMatch.sizes = { $elemMatch: sizeMatch }
+		}
+		filter.variants = { $elemMatch: variantMatch }
 	}
 
 	if (minPrice !== undefined || maxPrice !== undefined) {
@@ -112,9 +116,10 @@ const compareSizes = (a, b) => {
 	return groupA - groupB || valueA - valueB || a.value.localeCompare(b.value)
 }
 
-const countBy = (field) => [
-	{ $group: { _id: field, count: { $sum: 1 } } },
-	{ $project: { _id: 0, value: '$_id', count: 1 } },
+/** Number of distinct products per value (a product counts once even with several variants). */
+const countProductsBy = (field) => [
+	{ $group: { _id: field, products: { $addToSet: '$_id' } } },
+	{ $project: { _id: 0, value: '$_id', count: { $size: '$products' } } },
 	{ $sort: { value: 1 } },
 ]
 
@@ -127,9 +132,13 @@ export const productFacets = async (req, res) => {
 		{ $match: scopeFilter(req.valid.query) },
 		{
 			$facet: {
-				brands: countBy('$brand'),
-				colors: [{ $unwind: '$colors' }, ...countBy('$colors')],
-				sizes: [{ $unwind: '$sizes' }, ...countBy('$sizes.label')],
+				brands: countProductsBy('$brand'),
+				colors: [{ $unwind: '$variants' }, ...countProductsBy('$variants.color')],
+				sizes: [
+					{ $unwind: '$variants' },
+					{ $unwind: '$variants.sizes' },
+					...countProductsBy('$variants.sizes.label'),
+				],
 				price: [{ $group: { _id: null, min: { $min: '$price' }, max: { $max: '$price' } } }],
 			},
 		},
@@ -179,7 +188,7 @@ export const updateProduct = async (req, res) => {
 		runValidators: true,
 	})
 	if (!product) throw notFound('Product')
-	if (req.valid.body.sizes || req.valid.body.active) await notifyRestocked([product._id])
+	if (req.valid.body.variants || req.valid.body.active) await notifyRestocked([product._id])
 	res.json(toProductView(product))
 }
 

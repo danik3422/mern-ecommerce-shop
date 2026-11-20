@@ -58,13 +58,14 @@ const revenuePerDay = async () => {
 	}))
 }
 
-/** Sizes of active products that are low or out of stock, lowest first. */
+/** Colors and sizes of active products that are low or out of stock, lowest first. */
 const lowStockSizes = () =>
 	Product.aggregate([
 		{ $match: { active: true } },
-		{ $unwind: '$sizes' },
-		{ $match: { 'sizes.stock': { $lte: LOW_STOCK_THRESHOLD } } },
-		{ $sort: { 'sizes.stock': 1, title: 1 } },
+		{ $unwind: '$variants' },
+		{ $unwind: '$variants.sizes' },
+		{ $match: { 'variants.sizes.stock': { $lte: LOW_STOCK_THRESHOLD } } },
+		{ $sort: { 'variants.sizes.stock': 1, title: 1 } },
 		{ $limit: 10 },
 		{
 			$project: {
@@ -72,8 +73,9 @@ const lowStockSizes = () =>
 				productId: '$_id',
 				title: 1,
 				slug: 1,
-				size: '$sizes.label',
-				stock: '$sizes.stock',
+				color: '$variants.color',
+				size: '$variants.sizes.label',
+				stock: '$variants.sizes.stock',
 			},
 		},
 	])
@@ -153,7 +155,7 @@ export const listProducts = async (req, res) => {
 		filter.$or = [{ title: pattern }, { brand: pattern }, { slug: pattern }]
 	}
 	if (status) filter.active = status === 'active'
-	if (lowStock) filter.sizes = { $elemMatch: { stock: { $lte: LOW_STOCK_THRESHOLD } } }
+	if (lowStock) filter['variants.sizes.stock'] = { $lte: LOW_STOCK_THRESHOLD }
 
 	const result = await paginate(Product, filter, { page, limit, sort: { createdAt: -1, _id: -1 } })
 	res.json({ ...result, items: result.items.map(toProductView) })

@@ -136,7 +136,7 @@ const Dashboard = () => {
 									<thead>
 										<tr>
 											<th scope='col'>Product</th>
-											<th scope='col'>Size</th>
+											<th scope='col'>Color, size</th>
 											<th scope='col' className={table.numeric}>
 												Left
 											</th>
@@ -144,13 +144,15 @@ const Dashboard = () => {
 									</thead>
 									<tbody>
 										{data.lowStock.map((row) => (
-											<tr key={`${row.productId}-${row.size}`}>
+											<tr key={`${row.productId}-${row.color}-${row.size}`}>
 												<td>
 													<Link to={`/admin/products/${row.productId}`} className={table.rowLink}>
 														{row.title}
 													</Link>
 												</td>
-												<td>{row.size}</td>
+												<td>
+													{row.color}, {row.size}
+												</td>
 												<td className={`${table.numeric} ${row.stock === 0 ? style.out : ''}`}>
 													{row.stock === 0 ? 'Sold out' : row.stock}
 												</td>

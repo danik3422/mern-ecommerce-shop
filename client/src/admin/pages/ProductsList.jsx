@@ -12,7 +12,7 @@ import QueryState from '../components/QueryState'
 import SearchBox from '../components/SearchBox'
 import StatusBadge from '../components/StatusBadge'
 import table from '../components/Table.module.css'
-import { totalStock } from '../format'
+import { allSizes, totalStock } from '../format'
 import { useListParams } from '../useListParams'
 
 const PAGE_SIZE = 20
@@ -92,7 +92,7 @@ const ProductsList = () => {
 									<tbody>
 										{data.items.map((product) => {
 											const stock = totalStock(product)
-											const lowSizes = product.sizes.filter(
+											const lowSizes = allSizes(product).filter(
 												(size) => size.stock <= LOW_STOCK_THRESHOLD,
 											).length
 											return (

@@ -12,13 +12,14 @@ import TextField from '../ui/TextField'
 import style from './NotifyMe.module.css'
 
 /**
- * "Notify me" for sold-out sizes: opens a form that subscribes an email
- * to a back-in-stock alert. Renders nothing when every size is in stock.
- * @param variant 'link' (under the size picker) | 'button' (product fully sold out)
+ * "Notify me" for sold-out sizes of the shown color: opens a form that subscribes
+ * an email to a back-in-stock alert. Renders nothing when every size is in stock.
+ * @param variant the color the customer is looking at
+ * @param appearance 'link' (under the size picker) | 'button' (the color is sold out)
  */
-const NotifyMe = ({ product, variant = 'link' }) => {
+const NotifyMe = ({ product, variant, appearance = 'link' }) => {
 	const { user } = useAuth()
-	const soldOutSizes = product.sizes.filter((s) => s.stock === 0).map((s) => s.label)
+	const soldOutSizes = variant.sizes.filter((s) => s.stock === 0).map((s) => s.label)
 	const [isOpen, setIsOpen] = useState(false)
 	const [size, setSize] = useState(soldOutSizes[0])
 	const [email, setEmail] = useState(user?.email ?? '')
@@ -27,7 +28,8 @@ const NotifyMe = ({ product, variant = 'link' }) => {
 	if (!soldOutSizes.length) return null
 
 	const fieldErrors = getFieldErrors(alert.error)
-	const isOneSize = product.sizes.length === 1
+	const isOneSize = variant.sizes.length === 1
+	const colorName = product.variants.length > 1 ? ` in ${variant.color}` : ''
 
 	const close = () => {
 		setIsOpen(false)
@@ -36,12 +38,12 @@ const NotifyMe = ({ product, variant = 'link' }) => {
 
 	const handleSubmit = (e) => {
 		e.preventDefault()
-		alert.mutate({ size, email: email.trim() || undefined })
+		alert.mutate({ color: variant.color, size, email: email.trim() || undefined })
 	}
 
 	return (
 		<>
-			{variant === 'button' ? (
+			{appearance === 'button' ? (
 				<Button variant='secondary' fullWidth onClick={() => setIsOpen(true)}>
 					<Bell size={16} aria-hidden /> Notify me when it&apos;s back
 				</Button>
@@ -66,6 +68,7 @@ const NotifyMe = ({ product, variant = 'link' }) => {
 								We will send one email as soon as{' '}
 								<strong>
 									{product.brand} {product.title}
+									{colorName}
 								</strong>{' '}
 								{isOneSize ? 'is' : 'in your size is'} available again.
 							</p>

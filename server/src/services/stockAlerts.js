@@ -3,18 +3,21 @@ import { Product } from '../models/Product.js'
 import { StockAlert } from '../models/StockAlert.js'
 import { badRequest, conflict, notFound } from '../utils/HttpError.js'
 import { sendMail } from './mailer.js'
+import { findVariant } from './productView.js'
 
 // a guard against filling someone else's inbox through the public form
 const MAX_ACTIVE_ALERTS_PER_EMAIL = 20
 
-/** Subscribes an email to a sold-out size of an active product. Idempotent. */
-export const subscribeToRestock = async ({ productId, size, email }) => {
+/** Subscribes an email to a sold-out color and size of an active product. Idempotent. */
+export const subscribeToRestock = async ({ productId, color, size, email }) => {
 	const product = await Product.findOne({ _id: productId, active: true }).lean()
 	if (!product) throw notFound('Product')
 
-	const productSize = product.sizes.find((s) => s.label === size)
-	if (!productSize) throw badRequest(`Size "${size}" is not available`)
-	if (productSize.stock > 0) throw conflict('This size is in stock — you can order it now')
+	const variant = findVariant(product, color)
+	if (!variant) throw badRequest('Please choose an available color')
+	const variantSize = variant.sizes.find((s) => s.label === size)
+	if (!variantSize) throw badRequest(`Size "${size}" is not available`)
+	if (variantSize.stock > 0) throw conflict('This size is in stock — you can order it now')
 
 	const active = await StockAlert.countDocuments({ email, notifiedAt: null })
 	if (active >= MAX_ACTIVE_ALERTS_PER_EMAIL) {
@@ -22,7 +25,7 @@ export const subscribeToRestock = async ({ productId, size, email }) => {
 	}
 
 	await StockAlert.updateOne(
-		{ product: productId, size, email },
+		{ product: productId, color: variant.color, size, email },
 		{ $set: { notifiedAt: null } },
 		{ upsert: true },
 	)
@@ -42,13 +45,17 @@ export const notifyRestocked = async (productIds) => {
 		const products = await Product.find({ _id: { $in: ids }, active: true }).lean()
 
 		for (const product of products) {
-			const sizesInStock = product.sizes.filter((s) => s.stock > 0).map((s) => s.label)
-			if (!sizesInStock.length) continue
+			const inStock = product.variants.flatMap((variant) =>
+				variant.sizes
+					.filter((size) => size.stock > 0)
+					.map((size) => ({ color: variant.color, size: size.label })),
+			)
+			if (!inStock.length) continue
 
 			const alerts = await StockAlert.find({
 				product: product._id,
-				size: { $in: sizesInStock },
 				notifiedAt: null,
+				$or: inStock,
 			}).lean()
 
 			for (const alert of alerts) {
@@ -60,9 +67,9 @@ export const notifyRestocked = async (productIds) => {
 
 				await sendMail({
 					to: alert.email,
-					subject: `Back in stock: ${product.brand} ${product.title} (${alert.size})`,
+					subject: `Back in stock: ${product.brand} ${product.title} (${alert.color}, ${alert.size})`,
 					text: [
-						`Good news — ${product.brand} ${product.title} in size ${alert.size} is available again.`,
+						`Good news — ${product.brand} ${product.title} in ${alert.color}, size ${alert.size} is available again.`,
 						'',
 						`Order it here: ${productUrl(product)}`,
 						'',

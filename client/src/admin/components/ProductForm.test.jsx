@@ -59,6 +59,7 @@ describe('ProductForm', () => {
 		fireEvent.change(screen.getByLabelText('Brand'), { target: { value: 'Northline' } })
 		fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Soft' } })
 		fireEvent.change(screen.getByLabelText('Price ($)'), { target: { value: '25' } })
+		fireEvent.change(screen.getByLabelText('Color'), { target: { value: 'Indigo' } })
 		fireEvent.click(screen.getByRole('button', { name: 'Jeans 28–34' }))
 		fireEvent.change(screen.getByLabelText('Stock of size 30'), { target: { value: '4' } })
 
@@ -75,11 +76,17 @@ describe('ProductForm', () => {
 				brand: 'Northline',
 				price: 25,
 				categories: ['women'],
-				sizes: [
-					{ label: '28', stock: 0 },
-					{ label: '30', stock: 4 },
-					{ label: '32', stock: 0 },
-					{ label: '34', stock: 0 },
+				variants: [
+					{
+						color: 'indigo',
+						images: [],
+						sizes: [
+							{ label: '28', stock: 0 },
+							{ label: '30', stock: 4 },
+							{ label: '32', stock: 0 },
+							{ label: '34', stock: 0 },
+						],
+					},
 				],
 				active: true,
 			}),
@@ -91,7 +98,7 @@ describe('ProductForm', () => {
 		renderForm({
 			mutation: validationError([
 				{ path: 'title', message: 'Title is required' },
-				{ path: 'sizes.1.label', message: 'Size labels must be unique' },
+				{ path: 'variants.0.sizes.1.label', message: 'Size labels must be unique' },
 				{ path: 'compareAtPrice', message: 'Compare-at price must be higher than the price' },
 			]),
 		})
@@ -127,9 +134,14 @@ describe('ProductForm', () => {
 				price: '10',
 				compareAtPrice: '',
 				categories: [],
-				colors: [],
-				sizes: [{ label: 'M', stock: '1' }],
-				images: ['/a.jpg', '/b.jpg'],
+				variants: [
+					{
+						key: 'v1',
+						color: 'black',
+						images: ['/a.jpg', '/b.jpg'],
+						sizes: [{ label: 'M', stock: '1' }],
+					},
+				],
 				active: true,
 			},
 		})
@@ -149,5 +161,21 @@ describe('ProductForm', () => {
 		fireEvent.change(url, { target: { value: '/uploads/c.png' } })
 		fireEvent.click(screen.getByRole('button', { name: 'Add' }))
 		expect(sources()).toEqual(['/a.jpg', '/uploads/c.png'])
+	})
+
+	it('adds a color with the same sizes and removes it again', () => {
+		renderForm()
+		fireEvent.change(screen.getByLabelText('Color'), { target: { value: 'black' } })
+		fireEvent.click(screen.getByRole('button', { name: 'Add color' }))
+
+		const colors = screen.getAllByLabelText('Color')
+		expect(colors).toHaveLength(2)
+		fireEvent.change(colors[1], { target: { value: 'white' } })
+		expect(screen.getByRole('region', { name: 'Color: white' })).toBeInTheDocument()
+
+		fireEvent.click(screen.getByRole('button', { name: 'Remove color white' }))
+		expect(screen.getAllByLabelText('Color')).toHaveLength(1)
+		// the last color cannot be removed
+		expect(screen.queryByRole('button', { name: /Remove color/ })).not.toBeInTheDocument()
 	})
 })

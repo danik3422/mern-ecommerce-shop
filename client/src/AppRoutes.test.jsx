@@ -6,6 +6,7 @@ import * as productsApi from './api/products'
 import AppRoutes from './AppRoutes'
 import { AuthProvider } from './auth/AuthProvider'
 import { CartProvider } from './cart/CartProvider'
+import { makeProduct } from './test/fixtures'
 
 vi.mock('./api/products', async (importOriginal) => ({
 	...(await importOriginal()),
@@ -20,26 +21,7 @@ vi.mock('./api/products', async (importOriginal) => ({
 	fetchRelatedProducts: vi.fn(async () => []),
 }))
 
-const coat = {
-	_id: 'p1',
-	slug: 'arrow-jacket',
-	title: 'Arrow Jacket',
-	brand: 'Aster',
-	description: 'Warm jacket',
-	images: ['https://example.com/coat.png'],
-	categories: ['coats'],
-	colors: ['green'],
-	sizes: [
-		{ label: 'M', stock: 0 },
-		{ label: 'L', stock: 2 },
-	],
-	price: 120,
-	compareAtPrice: 150,
-	inStock: true,
-	onSale: true,
-	discountPercent: 20,
-	rating: { average: 0, count: 0 },
-}
+const coat = makeProduct({ compareAtPrice: 150 })
 
 const renderAt = (path) =>
 	render(
@@ -141,5 +123,40 @@ describe('routes', () => {
 		fireEvent.scroll(window)
 
 		await waitFor(() => expect(bar).toBeVisible())
+	})
+
+	it('switches photos and sizes with the color and adds that color to the bag', async () => {
+		vi.mocked(productsApi.fetchProduct).mockResolvedValue(
+			makeProduct({
+				variants: [
+					{ color: 'black', images: ['/black.jpg'], sizes: [{ label: 'M', stock: 0 }] },
+					{
+						color: 'white',
+						images: ['/white.jpg'],
+						sizes: [
+							{ label: 'M', stock: 3 },
+							{ label: 'L', stock: 1 },
+						],
+					},
+				],
+			}),
+		)
+		renderAt('/product/arrow-jacket')
+
+		// black is sold out, so the first color in stock is shown
+		expect(await screen.findByRole('radio', { name: 'white' })).toBeChecked()
+		expect(screen.getByRole('img', { name: /arrow jacket/i })).toHaveAttribute('src', '/white.jpg')
+
+		fireEvent.click(screen.getByRole('radio', { name: 'black' }))
+		expect(screen.getByRole('img', { name: /arrow jacket/i })).toHaveAttribute('src', '/black.jpg')
+		expect(screen.getByText('This color is sold out — try another color.')).toBeInTheDocument()
+
+		fireEvent.click(screen.getByRole('radio', { name: 'white' }))
+		fireEvent.click(screen.getByRole('radio', { name: 'L' }))
+		fireEvent.click(screen.getByRole('button', { name: 'Add to bag' }))
+
+		expect(JSON.parse(localStorage.getItem('cart'))).toEqual([
+			{ productId: 'p1', color: 'white', size: 'L', quantity: 1 },
+		])
 	})
 })

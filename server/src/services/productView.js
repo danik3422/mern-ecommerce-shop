@@ -1,13 +1,27 @@
+/** Finds the variant of a color; products with a single color accept a missing color. */
+export const findVariant = (product, color) =>
+	product.variants.find((variant) => variant.color === color) ??
+	(product.variants.length === 1 && !color ? product.variants[0] : undefined)
+
 /**
- * Public representation of a product: adds fields computed from stored data.
+ * Public representation of a product: stored data plus fields computed from the variants.
+ * `images` and `colors` are shortcuts for lists and cards (images of the first color).
  * Use for every product sent to clients.
  */
 export const toProductView = (product) => {
 	const data = typeof product.toObject === 'function' ? product.toObject() : product
-	const inStock = data.sizes.some((size) => size.stock > 0)
+	const inStock = data.variants.some((variant) => variant.sizes.some((size) => size.stock > 0))
 	const onSale = Boolean(data.compareAtPrice && data.compareAtPrice > data.price)
 	const discountPercent = onSale ? Math.round((1 - data.price / data.compareAtPrice) * 100) : 0
-	return { ...data, inStock, onSale, discountPercent }
+
+	return {
+		...data,
+		images: data.variants[0]?.images ?? [],
+		colors: data.variants.map((variant) => variant.color),
+		inStock,
+		onSale,
+		discountPercent,
+	}
 }
 
 export const LOW_STOCK_THRESHOLD = 3

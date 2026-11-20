@@ -3,14 +3,12 @@ import { getErrorMessage, getFieldErrors } from '../../api/client'
 import Alert from '../../components/ui/Alert'
 import Button from '../../components/ui/Button'
 import TextField from '../../components/ui/TextField'
-import { COLOR_NAMES } from '../../data/catalog'
 import { formToPayload, emptyProductForm } from '../productForm'
 import { slugify } from '../format'
-import ImagesEditor from './ImagesEditor'
-import SizesEditor from './SizesEditor'
 import table from './Table.module.css'
 import TagInput from './TagInput'
 import TextArea from './TextArea'
+import VariantsEditor from './VariantsEditor'
 import style from './ProductForm.module.css'
 
 const CATEGORY_SUGGESTIONS = ['women', 'men', 'tshirts', 'shirts', 'coats', 'jeans', 'accessories']
@@ -86,13 +84,6 @@ const ProductForm = ({ initialValues, onSubmit, mutation, submitLabel, extraActi
 						suggestions={CATEGORY_SUGGESTIONS}
 						error={errors.categories}
 					/>
-					<TagInput
-						label='Colors'
-						values={form.colors}
-						onChange={(value) => setField('colors', value)}
-						suggestions={COLOR_NAMES}
-						error={errors.colors}
-					/>
 				</section>
 
 				<div className={style.side}>
@@ -136,21 +127,16 @@ const ProductForm = ({ initialValues, onSubmit, mutation, submitLabel, extraActi
 							</span>
 						</label>
 					</section>
-
-					<section className={`${table.panel} ${style.section}`} aria-label='Sizes and stock'>
-						<SizesEditor
-							sizes={form.sizes}
-							onChange={(value) => setField('sizes', value)}
-							errors={errors}
-						/>
-					</section>
 				</div>
 
-				<section className={`${table.panel} ${style.section} ${style.wide}`} aria-label='Images'>
-					<ImagesEditor
-						images={form.images}
-						onChange={(value) => setField('images', value)}
-						error={errors.images ?? errors['images.0']}
+				<section className={`${style.section} ${style.wide}`} aria-labelledby='variants-title'>
+					<h2 id='variants-title' className={style.sectionTitle}>
+						Colors, photos and stock
+					</h2>
+					<VariantsEditor
+						variants={form.variants}
+						onChange={(value) => setField('variants', value)}
+						errors={errors}
 					/>
 				</section>
 			</div>

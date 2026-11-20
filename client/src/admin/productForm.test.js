@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { slugify } from './format'
-import { emptyProductForm, formToPayload, moveItem, productToForm } from './productForm'
+import {
+	emptyProductForm,
+	formToPayload,
+	moveItem,
+	newVariant,
+	productToForm,
+	variantErrors,
+} from './productForm'
 
 const product = {
 	title: 'Coat',
@@ -10,9 +17,10 @@ const product = {
 	price: 80,
 	compareAtPrice: 100,
 	categories: ['coats'],
-	colors: ['black'],
-	sizes: [{ label: 'M', stock: 3 }],
-	images: ['/images/coat.jpg'],
+	variants: [
+		{ color: 'black', images: ['/images/coat.jpg'], sizes: [{ label: 'M', stock: 3 }] },
+		{ color: 'camel', images: ['/images/coat-camel.jpg'], sizes: [{ label: 'M', stock: 0 }] },
+	],
 	active: false,
 }
 
@@ -27,12 +35,12 @@ describe('product form helpers', () => {
 			...emptyProductForm(),
 			title: '  Tee ',
 			price: '19.5',
-			sizes: [{ label: ' S ', stock: '' }],
+			variants: [{ key: 'v', color: ' White ', images: [], sizes: [{ label: ' S ', stock: '' }] }],
 		}
 		expect(formToPayload(form, { isNew: true })).toMatchObject({
 			title: 'Tee',
 			price: 19.5,
-			sizes: [{ label: 'S', stock: 0 }],
+			variants: [{ color: 'white', images: [], sizes: [{ label: 'S', stock: 0 }] }],
 		})
 	})
 
@@ -46,6 +54,24 @@ describe('product form helpers', () => {
 		expect(moveItem(['a', 'b', 'c'], 0, 1)).toEqual(['b', 'a', 'c'])
 		expect(moveItem(['a', 'b', 'c'], 2, -1)).toEqual(['a', 'c', 'b'])
 		expect(moveItem(['a', 'b'], 0, -1)).toEqual(['a', 'b'])
+	})
+
+	it('starts a new color with the size labels of the first one and no stock', () => {
+		const [first] = productToForm(product).variants
+		expect(newVariant(first)).toMatchObject({
+			color: '',
+			images: [],
+			sizes: [{ label: 'M', stock: '0' }],
+		})
+	})
+
+	it('picks the field errors of one variant', () => {
+		const errors = {
+			title: 'Required',
+			'variants.1.sizes.0.stock': 'Too small',
+			'variants.10.color': 'x',
+		}
+		expect(variantErrors(errors, 1)).toEqual({ 'sizes.0.stock': 'Too small' })
 	})
 
 	it('builds URL slugs', () => {

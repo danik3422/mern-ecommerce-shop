@@ -49,7 +49,7 @@ const MiniBag = ({ addedLine, onClose }) => {
 						className={style.item}
 						aria-current={item.key === addedKey ? 'true' : undefined}
 					>
-						<img className={style.image} src={item.product.images[0]} alt='' />
+						<img className={style.image} src={item.variant.images[0]} alt='' />
 						<div className={style.details}>
 							<p className={style.brand}>{item.product.brand}</p>
 							<p>{item.product.title}</p>

@@ -19,7 +19,10 @@ export const formatDateTime = (value) => (value ? dateTimeFormatter.format(new D
 /** Short, readable order number: last 8 characters of the id. */
 export const orderNumber = (id) => `#${id.slice(-8).toUpperCase()}`
 
-export const totalStock = (product) => product.sizes.reduce((sum, size) => sum + size.stock, 0)
+/** Every size of every color, e.g. for stock totals and low-stock counts. */
+export const allSizes = (product) => product.variants.flatMap((variant) => variant.sizes)
+
+export const totalStock = (product) => allSizes(product).reduce((sum, size) => sum + size.stock, 0)
 
 /** "Summer Linen Shirt!" → "summer-linen-shirt" */
 export const slugify = (text) =>

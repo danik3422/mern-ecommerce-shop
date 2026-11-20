@@ -14,6 +14,7 @@ import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import style from './Cart.module.css'
+import { stockOf } from '../utils/variants'
 
 const toPricedItems = (items) =>
 	items.map((item) => ({ price: item.product.price, quantity: item.quantity }))
@@ -56,9 +57,7 @@ const Cart = () => {
 	}
 
 	const totals = calculateTotals(toPricedItems(items))
-	const hasStockProblems = items.some(
-		(item) => (item.product.sizes.find((s) => s.label === item.size)?.stock ?? 0) < item.quantity,
-	)
+	const hasStockProblems = items.some((item) => stockOf(item.variant, item.size) < item.quantity)
 
 	return (
 		<div className='container'>

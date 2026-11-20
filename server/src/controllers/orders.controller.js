@@ -35,11 +35,11 @@ export const createOrder = async (req, res) => {
 	const resolved = await resolveLineItems(items, { requireStock: true })
 	await reserveStock(resolved)
 
-	const orderItems = resolved.map(({ product, ...item }) => ({
+	const orderItems = resolved.map(({ product, variant, ...item }) => ({
 		...item,
 		title: product.title,
 		brand: product.brand,
-		image: product.images[0],
+		image: variant.images[0],
 		price: product.price,
 	}))
 

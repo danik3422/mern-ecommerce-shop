@@ -1,8 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Order } from '../src/models/Order.js'
-import { Product } from '../src/models/Product.js'
 import * as payments from '../src/services/payments.js'
-import { api, createProduct, createUser, validAddress } from './helpers.js'
+import { api, createProduct, createUser, validAddress, stockOf } from './helpers.js'
 
 // Stripe is never called in tests: the payments service is replaced with mocks
 vi.mock('../src/services/payments.js', () => ({
@@ -20,8 +19,7 @@ const orderBody = (product) => ({
 	address: validAddress,
 })
 
-const stockOf = async (product) =>
-	(await Product.findById(product.id).lean()).sizes.find((s) => s.label === 'M').stock
+const stockInBlackM = (product) => stockOf(product.id, 'black', 'M')
 
 const sendWebhook = (event) => {
 	vi.mocked(payments.parseWebhookEvent).mockReturnValue(event)
@@ -82,7 +80,7 @@ describe('payments with Stripe', () => {
 		await api().post('/api/orders').set(auth).send(orderBody(product)).expect(502)
 
 		expect(await Order.findOne().lean()).toMatchObject({ status: 'cancelled' })
-		expect(await stockOf(product)).toBe(5)
+		expect(await stockInBlackM(product)).toBe(5)
 	})
 
 	it('starts a new payment for a pending order and expires the previous session', async () => {
@@ -125,12 +123,12 @@ describe('payments with Stripe', () => {
 
 		it('cancels the order and returns stock when the session expires', async () => {
 			const { order, product } = await checkout()
-			expect(await stockOf(product)).toBe(3)
+			expect(await stockInBlackM(product)).toBe(3)
 
 			await sendWebhook(sessionEvent('checkout.session.expired', order)).expect(200)
 
 			expect((await Order.findById(order._id).lean()).status).toBe('cancelled')
-			expect(await stockOf(product)).toBe(5)
+			expect(await stockInBlackM(product)).toBe(5)
 		})
 
 		it('keeps the order when an old session expires after a new one was started', async () => {
@@ -141,7 +139,7 @@ describe('payments with Stripe', () => {
 			await sendWebhook(sessionEvent('checkout.session.expired', order)).expect(200)
 
 			expect((await Order.findById(order._id).lean()).status).toBe('pending')
-			expect(await stockOf(product)).toBe(3)
+			expect(await stockInBlackM(product)).toBe(3)
 		})
 
 		it('acknowledges events it does not handle', async () => {

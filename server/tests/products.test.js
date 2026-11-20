@@ -258,9 +258,14 @@ describe('product management', () => {
 		slug: 'new-coat',
 		brand: 'Aster',
 		description: 'Warm',
-		images: ['https://example.com/coat.png'],
 		categories: ['Coats'],
-		sizes: [{ label: 'M', stock: 3 }],
+		variants: [
+			{
+				color: 'Black',
+				images: ['https://example.com/coat.png'],
+				sizes: [{ label: 'M', stock: 3 }],
+			},
+		],
 		price: 120,
 	}
 
@@ -298,7 +303,7 @@ describe('product management', () => {
 		await api()
 			.post('/api/products')
 			.set(auth)
-			.send({ ...newProduct, images: ['not a url'] })
+			.send({ ...newProduct, variants: [{ ...newProduct.variants[0], images: ['not a url'] }] })
 			.expect(400)
 	})
 
@@ -308,7 +313,11 @@ describe('product management', () => {
 			api()
 				.post('/api/products')
 				.set(auth)
-				.send({ ...newProduct, slug: `local-${Date.now()}`, images: [img] })
+				.send({
+					...newProduct,
+					slug: `local-${Date.now()}`,
+					variants: [{ ...newProduct.variants[0], images: [img] }],
+				})
 
 		await create('/images/products/coat.jpg').expect(201)
 		await create('/images/<script>.jpg').expect(400)

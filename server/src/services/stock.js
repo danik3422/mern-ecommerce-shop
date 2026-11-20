@@ -3,13 +3,23 @@ import { conflict } from '../utils/HttpError.js'
 import { notifyRestocked } from './stockAlerts.js'
 
 /**
- * Takes `quantity` from the chosen size only if enough is left — a single atomic update,
+ * Takes `quantity` from one color and size only if enough is left — a single atomic update,
  * so two customers can never buy the same last item.
+ *
+ * The stock condition must be in the query, not only in `arrayFilters`: Mongoose adds
+ * `updatedAt` to every update, so a document matched by `_id` alone counts as "modified"
+ * even when no size was decremented.
  */
-const takeFromStock = async ({ productId, size, quantity }) => {
+const takeFromStock = async ({ productId, color, size, quantity }) => {
 	const result = await Product.updateOne(
-		{ _id: productId, sizes: { $elemMatch: { label: size, stock: { $gte: quantity } } } },
-		{ $inc: { 'sizes.$.stock': -quantity } },
+		{
+			_id: productId,
+			variants: {
+				$elemMatch: { color, sizes: { $elemMatch: { label: size, stock: { $gte: quantity } } } },
+			},
+		},
+		{ $inc: { 'variants.$[v].sizes.$[s].stock': -quantity } },
+		{ arrayFilters: [{ 'v.color': color }, { 's.label': size }] },
 	)
 	return result.modifiedCount === 1
 }
@@ -20,10 +30,11 @@ const takeFromStock = async ({ productId, size, quantity }) => {
  */
 export const releaseStock = async (items) => {
 	await Promise.all(
-		items.map(({ productId, size, quantity }) =>
+		items.map(({ productId, color, size, quantity }) =>
 			Product.updateOne(
-				{ _id: productId, 'sizes.label': size },
-				{ $inc: { 'sizes.$.stock': quantity } },
+				{ _id: productId },
+				{ $inc: { 'variants.$[v].sizes.$[s].stock': quantity } },
+				{ arrayFilters: [{ 'v.color': color }, { 's.label': size }] },
 			),
 		),
 	)
@@ -48,7 +59,7 @@ export const reserveStock = async (items) => {
 		throw conflict('Some items are out of stock', [
 			{
 				path: `items.${index}`,
-				message: `Not enough "${item.product.title}" left in size ${item.size}`,
+				message: `Not enough "${item.product.title}" left in ${item.color}, size ${item.size}`,
 			},
 		])
 	}

@@ -31,7 +31,7 @@ const createOrder = (user, product, overrides = {}) =>
 				size: 'M',
 				title: product.title,
 				brand: product.brand,
-				image: product.images[0],
+				image: product.variants[0].images[0],
 				price: product.price,
 			},
 		],
@@ -75,6 +75,7 @@ describe('GET /api/admin/stats', () => {
 		const coat = await createProduct({
 			title: 'Coat',
 			price: 50,
+			colors: ['black'],
 			sizes: [
 				{ label: 'M', stock: 1 },
 				{ label: 'L', stock: 20 },
@@ -92,7 +93,9 @@ describe('GET /api/admin/stats', () => {
 		expect(body.ordersByStatus).toMatchObject({ pending: 1, paid: 1, cancelled: 1, shipped: 0 })
 		expect(body.customers).toBe(1)
 		expect(body.products).toEqual({ total: 2, active: 1 })
-		expect(body.lowStock).toEqual([expect.objectContaining({ title: 'Coat', size: 'M', stock: 1 })])
+		expect(body.lowStock).toEqual([
+			expect.objectContaining({ title: 'Coat', color: 'black', size: 'M', stock: 1 }),
+		])
 		expect(body.topProducts[0]).toMatchObject({ title: 'Coat', quantity: 4, revenue: 200 })
 		expect(body.recentOrders).toHaveLength(3)
 		expect(body.recentOrders[0].user.username).toBe('customer')

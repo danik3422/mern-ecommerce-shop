@@ -15,7 +15,7 @@ const createOrder = (userId, product, status = 'pending') =>
 				color: 'black',
 				title: product.title,
 				brand: product.brand,
-				image: product.images[0],
+				image: product.variants[0].images[0],
 				price: product.price,
 			},
 		],

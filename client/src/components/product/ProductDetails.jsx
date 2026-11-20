@@ -1,10 +1,11 @@
 import { Truck } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { MAX_QUANTITY } from '../../cart/cartLines'
 import { FREE_SHIPPING_FROM } from '../../cart/pricing'
 import { useCart } from '../../cart/useCart'
 import { formatMoney } from '../../utils/money'
+import { findVariant, isVariantInStock, stockOf } from '../../utils/variants'
 import { capitalize } from '../../utils/text'
 import { CATEGORY_TITLES } from '../../data/catalog'
 import { rememberViewedProduct } from '../../hooks/useRecentlyViewed'
@@ -28,8 +29,13 @@ const firstAvailableSize = (sizes) => sizes.find((s) => s.stock > 0)?.label ?? n
 
 const ProductDetails = ({ product }) => {
 	const { addItem } = useCart()
-	const [color, setColor] = useState(product.colors[0])
-	const [size, setSize] = useState(() => firstAvailableSize(product.sizes))
+	const [searchParams, setSearchParams] = useSearchParams()
+	// the color lives in the URL (?color=black), so a link opens the same color;
+	// unknown colors fall back to the first color that is in stock
+	const defaultVariant = product.variants.find(isVariantInStock) ?? product.variants[0]
+	const variant = findVariant(product, searchParams.get('color')) ?? defaultVariant
+	const color = variant.color
+	const [size, setSize] = useState(() => firstAvailableSize(variant.sizes))
 	const [quantity, setQuantity] = useState(1)
 	// the line just added; opens the mini bag
 	const [addedLine, setAddedLine] = useState(null)
@@ -37,8 +43,18 @@ const ProductDetails = ({ product }) => {
 	const purchaseRef = useRef(null)
 
 	const category = product.categories[0]
-	const sizeStock = product.sizes.find((s) => s.label === size)?.stock ?? 0
-	const isOneSize = product.sizes.length === 1
+	const sizeStock = stockOf(variant, size)
+	const isOneSize = variant.sizes.length === 1
+	const variantInStock = isVariantInStock(variant)
+
+	const chooseColor = (nextColor) => {
+		const next = findVariant(product, nextColor)
+		const params = new URLSearchParams(searchParams)
+		params.set('color', nextColor)
+		setSearchParams(params, { replace: true, preventScrollReset: true })
+		// keep the size when the new color has it in stock, otherwise pick the first available
+		if (stockOf(next, size) === 0) setSize(firstAvailableSize(next.sizes))
+	}
 
 	useEffect(() => {
 		rememberViewedProduct(product._id)
@@ -70,7 +86,7 @@ const ProductDetails = ({ product }) => {
 		addItem(line)
 		setAddedLine(line)
 	}
-	const canAdd = product.inStock && sizeStock > 0
+	const canAdd = variantInStock && sizeStock > 0
 
 	return (
 		<>
@@ -92,7 +108,8 @@ const ProductDetails = ({ product }) => {
 
 			<article className={style.product}>
 				<div className={style.media}>
-					<ProductGallery images={product.images} title={product.title} />
+					{/* key restarts the gallery at the first photo of another color */}
+					<ProductGallery images={variant.images} title={product.title} key={color} />
 				</div>
 
 				<div className={style.info}>
@@ -115,27 +132,27 @@ const ProductDetails = ({ product }) => {
 					</div>
 					<p className={style.description}>{product.description}</p>
 
-					{product.colors.length > 0 && (
+					{product.variants.length > 1 && (
 						<OptionPicker
 							legend='Color'
 							name='color'
 							variant='swatch'
 							options={product.colors}
 							value={color}
-							onChange={setColor}
+							onChange={chooseColor}
 						/>
 					)}
 					{!isOneSize && (
 						<div className={style.sizes}>
-							<SizePicker sizes={product.sizes} value={size} onChange={setSize} />
+							<SizePicker sizes={variant.sizes} value={size} onChange={setSize} />
 							<div className={style.sizeLinks}>
-								<SizeGuide sizes={product.sizes.map((s) => s.label)} />
-								{product.inStock && <NotifyMe product={product} />}
+								<SizeGuide sizes={variant.sizes.map((s) => s.label)} />
+								{variantInStock && <NotifyMe product={product} variant={variant} />}
 							</div>
 						</div>
 					)}
 
-					{product.inStock ? (
+					{variantInStock ? (
 						<div className={style.purchase} ref={purchaseRef}>
 							<QuantityStepper
 								value={quantity}
@@ -149,8 +166,12 @@ const ProductDetails = ({ product }) => {
 						</div>
 					) : (
 						<div className={style.soldOut}>
-							<Alert>This product is sold out.</Alert>
-							<NotifyMe product={product} variant='button' />
+							<Alert>
+								{product.variants.length > 1
+									? `This color is sold out — try another color.`
+									: 'This product is sold out.'}
+							</Alert>
+							<NotifyMe product={product} variant={variant} appearance='button' />
 						</div>
 					)}
 

@@ -27,24 +27,38 @@ export const createUser = async ({ username = 'alice', isAdmin = false } = {}) =
 
 let productCounter = 0
 
-/** Creates an active product with sizes S and M (5 in stock each) and colors black/white. */
-export const createProduct = (overrides = {}) => {
+/**
+ * Creates an active product. By default it has the colors black and white,
+ * each with sizes S and M (5 in stock). `colors`, `sizes` and `images` build identical
+ * variants for every color; pass `variants` for full control.
+ */
+export const createProduct = ({
+	colors = ['black', 'white'],
+	sizes = [
+		{ label: 'S', stock: 5 },
+		{ label: 'M', stock: 5 },
+	],
+	images = ['/images/products/product.jpg'],
+	variants,
+	...overrides
+} = {}) => {
 	const n = ++productCounter
 	return Product.create({
 		title: `Product ${n}`,
 		slug: `product-${n}`,
 		brand: 'Brand',
 		description: 'A nice product',
-		images: ['/images/products/product.jpg'],
 		categories: ['women'],
-		colors: ['black', 'white'],
-		sizes: [
-			{ label: 'S', stock: 5 },
-			{ label: 'M', stock: 5 },
-		],
+		variants: variants ?? colors.map((color) => ({ color, images, sizes })),
 		price: 10,
 		...overrides,
 	})
+}
+
+/** Stock of a color and size as stored in the database. */
+export const stockOf = async (productId, color, size) => {
+	const product = await Product.findById(productId).lean()
+	return product.variants.find((v) => v.color === color).sizes.find((s) => s.label === size).stock
 }
 
 export const validAddress = {

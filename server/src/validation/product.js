@@ -8,6 +8,18 @@ const size = z.strictObject({
 	stock: z.int().min(0).max(100_000),
 })
 
+const unique = (list, key) => new Set(list.map(key)).size === list.length
+
+const variant = z.strictObject({
+	color: tag,
+	images: z.array(imagePath).min(1).max(10),
+	sizes: z
+		.array(size)
+		.min(1)
+		.max(30)
+		.refine((sizes) => unique(sizes, (s) => s.label), 'Size labels must be unique'),
+})
+
 const productFields = z.strictObject({
 	title: z.string().trim().min(1).max(120),
 	slug: z
@@ -17,17 +29,12 @@ const productFields = z.strictObject({
 		.regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Use lowercase letters, digits and dashes'),
 	brand: z.string().trim().min(1).max(60),
 	description: z.string().trim().min(1).max(4000),
-	images: z.array(imagePath).min(1).max(10),
 	categories: z.array(tag).max(20).default([]),
-	colors: z.array(tag).max(20).default([]),
-	sizes: z
-		.array(size)
-		.min(1)
-		.max(30)
-		.refine(
-			(sizes) => new Set(sizes.map((s) => s.label)).size === sizes.length,
-			'Size labels must be unique',
-		),
+	variants: z
+		.array(variant)
+		.min(1, 'Add at least one color')
+		.max(20)
+		.refine((variants) => unique(variants, (v) => v.color), 'Each color can appear only once'),
 	price: z.number().nonnegative(),
 	// null removes the discount on update
 	compareAtPrice: z.number().nonnegative().nullable().optional(),
@@ -48,7 +55,6 @@ export const createProductBody = productFields.refine(
 export const updateProductBody = productFields
 	.extend({
 		categories: productFields.shape.categories.removeDefault(),
-		colors: productFields.shape.colors.removeDefault(),
 		active: productFields.shape.active.removeDefault(),
 	})
 	.partial()

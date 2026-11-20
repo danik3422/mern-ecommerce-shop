@@ -6,6 +6,7 @@ import * as productsApi from '../api/products'
 import { AuthProvider } from '../auth/AuthProvider'
 import { CartProvider } from '../cart/CartProvider'
 import ProductList from './ProductList'
+import { makeProduct } from '../test/fixtures'
 
 vi.mock('../api/products', async (importOriginal) => ({
 	...(await importOriginal()),
@@ -13,21 +14,15 @@ vi.mock('../api/products', async (importOriginal) => ({
 	fetchFacets: vi.fn(),
 }))
 
-const product = {
-	_id: 'p1',
+const product = makeProduct({
 	slug: 'wool-coat',
 	title: 'Wool Coat',
 	brand: 'Aster & Co',
 	images: ['/coat.jpg'],
-	categories: ['coats'],
 	colors: ['black'],
 	sizes: [{ label: 'M', stock: 2 }],
 	price: 150,
-	inStock: true,
-	onSale: false,
-	discountPercent: 0,
-	rating: { average: 0, count: 0 },
-}
+})
 
 const facets = {
 	brands: [

@@ -18,8 +18,9 @@ const QuickAdd = ({ product }) => {
 
 	if (!product.inStock) return null
 
-	const needsColorChoice = product.colors.length > 1
-	const isOneSize = product.sizes.length === 1
+	const needsColorChoice = product.variants.length > 1
+	const [{ sizes }] = product.variants
+	const isOneSize = sizes.length === 1
 
 	const add = (size) => {
 		addItem({ productId: product._id, size, color: product.colors[0], quantity: 1 })
@@ -49,18 +50,14 @@ const QuickAdd = ({ product }) => {
 						Choose color &amp; size
 					</Link>
 				) : isOneSize ? (
-					<button
-						type='button'
-						className={style.addButton}
-						onClick={() => add(product.sizes[0].label)}
-					>
+					<button type='button' className={style.addButton} onClick={() => add(sizes[0].label)}>
 						Add to bag
 					</button>
 				) : (
 					<>
 						<p className={style.label}>Quick add</p>
 						<div className={style.sizes} role='group' aria-label={`Sizes of ${product.title}`}>
-							{product.sizes.map((size) => (
+							{sizes.map((size) => (
 								<button
 									key={size.label}
 									type='button'

@@ -19,15 +19,32 @@ const withStock = (labels, overrides = {}) =>
 	labels.map((label, i) => ({ label, stock: overrides[label] ?? 4 + ((i * 7) % 9) }))
 
 /**
- * Compact product definition.
- * `photos` are file names in client/public/images/products (see CREDITS.md there).
+ * Compact product definition: every color becomes a variant with its own stock.
+ * `photos` are file names in client/public/images/products (see CREDITS.md there);
+ * `photosByColor` gives a color its own photos, otherwise colors share `photos`.
+ * `stock` overrides apply to the first color, so each product shows some low/sold-out sizes.
  */
-const product = ({ slug, photos = [slug], sizes = CLOTHING, stock, ...fields }) => ({
+const product = ({
 	slug,
-	images: photos.map((photo) => `/images/products/${photo}.jpg`),
-	sizes: withStock(sizes, stock),
+	photos = [slug],
+	photosByColor = {},
+	colors,
+	sizes = CLOTHING,
+	stock,
+	...fields
+}) => ({
+	slug,
+	variants: colors.map((color, index) => ({
+		color,
+		images: (photosByColor[color] ?? photos).map((photo) => `/images/products/${photo}.jpg`),
+		sizes: index === 0 ? withStock(sizes, stock) : withStockOffset(sizes, index),
+	})),
 	...fields,
 })
+
+/** Different stock numbers for additional colors, so variants are visibly independent. */
+const withStockOffset = (labels, offset) =>
+	labels.map((label, i) => ({ label, stock: (i * 5 + offset * 3) % 8 }))
 
 const products = [
 	// women

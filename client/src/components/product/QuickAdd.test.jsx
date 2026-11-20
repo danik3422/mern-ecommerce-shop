@@ -4,8 +4,9 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { AuthProvider } from '../../auth/AuthProvider'
 import { CartProvider } from '../../cart/CartProvider'
 import QuickAdd from './QuickAdd'
+import { makeProduct } from '../../test/fixtures'
 
-const tee = {
+const tee = makeProduct({
 	_id: 'p1',
 	slug: 'tee',
 	title: 'Tee',
@@ -14,8 +15,7 @@ const tee = {
 		{ label: 'S', stock: 0 },
 		{ label: 'M', stock: 3 },
 	],
-	inStock: true,
-}
+})
 
 const renderQuickAdd = (product) =>
 	render(
@@ -45,7 +45,9 @@ describe('QuickAdd', () => {
 	})
 
 	it('sends products with several colors to the product page', () => {
-		renderQuickAdd({ ...tee, colors: ['white', 'black'] })
+		renderQuickAdd(
+			makeProduct({ ...tee, variants: undefined, colors: ['white', 'black'], slug: 'tee' }),
+		)
 		expect(screen.getByRole('link', { name: 'Choose color & size' })).toHaveAttribute(
 			'href',
 			'/product/tee',
@@ -54,12 +56,19 @@ describe('QuickAdd', () => {
 	})
 
 	it('adds one-size products directly and hides itself for sold-out products', () => {
-		const { unmount } = renderQuickAdd({ ...tee, sizes: [{ label: 'One size', stock: 2 }] })
+		const { unmount } = renderQuickAdd(
+			makeProduct({
+				slug: 'tee',
+				title: 'Tee',
+				colors: ['white'],
+				sizes: [{ label: 'One size', stock: 2 }],
+			}),
+		)
 		fireEvent.click(screen.getByRole('button', { name: 'Add to bag' }))
 		expect(savedCart()[0].size).toBe('One size')
 		unmount()
 
-		renderQuickAdd({ ...tee, inStock: false })
+		renderQuickAdd(makeProduct({ title: 'Tee', sizes: [{ label: 'M', stock: 0 }] }))
 		expect(screen.queryByRole('button', { name: /quick add/i })).not.toBeInTheDocument()
 	})
 })

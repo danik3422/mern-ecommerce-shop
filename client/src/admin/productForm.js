@@ -11,6 +11,33 @@ export const SIZE_PRESETS = {
 
 export const presetSizes = (preset) => SIZE_PRESETS[preset].map((label) => ({ label, stock: '0' }))
 
+let variantKey = 0
+/** A stable React key for a variant card (colors can be renamed while editing). */
+const nextKey = () => `variant-${++variantKey}`
+
+/** A new color; copies the size labels of `template` so stock only has to be filled in. */
+export const newVariant = (template) => ({
+	key: nextKey(),
+	color: '',
+	images: [],
+	sizes: template
+		? template.sizes.map(({ label }) => ({ label, stock: '0' }))
+		: presetSizes('clothing'),
+})
+
+/**
+ * Field errors of one variant without the `variants.<index>.` prefix,
+ * so editors can look up `sizes.1.label` or `images` as usual.
+ */
+export const variantErrors = (errors, index) => {
+	const prefix = `variants.${index}.`
+	return Object.fromEntries(
+		Object.entries(errors)
+			.filter(([path]) => path.startsWith(prefix))
+			.map(([path, message]) => [path.slice(prefix.length), message]),
+	)
+}
+
 export const emptyProductForm = () => ({
 	title: '',
 	slug: '',
@@ -19,9 +46,7 @@ export const emptyProductForm = () => ({
 	price: '',
 	compareAtPrice: '',
 	categories: [],
-	colors: [],
-	sizes: presetSizes('clothing'),
-	images: [],
+	variants: [newVariant()],
 	active: true,
 })
 
@@ -34,9 +59,12 @@ export const productToForm = (product) => ({
 	price: String(product.price),
 	compareAtPrice: product.compareAtPrice ? String(product.compareAtPrice) : '',
 	categories: product.categories,
-	colors: product.colors,
-	sizes: product.sizes.map((size) => ({ label: size.label, stock: String(size.stock) })),
-	images: product.images,
+	variants: product.variants.map((variant) => ({
+		key: nextKey(),
+		color: variant.color,
+		images: variant.images,
+		sizes: variant.sizes.map((size) => ({ label: size.label, stock: String(size.stock) })),
+	})),
 	active: product.active,
 })
 
@@ -56,12 +84,14 @@ export const formToPayload = (form, { isNew }) => {
 		price: toNumber(form.price),
 		...(compareAtPrice !== undefined ? { compareAtPrice } : isNew ? {} : { compareAtPrice: null }),
 		categories: form.categories,
-		colors: form.colors,
-		sizes: form.sizes.map((size) => ({
-			label: size.label.trim(),
-			stock: toNumber(size.stock) ?? 0,
+		variants: form.variants.map((variant) => ({
+			color: variant.color.trim().toLowerCase(),
+			images: variant.images,
+			sizes: variant.sizes.map((size) => ({
+				label: size.label.trim(),
+				stock: toNumber(size.stock) ?? 0,
+			})),
 		})),
-		images: form.images,
 		active: form.active,
 	}
 }

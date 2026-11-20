@@ -1,14 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { Product } from '../src/models/Product.js'
-import { api, createProduct, createUser, validAddress } from './helpers.js'
+import { api, createProduct, createUser, validAddress, stockOf } from './helpers.js'
 
 const orderBody = (product, overrides = {}) => ({
 	items: [{ productId: product.id, quantity: 2, color: 'black', size: 'M', ...overrides }],
 	address: validAddress,
 })
 
-const stockOf = async (product, size = 'M') =>
-	(await Product.findById(product.id).lean()).sizes.find((s) => s.label === size).stock
+const stockInBlack = (product, size = 'M') => stockOf(product.id, 'black', size)
 
 const placeOrder = async (auth, body) => {
 	const res = await api().post('/api/orders').set(auth).send(body).expect(201)
@@ -73,10 +72,10 @@ describe('POST /api/orders', () => {
 			.set(auth)
 			.send(orderBody(product, { size: 'S', quantity: 1 }))
 			.expect(409)
-		expect(soldOut.body.details[0].message).toMatch(/sold out in size S/)
+		expect(soldOut.body.details[0].message).toMatch(/sold out in black, size S/)
 
 		const notEnough = await api().post('/api/orders').set(auth).send(orderBody(product)).expect(409)
-		expect(notEnough.body.details[0].message).toMatch(/Only 1 left/)
+		expect(notEnough.body.details[0].message).toMatch(/Only 1 left .* in black, size M/)
 	})
 
 	it('rejects options the product does not offer', async () => {
@@ -115,10 +114,10 @@ describe('stock reservation', () => {
 		const { auth } = await createUser()
 
 		const order = await placeOrder(auth, orderBody(product, { quantity: 2 }))
-		expect(await stockOf(product)).toBe(3)
+		expect(await stockInBlack(product)).toBe(3)
 
 		await api().post(`/api/orders/${order._id}/cancel`).set(auth).expect(200)
-		expect(await stockOf(product)).toBe(5)
+		expect(await stockInBlack(product)).toBe(5)
 	})
 
 	it('sells the last item only once when customers order at the same time', async () => {
@@ -138,7 +137,7 @@ describe('stock reservation', () => {
 		)
 
 		expect(statuses.sort()).toEqual([201, 409, 409])
-		expect(await stockOf(product)).toBe(0)
+		expect(await stockInBlack(product)).toBe(0)
 	})
 
 	it('reserves all items or none of them', async () => {
@@ -154,7 +153,7 @@ describe('stock reservation', () => {
 			.expect(409)
 
 		expect(res.body.details[0].path).toBe('items.1')
-		expect(await stockOf(product)).toBe(1)
+		expect(await stockInBlack(product)).toBe(1)
 	})
 })
 
@@ -186,7 +185,7 @@ describe('customer order actions', () => {
 		expect(cancelled.body.status).toBe('cancelled')
 
 		await api().post(`/api/orders/${order._id}/cancel`).set(alice.auth).expect(409)
-		expect(await stockOf(product)).toBe(5)
+		expect(await stockInBlack(product)).toBe(5)
 	})
 
 	it('does not let customers cancel paid orders', async () => {
@@ -260,7 +259,7 @@ describe('order management', () => {
 		const results = await Promise.all([setStatus('cancelled'), setStatus('cancelled')])
 
 		expect(results.map((r) => r.status).sort()).toEqual([200, 409])
-		expect(await stockOf(product)).toBe(5)
+		expect(await stockInBlack(product)).toBe(5)
 	})
 
 	it('returns 404 for unknown orders', async () => {

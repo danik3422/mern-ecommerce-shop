@@ -9,6 +9,7 @@ const soldOutInM = () =>
 	createProduct({
 		title: 'Coat',
 		slug: 'coat',
+		colors: ['black'],
 		sizes: [
 			{ label: 'S', stock: 1 },
 			{ label: 'M', stock: 0 },
@@ -55,9 +56,15 @@ describe('back-in-stock alerts', () => {
 				.patch(`/api/products/${product.id}`)
 				.set(admin.auth)
 				.send({
-					sizes: [
-						{ label: 'S', stock: 1 },
-						{ label: 'M', stock: 4 },
+					variants: [
+						{
+							color: 'black',
+							images: ['/images/products/coat.jpg'],
+							sizes: [
+								{ label: 'S', stock: 1 },
+								{ label: 'M', stock: 4 },
+							],
+						},
 					],
 				})
 				.expect(200)
@@ -66,7 +73,7 @@ describe('back-in-stock alerts', () => {
 		expect(sendMail).toHaveBeenCalledTimes(1)
 		expect(sendMail.mock.calls[0][0]).toMatchObject({
 			to: 'anna@example.com',
-			subject: expect.stringContaining('Back in stock: Brand Coat (M)'),
+			subject: expect.stringContaining('Back in stock: Brand Coat (black, M)'),
 			text: expect.stringContaining('/product/coat'),
 		})
 
@@ -75,7 +82,7 @@ describe('back-in-stock alerts', () => {
 	})
 
 	it('emails subscribers when a cancelled order returns the last item', async () => {
-		const product = await createProduct({ sizes: [{ label: 'M', stock: 1 }] })
+		const product = await createProduct({ colors: ['black'], sizes: [{ label: 'M', stock: 1 }] })
 		const { auth } = await createUser()
 		const item = { productId: product.id, quantity: 1, size: 'M', color: 'black' }
 		const { body } = await api()
@@ -97,11 +104,15 @@ describe('back-in-stock alerts', () => {
 		await api()
 			.patch(`/api/products/${product.id}`)
 			.set(admin.auth)
-			.send({ sizes: [{ label: 'M', stock: 2 }] })
+			.send({
+				variants: [{ color: 'black', images: ['/c.jpg'], sizes: [{ label: 'M', stock: 2 }] }],
+			})
 		await api()
 			.patch(`/api/products/${product.id}`)
 			.set(admin.auth)
-			.send({ sizes: [{ label: 'M', stock: 0 }] })
+			.send({
+				variants: [{ color: 'black', images: ['/c.jpg'], sizes: [{ label: 'M', stock: 0 }] }],
+			})
 
 		await subscribe(product, { size: 'M', email: 'anna@example.com' }).expect(201)
 		expect((await StockAlert.findOne()).notifiedAt).toBeNull()

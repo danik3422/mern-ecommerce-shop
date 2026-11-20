@@ -15,7 +15,7 @@ const CartLine = ({ item, onQuantityChange }) => {
 	return (
 		<li className={style.line}>
 			<Link to={productUrl} className={style.media} tabIndex={-1} aria-hidden>
-				<img className={style.image} src={product.images[0]} alt='' loading='lazy' />
+				<img className={style.image} src={item.variant.images[0]} alt='' loading='lazy' />
 			</Link>
 
 			<div className={style.details}>

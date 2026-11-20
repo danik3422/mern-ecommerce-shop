@@ -31,5 +31,5 @@ export const productKeys = {
 }
 
 /** Asks to be emailed when a sold-out size is back. `email` may be omitted when signed in. */
-export const createStockAlert = (productId, { size, email }) =>
-	http.post(`/products/${productId}/stock-alerts`, { size, email }).then((r) => r.data)
+export const createStockAlert = (productId, { color, size, email }) =>
+	http.post(`/products/${productId}/stock-alerts`, { color, size, email }).then((r) => r.data)
