@@ -72,5 +72,8 @@ const SWATCHES = {
 
 export const swatchColor = (name) => SWATCHES[name] ?? name
 
+/** Color names with a designed swatch — suggested when editing products. */
+export const COLOR_NAMES = Object.keys(SWATCHES)
+
 /** Must match LOW_STOCK_THRESHOLD in server/src/services/productView.js */
 export const LOW_STOCK_THRESHOLD = 3

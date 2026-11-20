@@ -1,5 +1,5 @@
+import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router'
-import AdminApp from './admin/AdminApp'
 import RequireAuth from './auth/RequireAuth'
 import Layout from './components/layout/Layout'
 import AccountPage from './pages/account/AccountPage'
@@ -11,6 +11,9 @@ import NotFound from './pages/NotFound'
 import Product from './pages/Product'
 import ProductList from './pages/ProductList'
 import Register from './pages/Register'
+
+// The admin panel is only needed by staff, so it is loaded on demand in its own chunk
+const AdminApp = lazy(() => import('./admin/AdminApp'))
 
 const AppRoutes = () => (
 	<Routes>
@@ -38,7 +41,9 @@ const AppRoutes = () => (
 			path='admin/*'
 			element={
 				<RequireAuth admin>
-					<AdminApp />
+					<Suspense fallback={<p className='container'>Loading admin…</p>}>
+						<AdminApp />
+					</Suspense>
 				</RequireAuth>
 			}
 		/>

@@ -3,7 +3,7 @@ import { getErrorMessage, getFieldErrors } from '../../api/client'
 import Alert from '../../components/ui/Alert'
 import Button from '../../components/ui/Button'
 import TextField from '../../components/ui/TextField'
-import { COLOR_FILTERS } from '../../data/catalog'
+import { COLOR_NAMES } from '../../data/catalog'
 import { formToPayload, emptyProductForm } from '../productForm'
 import { slugify } from '../format'
 import ImagesEditor from './ImagesEditor'
@@ -90,7 +90,7 @@ const ProductForm = ({ initialValues, onSubmit, mutation, submitLabel, extraActi
 						label='Colors'
 						values={form.colors}
 						onChange={(value) => setField('colors', value)}
-						suggestions={COLOR_FILTERS}
+						suggestions={COLOR_NAMES}
 						error={errors.colors}
 					/>
 				</section>

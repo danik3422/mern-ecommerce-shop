@@ -18,8 +18,9 @@ const Kpi = ({ label, value, hint }) => (
 	</div>
 )
 
-const Panel = ({ title, action, children }) => (
-	<section className={`${table.panel} ${style.panel}`} aria-label={title}>
+/** @param wide span the full width of the dashboard grid (for wide tables) */
+const Panel = ({ title, action, wide = false, children }) => (
+	<section className={`${table.panel} ${style.panel} ${wide ? style.wide : ''}`} aria-label={title}>
 		<div className={style.panelHeader}>
 			<h2 className={style.panelTitle}>{title}</h2>
 			{action}
@@ -74,6 +75,7 @@ const Dashboard = () => {
 						</Panel>
 
 						<Panel
+							wide
 							title='Recent orders'
 							action={
 								<Link to='/admin/orders' className='text-link'>
