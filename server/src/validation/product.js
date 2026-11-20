@@ -55,21 +55,59 @@ export const updateProductBody = productFields
 	.refine((body) => Object.keys(body).length > 0, 'Nothing to update')
 	.refine(compareAtPriceIsHigher.check, compareAtPriceIsHigher.error)
 
-export const PRODUCT_SORTS = ['newest', 'price_asc', 'price_desc']
+export const PRODUCT_SORTS = ['newest', 'price_asc', 'price_desc', 'rating', 'discount']
 
-export const listProductsQuery = z.object({
-	category: z.string().trim().toLowerCase().optional(),
-	color: z.string().trim().toLowerCase().optional(),
-	size: z.string().trim().optional(),
-	// comma-separated product ids, used by the cart to load fresh prices
-	ids: z
+/** "a,b,c" → ['a', 'b', 'c'] (trimmed, empty parts dropped) */
+const commaList = (item, max = 50) =>
+	z
 		.string()
-		.transform((value) => value.split(',').filter(Boolean))
-		.pipe(z.array(objectId).max(100))
-		.optional(),
-	sort: z.enum(PRODUCT_SORTS).default('newest'),
-	page: z.coerce.number().int().min(1).default(1),
-	limit: z.coerce.number().int().min(1).max(100).default(20),
+		.transform((value) =>
+			value
+				.split(',')
+				.map((part) => part.trim())
+				.filter(Boolean),
+		)
+		.pipe(z.array(item).max(max))
+
+const booleanFlag = z.enum(['true', 'false']).transform((value) => value === 'true')
+
+const price = z.coerce.number().nonnegative()
+
+/** Filters shared by the product list and the facets endpoint. */
+const scopeFields = {
+	category: z.string().trim().toLowerCase().max(30).optional(),
+	// free-text search in title, brand and description
+	q: z.string().trim().max(100).optional(),
+}
+
+export const listProductsQuery = z
+	.object({
+		...scopeFields,
+		brand: commaList(z.string().max(60)).optional(),
+		color: commaList(z.string().toLowerCase().max(30)).optional(),
+		size: commaList(z.string().max(20)).optional(),
+		minPrice: price.optional(),
+		maxPrice: price.optional(),
+		onSale: booleanFlag.optional(),
+		inStock: booleanFlag.optional(),
+		// comma-separated product ids, used by the cart to load fresh prices
+		ids: commaList(objectId, 100).optional(),
+		sort: z.enum(PRODUCT_SORTS).default('newest'),
+		page: z.coerce.number().int().min(1).default(1),
+		limit: z.coerce.number().int().min(1).max(100).default(20),
+	})
+	.refine(
+		(query) =>
+			query.minPrice === undefined ||
+			query.maxPrice === undefined ||
+			query.minPrice <= query.maxPrice,
+		{ message: 'minPrice must not be greater than maxPrice', path: ['minPrice'] },
+	)
+
+export const facetsQuery = z.object(scopeFields)
+
+export const relatedQuery = z.object({
+	limit: z.coerce.number().int().min(1).max(12).default(4),
 })
 
 /** `:id` may be a Mongo id or a slug */
