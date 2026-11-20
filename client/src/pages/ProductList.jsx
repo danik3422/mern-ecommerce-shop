@@ -1,68 +1,158 @@
-import { useParams, useSearchParams } from 'react-router'
+import { SlidersHorizontal } from 'lucide-react'
+import { useCallback, useState } from 'react'
+import { Link, useParams, useSearchParams } from 'react-router'
+import ActiveFilters from '../components/product/ActiveFilters'
+import {
+	activeFilterChips,
+	clearFilterParams,
+	readFilters,
+	toApiQuery,
+	toFacetScope,
+	updateFilterParams,
+} from '../components/product/catalogFilters'
+import FilterDrawer from '../components/product/FilterDrawer'
+import FilterPanel from '../components/product/FilterPanel'
 import Pagination from '../components/product/Pagination'
-import ProductFilters from '../components/product/ProductFilters'
 import ProductGrid from '../components/product/ProductGrid'
+import Button from '../components/ui/Button'
+import Select from '../components/ui/Select'
+import { CATEGORY_TITLES, SALE_CATEGORY, SORT_OPTIONS } from '../data/catalog'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
-import { useProducts } from '../hooks/useProducts'
+import { useFacets, useProducts } from '../hooks/useProducts'
 import { capitalize } from '../utils/text'
 import style from './ProductList.module.css'
 
-const PAGE_SIZE = 12
+const PAGE_SIZE = 24
 
-/** Filters, sorting and page live in the URL, so a list can be shared and survives reloads. */
+const pageTitle = (category, q) => {
+	if (q) return `Results for “${q}”`
+	if (!category) return 'All products'
+	return CATEGORY_TITLES[category] ?? capitalize(category)
+}
+
+/** Catalog: category, sale or search results with filters kept in the URL. */
 const ProductList = () => {
 	const { category } = useParams()
 	const [searchParams, setSearchParams] = useSearchParams()
+	const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
-	const filters = {
-		color: searchParams.get('color') ?? '',
-		size: searchParams.get('size') ?? '',
-		sort: searchParams.get('sort') ?? 'newest',
-	}
-	const page = Number(searchParams.get('page')) || 1
-
-	const title = category ? capitalize(category) : 'All products'
+	const filters = readFilters(searchParams)
+	const isSale = category === SALE_CATEGORY
+	const title = pageTitle(category, filters.q)
 	useDocumentTitle(title)
-	const products = useProducts({ category, ...filters, page, limit: PAGE_SIZE })
 
-	const updateParams = (changes) => {
-		const next = new URLSearchParams(searchParams)
-		for (const [name, value] of Object.entries(changes)) {
-			if (value) next.set(name, value)
-			else next.delete(name)
-		}
-		setSearchParams(next)
-	}
+	const products = useProducts(toApiQuery(filters, category, PAGE_SIZE))
+	const facets = useFacets(toFacetScope(filters, category))
 
+	const applyChanges = (changes) => setSearchParams(updateFilterParams(searchParams, changes))
+	const clearAll = () => setSearchParams(clearFilterParams(searchParams))
+	const closeDrawer = useCallback(() => setIsDrawerOpen(false), [])
+
+	const chips = activeFilterChips(isSale ? { ...filters, onSale: false } : filters)
 	const total = products.data?.total
+	const countText = total === undefined ? '' : `${total} ${total === 1 ? 'product' : 'products'}`
+
+	const filterPanel = (
+		<FilterPanel
+			filters={filters}
+			facets={facets.data}
+			onChange={applyChanges}
+			hideSaleToggle={isSale}
+		/>
+	)
 
 	return (
 		<div className='container'>
 			<div className={style.header}>
-				<h1 className={style.title}>{title}</h1>
-				{total !== undefined && (
-					<p className={style.count}>
-						{total} {total === 1 ? 'product' : 'products'}
-					</p>
-				)}
+				<div>
+					{filters.q && category && (
+						<p className='eyebrow'>{CATEGORY_TITLES[category] ?? capitalize(category)}</p>
+					)}
+					<h1 className={style.title}>{title}</h1>
+				</div>
+				<p className={style.count} aria-live='polite'>
+					{countText}
+				</p>
 			</div>
 
-			{/* any filter change starts again from the first page */}
-			<ProductFilters
-				values={filters}
-				onChange={(name, value) => updateParams({ [name]: value, page: null })}
-			/>
-
-			<div className={style.results}>
-				<ProductGrid query={products} skeletonCount={PAGE_SIZE} />
-				{products.data && (
-					<Pagination
-						page={products.data.page}
-						pages={products.data.pages}
-						onChange={(next) => updateParams({ page: next })}
-					/>
-				)}
+			<div className={style.toolbar}>
+				<Button
+					variant='secondary'
+					size='sm'
+					className={style.filterButton}
+					onClick={() => setIsDrawerOpen(true)}
+					aria-haspopup='dialog'
+				>
+					<SlidersHorizontal size={16} aria-hidden /> Filters
+					{chips.length > 0 && ` (${chips.length})`}
+				</Button>
+				<Select
+					label='Sort by'
+					hideLabel
+					name='sort'
+					value={filters.sort}
+					options={SORT_OPTIONS}
+					onChange={(e) => applyChanges({ sort: e.target.value })}
+					className={style.sort}
+				/>
 			</div>
+
+			<ActiveFilters chips={chips} onRemove={applyChanges} onClearAll={clearAll} />
+
+			<div className={style.layout}>
+				<aside className={style.sidebar} aria-label='Filters'>
+					{filterPanel}
+				</aside>
+
+				<section className={style.results} aria-label='Products'>
+					{products.data?.total === 0 ? (
+						<div className={style.empty}>
+							<p>
+								{filters.q
+									? `No products found for “${filters.q}”.`
+									: 'No products match these filters.'}
+							</p>
+							{chips.length > 0 ? (
+								<Button variant='secondary' onClick={clearAll}>
+									Clear filters
+								</Button>
+							) : (
+								<Button as={Link} to='/products' variant='secondary'>
+									Browse all products
+								</Button>
+							)}
+						</div>
+					) : (
+						<>
+							<ProductGrid query={products} skeletonCount={12} />
+							{products.data && (
+								<Pagination
+									page={products.data.page}
+									pages={products.data.pages}
+									onChange={(page) => {
+										applyChanges({ page })
+										window.scrollTo(0, 0)
+									}}
+								/>
+							)}
+						</>
+					)}
+				</section>
+			</div>
+
+			{isDrawerOpen && (
+				<FilterDrawer
+					title='Filters'
+					onClose={closeDrawer}
+					footer={
+						<Button fullWidth onClick={closeDrawer}>
+							{total === undefined ? 'Show products' : `Show ${countText}`}
+						</Button>
+					}
+				>
+					{filterPanel}
+				</FilterDrawer>
+			)}
 		</div>
 	)
 }
