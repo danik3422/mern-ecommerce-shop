@@ -2,7 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router'
 import { getErrorMessage } from '../../api/client'
-import { deleteReview, fetchReviews, reviewKeys } from '../../api/reviews'
+import { deleteReview, fetchReviewEligibility, fetchReviews, reviewKeys } from '../../api/reviews'
 import { useAuth } from '../../auth/useAuth'
 import Alert from '../ui/Alert'
 import Button from '../ui/Button'
@@ -58,6 +58,18 @@ const ProductReviews = ({ product }) => {
 		placeholderData: keepPreviousData,
 	})
 
+	// verified buyers only: the server says whether this customer may write a review
+	const eligibility = useQuery({
+		queryKey: reviewKeys.eligibility(product._id, user?._id),
+		queryFn: ({ signal }) => fetchReviewEligibility(product._id, signal),
+		enabled: Boolean(user),
+	})
+	const canReview = eligibility.data?.canReview ?? false
+	const reviewNote = {
+		not_purchased: t('reviews.notPurchased'),
+		already_reviewed: t('reviews.alreadyReviewed'),
+	}[eligibility.data?.reason]
+
 	const removal = useMutation({
 		mutationFn: (reviewId) => deleteReview(product._id, reviewId),
 		onSuccess: () => {
@@ -75,7 +87,7 @@ const ProductReviews = ({ product }) => {
 				<h2 id='reviews-title' className={style.title}>
 					{hasReviews ? t('reviews.titleWithCount', { count: data.total }) : t('reviews.title')}
 				</h2>
-				{user && !isWriting && (
+				{canReview && !isWriting && (
 					<Button variant='secondary' size='sm' onClick={() => setIsWriting(true)}>
 						{t('reviews.write')}
 					</Button>
@@ -87,6 +99,7 @@ const ProductReviews = ({ product }) => {
 				)}
 			</div>
 
+			{reviewNote && <p className={style.muted}>{reviewNote}</p>}
 			{isWriting && <ReviewForm productId={product._id} onDone={() => setIsWriting(false)} />}
 
 			{reviews.isPending && <p className={style.muted}>{t('reviews.loading')}</p>}

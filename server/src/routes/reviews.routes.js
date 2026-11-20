@@ -20,6 +20,12 @@ reviewRoutes.get(
 	validate({ params: reviewProductParams, query: listReviewsQuery }),
 	reviews.listReviews,
 )
+reviewRoutes.get(
+	'/eligibility',
+	requireAuth,
+	validate({ params: reviewProductParams }),
+	reviews.reviewEligibility,
+)
 reviewRoutes.post(
 	'/',
 	requireAuth,

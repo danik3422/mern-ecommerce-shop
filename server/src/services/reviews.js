@@ -30,6 +30,23 @@ export const syncProductRating = async (productId) => {
 	await Product.updateOne({ _id: productId }, { rating: { average, count } })
 }
 
-/** Only customers who ordered the product (in an order that was not cancelled) may review it. */
+/** Orders that count as a purchase: unpaid and cancelled orders do not. */
+export const PURCHASED_STATUSES = ['paid', 'shipped', 'delivered']
+
+/** Only customers who bought the product may review it. */
 export const hasPurchased = (userId, productId) =>
-	Order.exists({ user: userId, 'items.productId': productId, status: { $ne: 'cancelled' } })
+	Order.exists({ user: userId, 'items.productId': productId, status: { $in: PURCHASED_STATUSES } })
+
+/**
+ * Whether a customer may write a review now.
+ * @returns `{ canReview, reason }` — reason is 'not_purchased' or 'already_reviewed' when not
+ */
+export const getReviewEligibility = async (userId, productId) => {
+	if (await Review.exists({ product: productId, user: userId })) {
+		return { canReview: false, reason: 'already_reviewed' }
+	}
+	if (!(await hasPurchased(userId, productId))) {
+		return { canReview: false, reason: 'not_purchased' }
+	}
+	return { canReview: true, reason: null }
+}

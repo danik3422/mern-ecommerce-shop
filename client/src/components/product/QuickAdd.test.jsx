@@ -39,6 +39,17 @@ describe('QuickAdd', () => {
 		expect(savedCart()).toEqual([{ productId: 'p1', size: 'M', color: 'white', quantity: 1 }])
 	})
 
+	it('stops at the stock: a size whose whole stock is in the bag cannot be added again', () => {
+		renderQuickAdd(tee)
+		for (let click = 0; click < 3; click++) {
+			fireEvent.click(screen.getByRole('button', { name: 'Add Tee in size M' }))
+		}
+		expect(savedCart()[0].quantity).toBe(3)
+		expect(
+			screen.getByRole('button', { name: 'M, all available items are in your bag' }),
+		).toBeDisabled()
+	})
+
 	it('disables sold-out sizes', () => {
 		renderQuickAdd(tee)
 		expect(screen.getByRole('button', { name: 'S, sold out' })).toBeDisabled()

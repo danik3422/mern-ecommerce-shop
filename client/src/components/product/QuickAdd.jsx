@@ -14,7 +14,7 @@ import { useI18n } from '../../i18n/useI18n'
  */
 const QuickAdd = ({ product }) => {
 	const { t } = useI18n()
-	const { addItem } = useCart()
+	const { addItem, quantityInBag } = useCart()
 	const toast = useToast()
 	const [isOpen, setIsOpen] = useState(false)
 
@@ -24,13 +24,18 @@ const QuickAdd = ({ product }) => {
 	const [{ sizes }] = product.variants
 	const isOneSize = sizes.length === 1
 
+	const color = product.colors[0]
+	// sizes whose whole stock is already in the bag cannot be added again
+	const available = (size) =>
+		size.stock - quantityInBag({ productId: product._id, color, size: size.label })
+
 	const add = (size) => {
-		addItem({ productId: product._id, size, color: product.colors[0], quantity: 1 })
+		addItem({ productId: product._id, size: size.label, color, quantity: 1 }, size.stock)
 		setIsOpen(false)
 		toast.show({
 			message: isOneSize
 				? t('card.added', { title: product.title })
-				: t('card.addedInSize', { title: product.title, size }),
+				: t('card.addedInSize', { title: product.title, size: size.label }),
 			tone: 'success',
 			action: { label: t('card.viewBag'), to: '/cart' },
 		})
@@ -54,8 +59,13 @@ const QuickAdd = ({ product }) => {
 						{t('card.chooseOptions')}
 					</Link>
 				) : isOneSize ? (
-					<button type='button' className={style.addButton} onClick={() => add(sizes[0].label)}>
-						{t('card.addToBag')}
+					<button
+						type='button'
+						className={style.addButton}
+						onClick={() => add(sizes[0])}
+						disabled={available(sizes[0]) <= 0}
+					>
+						{available(sizes[0]) > 0 ? t('card.addToBag') : t('card.allInBag')}
 					</button>
 				) : (
 					<>
@@ -70,12 +80,14 @@ const QuickAdd = ({ product }) => {
 									key={size.label}
 									type='button'
 									className={style.size}
-									onClick={() => add(size.label)}
-									disabled={size.stock === 0}
+									onClick={() => add(size)}
+									disabled={available(size) <= 0}
 									aria-label={
 										size.stock === 0
 											? t('card.sizeSoldOut', { size: size.label })
-											: t('card.addInSize', { title: product.title, size: size.label })
+											: available(size) <= 0
+												? t('card.sizeAllInBag', { size: size.label })
+												: t('card.addInSize', { title: product.title, size: size.label })
 									}
 								>
 									{size.label}

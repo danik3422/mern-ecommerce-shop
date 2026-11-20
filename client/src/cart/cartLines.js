@@ -7,15 +7,22 @@ export const MAX_QUANTITY = 99
 
 export const lineKey = ({ productId, color = '', size = '' }) => `${productId}|${color}|${size}`
 
-const clampQuantity = (quantity) => Math.min(Math.max(quantity, 0), MAX_QUANTITY)
+/** @param max e.g. the stock of the size; never above MAX_QUANTITY */
+const clampQuantity = (quantity, max = MAX_QUANTITY) =>
+	Math.min(Math.max(quantity, 0), max, MAX_QUANTITY)
 
-export const addLine = (lines, line) => {
+/** Quantity of this product, color and size already in the cart. */
+export const quantityInLines = (lines, line) =>
+	lines.find((l) => lineKey(l) === lineKey(line))?.quantity ?? 0
+
+/** Adds a line or increases an existing one, up to `max` in total. */
+export const addLine = (lines, line, max) => {
 	const key = lineKey(line)
 	const existing = lines.find((l) => lineKey(l) === key)
-	if (!existing) return [...lines, { ...line, quantity: clampQuantity(line.quantity) }]
+	if (!existing) return [...lines, { ...line, quantity: clampQuantity(line.quantity, max) }]
 
 	return lines.map((l) =>
-		l === existing ? { ...l, quantity: clampQuantity(l.quantity + line.quantity) } : l,
+		l === existing ? { ...l, quantity: clampQuantity(l.quantity + line.quantity, max) } : l,
 	)
 }
 

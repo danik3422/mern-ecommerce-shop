@@ -85,6 +85,8 @@ export default {
 		page: 'Page {page} of {pages}',
 	},
 	card: {
+		allInBag: 'Already in your bag',
+		sizeAllInBag: '{size}, all available items are in your bag',
 		soldOut: 'Sold out',
 		sale: 'Sale',
 		quickAdd: 'Quick add',
@@ -100,6 +102,7 @@ export default {
 	},
 	price: { original: 'Original price' },
 	product: {
+		allInBag: 'All available items ({count}) are already in your bag',
 		home: 'Home',
 		breadcrumb: 'Breadcrumb',
 		loading: 'Loading product',

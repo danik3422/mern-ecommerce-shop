@@ -85,6 +85,8 @@ export default {
 		page: 'Strona {page} z {pages}',
 	},
 	card: {
+		allInBag: 'Już w koszyku',
+		sizeAllInBag: '{size}, wszystkie dostępne sztuki są już w koszyku',
 		soldOut: 'Wyprzedane',
 		sale: 'Promocja',
 		quickAdd: 'Szybki zakup',
@@ -100,6 +102,7 @@ export default {
 	},
 	price: { original: 'Cena regularna' },
 	product: {
+		allInBag: 'Wszystkie dostępne sztuki ({count}) są już w Twoim koszyku',
 		home: 'Strona główna',
 		breadcrumb: 'Ścieżka nawigacji',
 		loading: 'Ładowanie produktu',

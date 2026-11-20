@@ -92,6 +92,8 @@ export default {
 		deleteButton: 'Usuń moje konto',
 	},
 	reviews: {
+		notPurchased: 'Opinię mogą wystawić tylko osoby, które kupiły ten produkt.',
+		alreadyReviewed: 'Ten produkt ma już Twoją opinię.',
 		title: 'Opinie',
 		titleWithCount: 'Opinie ({count})',
 		write: 'Napisz opinię',

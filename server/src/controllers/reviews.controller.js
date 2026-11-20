@@ -1,7 +1,7 @@
 import { Product } from '../models/Product.js'
 import { Review } from '../models/Review.js'
 import { User } from '../models/User.js'
-import { getRatingSummary, hasPurchased, syncProductRating } from '../services/reviews.js'
+import { getRatingSummary, getReviewEligibility, syncProductRating } from '../services/reviews.js'
 import { conflict, forbidden, notFound } from '../utils/HttpError.js'
 
 const ensureActiveProduct = async (productId) => {
@@ -27,16 +27,22 @@ export const listReviews = async (req, res) => {
 	res.json({ items, page, pages: Math.ceil(summary.count / limit), total: summary.count, summary })
 }
 
+/** GET /products/:productId/reviews/eligibility — may the signed-in customer review it? */
+export const reviewEligibility = async (req, res) => {
+	const { productId } = req.valid.params
+	await ensureActiveProduct(productId)
+	res.json(await getReviewEligibility(req.user.id, productId))
+}
+
 /** POST /products/:productId/reviews — verified buyers only, one review per product */
 export const createReview = async (req, res) => {
 	const { productId } = req.valid.params
 	await ensureActiveProduct(productId)
 
-	if (!(await hasPurchased(req.user.id, productId))) {
-		throw forbidden('Only customers who ordered this product can review it')
-	}
-	if (await Review.exists({ product: productId, user: req.user.id })) {
-		throw conflict('You have already reviewed this product')
+	const { reason } = await getReviewEligibility(req.user.id, productId)
+	if (reason === 'already_reviewed') throw conflict('You have already reviewed this product')
+	if (reason === 'not_purchased') {
+		throw forbidden('Only customers who bought this product can review it')
 	}
 
 	const { username } = await User.findById(req.user.id).lean()

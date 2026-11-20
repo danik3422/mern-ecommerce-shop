@@ -12,6 +12,7 @@ vi.hoisted(() => {
 vi.mock('../../api/reviews', async (importOriginal) => ({
 	...(await importOriginal()),
 	fetchReviews: vi.fn(),
+	fetchReviewEligibility: vi.fn(),
 	createReview: vi.fn(),
 	deleteReview: vi.fn(),
 }))
@@ -44,17 +45,14 @@ const reviewsPage = {
 	summary: { average: 4, count: 2, distribution: { 1: 0, 2: 0, 3: 1, 4: 0, 5: 1 } },
 }
 
-const forbidden = Object.assign(new Error('Request failed'), {
-	response: {
-		status: 403,
-		data: { message: 'Only customers who ordered this product can review it' },
-	},
-})
-
 describe('ProductReviews', () => {
 	beforeEach(() => {
 		vi.mocked(reviewsApi.fetchReviews).mockResolvedValue(reviewsPage)
 		vi.mocked(reviewsApi.createReview).mockResolvedValue({ _id: 'r3' })
+		vi.mocked(reviewsApi.fetchReviewEligibility).mockResolvedValue({
+			canReview: true,
+			reason: null,
+		})
 	})
 
 	it('shows the summary, distribution and reviews', async () => {
@@ -95,20 +93,15 @@ describe('ProductReviews', () => {
 		)
 	})
 
-	it('explains when only buyers can review', async () => {
-		vi.mocked(reviewsApi.createReview).mockRejectedValue(forbidden)
+	it.each([
+		['not_purchased', 'Only customers who bought this item can review it.'],
+		['already_reviewed', 'You have already reviewed this item.'],
+	])('hides the form and explains why (%s)', async (reason, text) => {
+		vi.mocked(reviewsApi.fetchReviewEligibility).mockResolvedValue({ canReview: false, reason })
 		renderWithProviders(<ProductReviews product={product} />)
-		fireEvent.click(await screen.findByRole('button', { name: 'Write a review' }))
 
-		fireEvent.click(screen.getByRole('radio', { name: /^5 stars/ }))
-		fireEvent.change(screen.getByLabelText('Your review'), {
-			target: { value: 'I like it a lot, honestly.' },
-		})
-		fireEvent.click(screen.getByRole('button', { name: 'Post review' }))
-
-		expect(
-			await screen.findByText('Only customers who ordered this product can review it'),
-		).toBeInTheDocument()
+		expect(await screen.findByText(text)).toBeInTheDocument()
+		expect(screen.queryByRole('button', { name: 'Write a review' })).not.toBeInTheDocument()
 	})
 
 	it('invites to write the first review', async () => {

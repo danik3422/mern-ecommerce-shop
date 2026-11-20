@@ -12,6 +12,7 @@ const CartLine = ({ item, onQuantityChange }) => {
 	const { t, formatMoney } = useI18n()
 	const { product } = item
 	const productUrl = `/product/${product.slug}`
+	const stock = stockOf(item.variant, item.size)
 	const options = [item.color && colorName(t, item.color), item.size].filter(Boolean).join(' · ')
 
 	return (
@@ -31,15 +32,16 @@ const CartLine = ({ item, onQuantityChange }) => {
 				{item.quantity > 1 && (
 					<p className={style.options}>{t('bag.each', { price: formatMoney(product.price) })}</p>
 				)}
-				{stockOf(item.variant, item.size) < item.quantity && (
-					<p className={style.warning}>{t('bag.notEnoughStock')}</p>
+				{stock > 0 && stock === item.quantity && (
+					<p className={style.options}>{t('bag.maxReached', { count: stock })}</p>
 				)}
+				{stock < item.quantity && <p className={style.warning}>{t('bag.notEnoughStock')}</p>}
 
 				<div className={style.controls}>
 					<QuantityStepper
 						value={item.quantity}
 						onChange={(quantity) => onQuantityChange(item.key, quantity)}
-						max={MAX_QUANTITY}
+						max={Math.min(MAX_QUANTITY, stock)}
 						label={t('bag.quantityOf', { title: product.title })}
 					/>
 					<Button variant='ghost' size='sm' onClick={() => onQuantityChange(item.key, 0)}>

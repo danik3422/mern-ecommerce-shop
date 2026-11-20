@@ -1,5 +1,6 @@
 export default {
 	bag: {
+		maxReached: 'Dostępnych sztuk w tym rozmiarze: {count}',
 		title: 'Koszyk',
 		items: 'Produkty w koszyku',
 		loading: 'Ładowanie koszyka…',

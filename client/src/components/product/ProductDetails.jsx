@@ -27,7 +27,7 @@ const firstAvailableSize = (sizes) => sizes.find((s) => s.stock > 0)?.label ?? n
 
 const ProductDetails = ({ product }) => {
 	const { t } = useI18n()
-	const { addItem } = useCart()
+	const { addItem, quantityInBag } = useCart()
 	const [searchParams, setSearchParams] = useSearchParams()
 	// the color lives in the URL (?color=black), so a link opens the same color;
 	// unknown colors fall back to the first color that is in stock
@@ -43,6 +43,9 @@ const ProductDetails = ({ product }) => {
 
 	const category = product.categories[0]
 	const sizeStock = stockOf(variant, size)
+	// what can still be added: the stock minus what is already in the bag
+	const inBag = quantityInBag({ productId: product._id, color, size })
+	const available = Math.max(sizeStock - inBag, 0)
 	const isOneSize = variant.sizes.length === 1
 	const variantInStock = isVariantInStock(variant)
 
@@ -81,11 +84,13 @@ const ProductDetails = ({ product }) => {
 	}, [])
 
 	const handleAdd = () => {
-		const line = { productId: product._id, color, size, quantity }
-		addItem(line)
+		const line = { productId: product._id, color, size, quantity: Math.min(quantity, available) }
+		addItem(line, sizeStock)
 		setAddedLine(line)
+		setQuantity(1)
 	}
-	const canAdd = variantInStock && sizeStock > 0
+	const canAdd = variantInStock && available > 0
+	const allInBag = sizeStock > 0 && available === 0
 
 	return (
 		<>
@@ -155,7 +160,7 @@ const ProductDetails = ({ product }) => {
 							<QuantityStepper
 								value={quantity}
 								onChange={setQuantity}
-								max={Math.min(MAX_QUANTITY, sizeStock || 1)}
+								max={Math.min(MAX_QUANTITY, Math.max(available, 1))}
 							/>
 							<Button fullWidth onClick={handleAdd} disabled={!canAdd}>
 								{t('product.addToBag')}
@@ -171,6 +176,9 @@ const ProductDetails = ({ product }) => {
 						</div>
 					)}
 
+					{variantInStock && allInBag && (
+						<Alert>{t('product.allInBag', { count: sizeStock })}</Alert>
+					)}
 					<p className={style.note}>
 						<FreeShippingNote />
 					</p>

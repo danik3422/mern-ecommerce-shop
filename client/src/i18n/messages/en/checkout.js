@@ -1,5 +1,6 @@
 export default {
 	bag: {
+		maxReached: 'Only {count} available in this size',
 		title: 'Bag',
 		items: 'Items in your bag',
 		loading: 'Loading your bag…',

@@ -5,6 +5,7 @@ import {
 	countItems,
 	lineKey,
 	mergeLines,
+	quantityInLines,
 	removeProducts,
 	setLineQuantity,
 } from './cartLines'
@@ -22,6 +23,14 @@ describe('cart lines', () => {
 
 	it('caps the quantity', () => {
 		expect(addLine([black], { ...black, quantity: 500 })[0].quantity).toBe(MAX_QUANTITY)
+	})
+
+	it('never adds more than the stock, however often the same size is added', () => {
+		let lines = []
+		for (let click = 0; click < 5; click++) lines = addLine(lines, black, 3)
+		expect(quantityInLines(lines, black)).toBe(3)
+		expect(addLine([], { ...black, quantity: 10 }, 2)[0].quantity).toBe(2)
+		expect(quantityInLines(lines, white)).toBe(0)
 	})
 
 	it('removes a line when its quantity drops to zero', () => {

@@ -62,7 +62,13 @@ export const CartProvider = ({ children }) => {
 		return () => clearTimeout(timer)
 	}, [lines, userId, syncedUserId])
 
-	const addItem = useCallback((line) => setLines((prev) => cartLines.addLine(prev, line)), [])
+	/** @param stock available quantity of the size: the bag never holds more */
+	const addItem = useCallback(
+		(line, stock) => setLines((prev) => cartLines.addLine(prev, line, stock)),
+		[],
+	)
+
+	const quantityInBag = useCallback((line) => cartLines.quantityInLines(lines, line), [lines])
 
 	const setQuantity = useCallback(
 		(key, quantity) => setLines((prev) => cartLines.setLineQuantity(prev, key, quantity)),
@@ -81,11 +87,12 @@ export const CartProvider = ({ children }) => {
 			lines,
 			count: cartLines.countItems(lines),
 			addItem,
+			quantityInBag,
 			setQuantity,
 			removeProducts,
 			clear,
 		}),
-		[lines, addItem, setQuantity, removeProducts, clear],
+		[lines, addItem, quantityInBag, setQuantity, removeProducts, clear],
 	)
 
 	return <CartContext.Provider value={value}>{children}</CartContext.Provider>

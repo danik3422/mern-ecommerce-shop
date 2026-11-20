@@ -91,6 +91,8 @@ export default {
 		deleteButton: 'Delete my account',
 	},
 	reviews: {
+		notPurchased: 'Only customers who bought this item can review it.',
+		alreadyReviewed: 'You have already reviewed this item.',
 		title: 'Reviews',
 		titleWithCount: 'Reviews ({count})',
 		write: 'Write a review',
