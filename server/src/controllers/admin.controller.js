@@ -170,9 +170,10 @@ export const getProduct = async (req, res) => {
 
 /** GET /admin/orders — filter by status, search by order id or customer username/email. */
 export const listOrders = async (req, res) => {
-	const { status, q, page, limit } = req.valid.query
+	const { status, returnStatus, q, page, limit } = req.valid.query
 	const filter = {}
 	if (status) filter.status = status
+	if (returnStatus) filter['returnRequest.status'] = returnStatus
 	if (q) {
 		const pattern = containsIgnoringCase(q)
 		const customers = await User.find({ $or: [{ username: pattern }, { email: pattern }] })

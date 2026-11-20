@@ -7,6 +7,7 @@ import { cancelOrder, payOrder } from '../../api/orders'
 import { formatMoney } from '../../utils/money'
 import { capitalize } from '../../utils/text'
 import { cx } from '../../utils/cx'
+import ReturnSection from '../orders/ReturnSection'
 import Alert from '../ui/Alert'
 import Button from '../ui/Button'
 import shared from './Account.module.css'
@@ -96,6 +97,10 @@ const OrderCard = ({ order }) => {
 				<Alert>Online payment is not available yet. We will contact you about payment.</Alert>
 			)}
 			{error && <Alert tone='error'>{getErrorMessage(error)}</Alert>}
+			<ReturnSection
+				order={order}
+				onChange={() => queryClient.invalidateQueries({ queryKey: accountKeys.orders })}
+			/>
 
 			<div id={detailsId} hidden={!isOpen} className={style.details}>
 				<ul role='list' className={style.items}>

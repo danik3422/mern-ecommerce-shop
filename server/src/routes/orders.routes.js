@@ -3,7 +3,7 @@ import * as orders from '../controllers/orders.controller.js'
 import { optionalAuth, requireAdmin, requireAuth } from '../middleware/auth.js'
 import { validate } from '../middleware/validate.js'
 import { idParams } from '../validation/common.js'
-import { createOrderBody, updateOrderStatusBody } from '../validation/order.js'
+import { createOrderBody, returnRequestBody, updateOrderStatusBody } from '../validation/order.js'
 
 export const orderRoutes = Router()
 
@@ -25,3 +25,9 @@ orderRoutes.patch(
 orderRoutes.get('/:id', optionalAuth, validate({ params: idParams }), orders.getOrder)
 orderRoutes.post('/:id/pay', optionalAuth, validate({ params: idParams }), orders.payOrder)
 orderRoutes.post('/:id/cancel', optionalAuth, validate({ params: idParams }), orders.cancelMyOrder)
+orderRoutes.post(
+	'/:id/return',
+	optionalAuth,
+	validate({ params: idParams, body: returnRequestBody }),
+	orders.createReturn,
+)

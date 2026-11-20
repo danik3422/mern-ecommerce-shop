@@ -40,3 +40,24 @@
 	background: var(--color-text);
 	color: var(--color-inverse);
 }
+
+/* return requests */
+.requested {
+	background: var(--color-warning-bg);
+	color: var(--color-warning);
+}
+
+.approved {
+	border-color: var(--color-border-strong);
+	background: transparent;
+}
+
+.rejected {
+	background: var(--color-danger-bg);
+	color: var(--color-danger);
+}
+
+.refunded {
+	background: var(--color-success-bg);
+	color: var(--color-success);
+}

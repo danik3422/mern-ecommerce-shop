@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { SHIPPING_METHOD_IDS } from '../config/shop.js'
-import { ORDER_STATUSES } from '../models/Order.js'
-import { address, email, lineItems } from './common.js'
+import { ORDER_STATUSES, RETURN_REASONS } from '../models/Order.js'
+import { address, email, lineItem, lineItems } from './common.js'
 
 const checkoutOptions = {
 	shippingMethod: z.enum(SHIPPING_METHOD_IDS).default('standard'),
@@ -23,3 +23,14 @@ export const quoteBody = z.strictObject({
 })
 
 export const updateOrderStatusBody = z.strictObject({ status: z.enum(ORDER_STATUSES) })
+
+export const returnRequestBody = z.strictObject({
+	items: z.array(lineItem).min(1, 'Choose at least one item').max(50),
+	reason: z.enum(RETURN_REASONS),
+	comment: z.string().trim().max(500).optional(),
+})
+
+export const returnDecisionBody = z.strictObject({
+	status: z.enum(['approved', 'rejected', 'refunded']),
+	note: z.string().trim().max(500).optional(),
+})

@@ -4,6 +4,7 @@ import { User } from '../models/User.js'
 import { resolveLineItems } from '../services/lineItems.js'
 import { createOrderToken, findAccessibleOrder, readOrderToken } from '../services/orderAccess.js'
 import { sendOrderEmail } from '../services/orderEmails.js'
+import { decideReturn, requestReturn } from '../services/returns.js'
 import { transitionOrder, transitionOrderOrThrow } from '../services/orderStatus.js'
 import {
 	createCheckoutSession,
@@ -144,7 +145,12 @@ export const listOrders = async (_req, res) => {
 /** PATCH /orders/:id/status — admins move orders forward; cancelling returns stock. */
 export const updateOrderStatus = async (req, res) => {
 	const { status } = req.valid.body
-	const set = status === 'paid' ? { 'payment.paidAt': new Date() } : {}
+	const now = new Date()
+	const set = {
+		paid: { 'payment.paidAt': now },
+		shipped: { shippedAt: now },
+		delivered: { deliveredAt: now },
+	}[status]
 	res.json(await transitionOrderOrThrow(req.valid.params.id, status, { set }))
 }
 
@@ -164,4 +170,17 @@ export const monthlyIncome = async (_req, res) => {
 		{ $sort: { '_id.year': 1, '_id.month': 1 } },
 	])
 	res.json(income)
+}
+
+/** POST /orders/:id/return — the customer (or guest with the token) returns delivered items. */
+export const createReturn = async (req, res) => {
+	const order = await findAccessibleOrder(req, req.valid.params.id)
+	const updated = await requestReturn(order, req.valid.body)
+	const { accessToken: _token, ...publicOrder } = updated.toObject()
+	res.status(201).json(publicOrder)
+}
+
+/** PATCH /admin/orders/:id/return — approve, reject or refund a return. */
+export const updateReturn = async (req, res) => {
+	res.json(await decideReturn(req.valid.params.id, req.valid.body))
 }

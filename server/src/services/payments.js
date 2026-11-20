@@ -108,6 +108,19 @@ export const expireCheckoutSession = async (sessionId) => {
 }
 
 /**
+ * Refunds (part of) a payment. @returns the Stripe refund id
+ * @throws when Stripe rejects the refund — callers decide how to report it
+ */
+export const refundPayment = async ({ paymentIntentId, amount, reason }) => {
+	const refund = await stripe().refunds.create({
+		payment_intent: paymentIntentId,
+		amount: toCents(amount),
+		metadata: reason ? { reason } : undefined,
+	})
+	return refund.id
+}
+
+/**
  * Verifies the Stripe signature and returns the event.
  * @param rawBody the unparsed request body (Buffer)
  * @throws when the signature is invalid

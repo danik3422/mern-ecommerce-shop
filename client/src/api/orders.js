@@ -27,3 +27,11 @@ export const orderKeys = {
 	detail: (id) => ['orders', id],
 	mine: ['orders', 'mine'],
 }
+
+/**
+ * Requests a return for delivered items (customers, or guests with their token).
+ * @param body `{ items: [{ productId, color, size, quantity }], reason, comment? }`
+ * @returns the updated order
+ */
+export const requestReturn = (id, body, token) =>
+	http.post(`/orders/${id}/return`, body, tokenHeaders(token)).then((r) => r.data)

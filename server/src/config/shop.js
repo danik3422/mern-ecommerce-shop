@@ -6,6 +6,8 @@ export const SHOP = Object.freeze({
 	currency: 'USD',
 	// orders from this subtotal (after discounts) ship for free with methods that allow it
 	freeShippingFrom: 50,
+	// delivered items can be returned for this many days
+	returnWindowDays: 30,
 	shippingMethods: [
 		{ id: 'standard', label: 'Standard delivery', price: 4.9, freeShipping: true, days: [3, 5] },
 		{ id: 'locker', label: 'Parcel locker', price: 2.9, freeShipping: true, days: [2, 3] },

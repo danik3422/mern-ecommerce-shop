@@ -1,6 +1,6 @@
 import { Order } from '../models/Order.js'
 import { HttpError, notFound } from '../utils/HttpError.js'
-import { expireCheckoutSession } from './payments.js'
+import { expireCheckoutSession, refundPayment } from './payments.js'
 import { sendOrderEmail } from './orderEmails.js'
 import { releasePromo } from './promoCodes.js'
 import { releaseStock } from './stock.js'
@@ -16,6 +16,24 @@ const NEXT_STATUSES = {
 
 const previousStatuses = (status) =>
 	Object.keys(NEXT_STATUSES).filter((from) => NEXT_STATUSES[from].includes(status))
+
+/**
+ * Refunds `amount` of an order paid through Stripe and records it.
+ * @returns true when Stripe refunded it; false when there is nothing to refund online
+ *   (unpaid or paid on delivery) or Stripe failed — then the shop refunds manually
+ */
+export const refundOrderPayment = async (order, amount, reason) => {
+	const paymentIntentId = order.payment?.paymentIntentId
+	if (!paymentIntentId || amount <= 0) return false
+	try {
+		await refundPayment({ paymentIntentId, amount, reason })
+		await Order.updateOne({ _id: order._id }, { $inc: { 'payment.refunded': amount } })
+		return true
+	} catch (err) {
+		console.error(`Refund of ${amount} for order ${order._id} failed — refund manually:`, err)
+		return false
+	}
+}
 
 /**
  * Changes the order status if the transition is allowed.
@@ -40,6 +58,8 @@ export const transitionOrder = async (orderId, status, { from, filter = {}, set 
 		await releaseStock(order.items)
 		if (order.promoCode) await releasePromo(order.promoCode)
 		await expireCheckoutSession(order.payment?.sessionId)
+		// a paid order that is cancelled gets its money back
+		if (order.payment?.paidAt) await refundOrderPayment(order, order.amount, 'order cancelled')
 	}
 	if (order) await sendOrderEmail(order._id, status)
 	return order

@@ -62,3 +62,7 @@ export const adminKeys = {
 	reviews: (params) => ['admin', 'reviews', params],
 	promoCodes: ['admin', 'promo-codes'],
 }
+
+/** Approve, reject or refund a return: `{ status, note? }` */
+export const decideReturn = (orderId, decision) =>
+	http.patch(`/admin/orders/${orderId}/return`, decision).then(data)

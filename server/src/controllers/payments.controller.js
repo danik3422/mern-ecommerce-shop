@@ -1,5 +1,5 @@
 import { Order } from '../models/Order.js'
-import { transitionOrder } from '../services/orderStatus.js'
+import { refundOrderPayment, transitionOrder } from '../services/orderStatus.js'
 import { isWebhookConfigured, parseWebhookEvent } from '../services/payments.js'
 import { HttpError, badRequest } from '../utils/HttpError.js'
 
@@ -7,21 +7,27 @@ const orderIdOf = (session) => session.metadata?.orderId ?? session.client_refer
 
 /**
  * Marks the order as paid. Repeated events are harmless: only a pending order can become paid.
- * A payment for an order that was cancelled meanwhile is logged so it can be refunded.
+ * A payment for an order that was cancelled meanwhile is refunded right away.
  */
 const handlePaidSession = async (session) => {
 	if (session.payment_status !== 'paid') return
 
 	const orderId = orderIdOf(session)
-	const order = await transitionOrder(orderId, 'paid', {
-		set: { 'payment.paidAt': new Date(), 'payment.sessionId': session.id },
-	})
+	const payment = {
+		'payment.paidAt': new Date(),
+		'payment.sessionId': session.id,
+		'payment.paymentIntentId': session.payment_intent,
+	}
+	const order = await transitionOrder(orderId, 'paid', { set: payment })
 	if (order) return
 
-	const current = await Order.findById(orderId).lean()
-	if (current?.status === 'cancelled') {
-		console.warn(`Order ${orderId} was paid after it had been cancelled — refund needed`)
-	}
+	// paid after it was cancelled (e.g. the session expired while the customer was paying)
+	const cancelled = await Order.findOneAndUpdate(
+		{ _id: orderId, status: 'cancelled', 'payment.paymentIntentId': { $exists: false } },
+		{ $set: payment },
+		{ returnDocument: 'after' },
+	)
+	if (cancelled) await refundOrderPayment(cancelled, cancelled.amount, 'order cancelled')
 }
 
 /** An unpaid session expired: cancel the order and return its stock, unless a newer session exists. */

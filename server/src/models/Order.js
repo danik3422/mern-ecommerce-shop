@@ -27,7 +27,56 @@ const paymentSchema = new mongoose.Schema(
 		provider: { type: String, enum: ['stripe', 'none'], default: 'none' },
 		// Stripe Checkout Session id
 		sessionId: { type: String, index: true, sparse: true },
+		// needed for refunds
+		paymentIntentId: String,
 		paidAt: Date,
+		// total refunded so far (cancellations and returns)
+		refunded: { type: Number, min: 0, default: 0 },
+	},
+	{ _id: false },
+)
+
+export const RETURN_REASONS = [
+	'too_small',
+	'too_big',
+	'not_as_described',
+	'damaged',
+	'changed_mind',
+	'other',
+]
+
+/**
+ * requested → approved (send the parcel back) | rejected
+ * approved → refunded (items received: stock returned, money refunded)
+ */
+export const RETURN_STATUSES = ['requested', 'approved', 'rejected', 'refunded']
+
+const returnRequestSchema = new mongoose.Schema(
+	{
+		status: { type: String, enum: RETURN_STATUSES, default: 'requested' },
+		items: [
+			new mongoose.Schema(
+				{
+					productId: { type: mongoose.Schema.Types.ObjectId, required: true },
+					color: String,
+					size: { type: String, required: true },
+					quantity: { type: Number, required: true, min: 1 },
+					title: String,
+					price: Number,
+				},
+				{ _id: false },
+			),
+		],
+		reason: { type: String, enum: RETURN_REASONS, required: true },
+		comment: String,
+		// message from the shop, e.g. why a return was rejected
+		note: String,
+		refundAmount: { type: Number, min: 0 },
+		// true when the refund went through Stripe; false: the shop refunds manually
+		refundedOnline: Boolean,
+		requestedAt: { type: Date, default: Date.now },
+		decidedAt: Date,
+		refundedAt: Date,
 	},
 	{ _id: false },
 )
@@ -53,6 +102,9 @@ const orderSchema = new mongoose.Schema(
 		address: { type: new mongoose.Schema(addressFields, { _id: false }), required: true },
 		status: { type: String, enum: ORDER_STATUSES, default: 'pending', index: true },
 		payment: { type: paymentSchema, default: () => ({}) },
+		shippedAt: Date,
+		deliveredAt: Date,
+		returnRequest: returnRequestSchema,
 	},
 	{ timestamps: true, versionKey: false },
 )

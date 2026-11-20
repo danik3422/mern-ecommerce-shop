@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { ORDER_STATUSES } from '../models/Order.js'
+import { ORDER_STATUSES, RETURN_STATUSES } from '../models/Order.js'
 
 const page = z.coerce.number().int().min(1).default(1)
 const limit = z.coerce.number().int().min(1).max(100).default(20)
@@ -18,6 +18,7 @@ export const adminProductsQuery = z.object({
 
 export const adminOrdersQuery = z.object({
 	status: z.enum(ORDER_STATUSES).optional(),
+	returnStatus: z.enum(RETURN_STATUSES).optional(),
 	// customer username/email or order id
 	q: search,
 	page,

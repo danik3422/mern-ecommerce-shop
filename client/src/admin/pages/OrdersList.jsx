@@ -20,10 +20,22 @@ const STATUS_OPTIONS = [
 	...ORDER_STATUSES.map((status) => ({ value: status, label: capitalize(status) })),
 ]
 
+const RETURN_OPTIONS = [
+	{ value: '', label: 'Any return state' },
+	{ value: 'requested', label: 'Return requested' },
+	{ value: 'approved', label: 'Return approved' },
+	{ value: 'rejected', label: 'Return rejected' },
+	{ value: 'refunded', label: 'Return refunded' },
+]
+
 const itemCount = (order) => order.items.reduce((sum, item) => sum + item.quantity, 0)
 
 const OrdersList = () => {
-	const { values, params, setParam, setPage } = useListParams({ q: '', status: '' })
+	const { values, params, setParam, setPage } = useListParams({
+		q: '',
+		status: '',
+		returnStatus: '',
+	})
 	const query = { ...params, limit: PAGE_SIZE }
 
 	const orders = useQuery({
@@ -48,6 +60,12 @@ const OrdersList = () => {
 					value={values.status}
 					options={STATUS_OPTIONS}
 					onChange={(e) => setParam('status', e.target.value)}
+				/>
+				<Select
+					label='Returns'
+					value={values.returnStatus}
+					options={RETURN_OPTIONS}
+					onChange={(e) => setParam('returnStatus', e.target.value)}
 				/>
 			</div>
 

@@ -11,6 +11,7 @@ import { formatMoney } from '../../utils/money'
 import { capitalize } from '../../utils/text'
 import PageHeader from '../components/PageHeader'
 import QueryState from '../components/QueryState'
+import ReturnPanel from '../components/ReturnPanel'
 import StatusBadge from '../components/StatusBadge'
 import table from '../components/Table.module.css'
 import { ORDER_STATUSES, formatDateTime, orderNumber } from '../format'
@@ -152,6 +153,7 @@ const OrderDetail = () => {
 						</section>
 
 						<div className={style.side}>
+							{data.returnRequest && <ReturnPanel order={data} />}
 							<section className={`${table.panel} ${style.card}`} aria-labelledby='status-title'>
 								<h2 id='status-title' className={style.cardTitle}>
 									Fulfilment

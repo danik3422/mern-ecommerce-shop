@@ -12,6 +12,7 @@ import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { cx } from '../../utils/cx'
 import style from './CheckoutResult.module.css'
 import OrderReview from './OrderReview'
+import ReturnSection from '../../components/orders/ReturnSection'
 
 // Stripe usually confirms within seconds; after ~16 s the page stops waiting
 const POLL_INTERVAL_MS = 2000
@@ -204,6 +205,13 @@ const CheckoutResult = ({ result }) => {
 				</p>
 			)}
 
+			<div className={style.returns}>
+				<ReturnSection
+					order={data}
+					token={token}
+					onChange={(updated) => queryClient.setQueryData(orderKeys.detail(orderId), updated)}
+				/>
+			</div>
 			<OrderReview order={data} />
 		</div>
 	)
