@@ -7,9 +7,17 @@ const orderBody = (product, overrides = {}) => ({
 	address: validAddress,
 })
 
+const stockOf = async (product, size = 'M') =>
+	(await Product.findById(product.id).lean()).sizes.find((s) => s.label === size).stock
+
+const placeOrder = async (auth, body) => {
+	const res = await api().post('/api/orders').set(auth).send(body).expect(201)
+	return res.body.order
+}
+
 describe('POST /api/orders', () => {
 	it('calculates the amount on the server and stores a product snapshot', async () => {
-		const product = await createProduct({ title: 'Coat', price: 19.99 })
+		const product = await createProduct({ title: 'Coat', brand: 'Aster', price: 19.99 })
 		const { auth } = await createUser()
 
 		const res = await api()
@@ -17,19 +25,33 @@ describe('POST /api/orders', () => {
 			.set(auth)
 			.send({ ...orderBody(product), amount: 1 })
 			.expect(400) // unknown field "amount" is rejected
-
 		expect(res.body.details[0].message).toMatch(/unrecognized/i)
 
-		const order = await api().post('/api/orders').set(auth).send(orderBody(product)).expect(201)
-		expect(order.body).toMatchObject({ subtotal: 39.98, shipping: 4.9, amount: 44.88 })
-		expect(order.body.items[0]).toMatchObject({ title: 'Coat', price: 19.99, quantity: 2 })
-		expect(order.body.status).toBe('pending')
+		const created = await api().post('/api/orders').set(auth).send(orderBody(product)).expect(201)
+		// without Stripe keys the order is "pay later"
+		expect(created.body.checkoutUrl).toBeNull()
+		expect(created.body.order).toMatchObject({
+			subtotal: 39.98,
+			shipping: 4.9,
+			amount: 44.88,
+			status: 'pending',
+			payment: { provider: 'none' },
+		})
+		expect(created.body.order.items[0]).toMatchObject({
+			title: 'Coat',
+			brand: 'Aster',
+			image: '/images/products/product.jpg',
+			price: 19.99,
+			quantity: 2,
+			size: 'M',
+			color: 'black',
+		})
 	})
 
 	it('keeps the original price when the product price changes later', async () => {
 		const product = await createProduct({ price: 10 })
 		const { auth } = await createUser()
-		await api().post('/api/orders').set(auth).send(orderBody(product)).expect(201)
+		await placeOrder(auth, orderBody(product))
 
 		await Product.updateOne({ _id: product.id }, { price: 500 })
 
@@ -60,21 +82,12 @@ describe('POST /api/orders', () => {
 	it('rejects options the product does not offer', async () => {
 		const product = await createProduct()
 		const { auth } = await createUser()
-		await api()
-			.post('/api/orders')
-			.set(auth)
-			.send(orderBody(product, { color: 'rainbow' }))
-			.expect(400)
-		await api()
-			.post('/api/orders')
-			.set(auth)
-			.send(orderBody(product, { size: 'XXXL' }))
-			.expect(400)
-		await api()
-			.post('/api/orders')
-			.set(auth)
-			.send(orderBody(product, { size: undefined }))
-			.expect(400)
+		const post = (overrides) =>
+			api().post('/api/orders').set(auth).send(orderBody(product, overrides))
+
+		await post({ color: 'rainbow' }).expect(400)
+		await post({ size: 'XXXL' }).expect(400)
+		await post({ size: undefined }).expect(400)
 	})
 
 	it('requires a complete address and at least one item', async () => {
@@ -91,8 +104,112 @@ describe('POST /api/orders', () => {
 		const body = orderBody(product)
 		await api().put('/api/cart').set(auth).send({ items: body.items }).expect(200)
 
-		await api().post('/api/orders').set(auth).send(body).expect(201)
+		await placeOrder(auth, body)
 		expect((await api().get('/api/cart').set(auth)).body.items).toEqual([])
+	})
+})
+
+describe('stock reservation', () => {
+	it('takes ordered items from stock and returns them when the order is cancelled', async () => {
+		const product = await createProduct()
+		const { auth } = await createUser()
+
+		const order = await placeOrder(auth, orderBody(product, { quantity: 2 }))
+		expect(await stockOf(product)).toBe(3)
+
+		await api().post(`/api/orders/${order._id}/cancel`).set(auth).expect(200)
+		expect(await stockOf(product)).toBe(5)
+	})
+
+	it('sells the last item only once when customers order at the same time', async () => {
+		const product = await createProduct({ sizes: [{ label: 'M', stock: 1 }] })
+		const customers = await Promise.all(
+			['ann', 'ben', 'cat'].map((username) => createUser({ username })),
+		)
+
+		const statuses = await Promise.all(
+			customers.map(({ auth }) =>
+				api()
+					.post('/api/orders')
+					.set(auth)
+					.send(orderBody(product, { quantity: 1 }))
+					.then((res) => res.status),
+			),
+		)
+
+		expect(statuses.sort()).toEqual([201, 409, 409])
+		expect(await stockOf(product)).toBe(0)
+	})
+
+	it('reserves all items or none of them', async () => {
+		const product = await createProduct({ sizes: [{ label: 'M', stock: 1 }] })
+		const { auth } = await createUser()
+		const line = { productId: product.id, quantity: 1, color: 'black', size: 'M' }
+
+		// each line alone fits, but together they need 2 of the 1 left
+		const res = await api()
+			.post('/api/orders')
+			.set(auth)
+			.send({ items: [line, line], address: validAddress })
+			.expect(409)
+
+		expect(res.body.details[0].path).toBe('items.1')
+		expect(await stockOf(product)).toBe(1)
+	})
+})
+
+describe('customer order actions', () => {
+	it('shows an order to its owner and admins only', async () => {
+		const product = await createProduct()
+		const alice = await createUser({ username: 'alice' })
+		const bob = await createUser({ username: 'bob' })
+		const admin = await createUser({ username: 'admin', isAdmin: true })
+		const order = await placeOrder(alice.auth, orderBody(product))
+
+		await api().get(`/api/orders/${order._id}`).set(alice.auth).expect(200)
+		await api().get(`/api/orders/${order._id}`).set(admin.auth).expect(200)
+		await api().get(`/api/orders/${order._id}`).set(bob.auth).expect(404)
+		await api().get(`/api/orders/${order._id}`).expect(401)
+		await api().get('/api/orders/not-an-id').set(alice.auth).expect(400)
+	})
+
+	it('lets customers cancel their own pending orders once', async () => {
+		const product = await createProduct()
+		const alice = await createUser({ username: 'alice' })
+		const bob = await createUser({ username: 'bob' })
+		const order = await placeOrder(alice.auth, orderBody(product))
+
+		await api().post(`/api/orders/${order._id}/cancel`).set(bob.auth).expect(404)
+
+		const cancelled = await api().post(`/api/orders/${order._id}/cancel`).set(alice.auth)
+		expect(cancelled.status).toBe(200)
+		expect(cancelled.body.status).toBe('cancelled')
+
+		await api().post(`/api/orders/${order._id}/cancel`).set(alice.auth).expect(409)
+		expect(await stockOf(product)).toBe(5)
+	})
+
+	it('does not let customers cancel paid orders', async () => {
+		const product = await createProduct()
+		const customer = await createUser({ username: 'alice' })
+		const admin = await createUser({ username: 'admin', isAdmin: true })
+		const order = await placeOrder(customer.auth, orderBody(product))
+		await api()
+			.patch(`/api/orders/${order._id}/status`)
+			.set(admin.auth)
+			.send({ status: 'paid' })
+			.expect(200)
+
+		await api().post(`/api/orders/${order._id}/cancel`).set(customer.auth).expect(409)
+	})
+
+	it('rejects online payment when Stripe is not configured', async () => {
+		const product = await createProduct()
+		const { auth } = await createUser()
+		const order = await placeOrder(auth, orderBody(product))
+
+		const res = await api().post(`/api/orders/${order._id}/pay`).set(auth).expect(409)
+		expect(res.body.message).toMatch(/not available/)
 	})
 })
 
@@ -101,35 +218,57 @@ describe('order management', () => {
 		const product = await createProduct()
 		const alice = await createUser({ username: 'alice' })
 		const bob = await createUser({ username: 'bob' })
-		await api().post('/api/orders').set(alice.auth).send(orderBody(product)).expect(201)
+		await placeOrder(alice.auth, orderBody(product))
 
 		expect((await api().get('/api/orders/mine').set(alice.auth)).body).toHaveLength(1)
 		expect((await api().get('/api/orders/mine').set(bob.auth)).body).toHaveLength(0)
 		await api().get('/api/orders').set(bob.auth).expect(403)
 	})
 
-	it('lets admins list orders, change status and see income', async () => {
+	it('moves orders through allowed statuses only', async () => {
 		const product = await createProduct({ price: 25 })
 		const customer = await createUser({ username: 'alice' })
 		const admin = await createUser({ username: 'admin', isAdmin: true })
-		const order = await api().post('/api/orders').set(customer.auth).send(orderBody(product))
+		const order = await placeOrder(customer.auth, orderBody(product))
+		const setStatus = (status) =>
+			api().patch(`/api/orders/${order._id}/status`).set(admin.auth).send({ status })
 
 		expect((await api().get('/api/orders').set(admin.auth)).body).toHaveLength(1)
 
-		const updated = await api()
-			.patch(`/api/orders/${order.body._id}/status`)
-			.set(admin.auth)
-			.send({ status: 'shipped' })
-			.expect(200)
-		expect(updated.body.status).toBe('shipped')
-
-		await api()
-			.patch(`/api/orders/${order.body._id}/status`)
-			.set(admin.auth)
-			.send({ status: 'teleported' })
-			.expect(400)
+		await setStatus('shipped').expect(409) // must be paid first
+		const paid = await setStatus('paid').expect(200)
+		expect(paid.body.payment.paidAt).toEqual(expect.any(String))
+		await setStatus('shipped').expect(200)
+		const delivered = await setStatus('delivered').expect(200)
+		expect(delivered.body.status).toBe('delivered')
+		await setStatus('cancelled').expect(409)
+		await setStatus('teleported').expect(400)
 
 		const income = await api().get('/api/orders/income').set(admin.auth).expect(200)
 		expect(income.body[0].total).toBe(50) // free shipping from 50
+	})
+
+	it('returns stock exactly once when an admin cancels a paid order', async () => {
+		const product = await createProduct()
+		const customer = await createUser({ username: 'alice' })
+		const admin = await createUser({ username: 'admin', isAdmin: true })
+		const order = await placeOrder(customer.auth, orderBody(product, { quantity: 3 }))
+		const setStatus = (status) =>
+			api().patch(`/api/orders/${order._id}/status`).set(admin.auth).send({ status })
+
+		await setStatus('paid').expect(200)
+		const results = await Promise.all([setStatus('cancelled'), setStatus('cancelled')])
+
+		expect(results.map((r) => r.status).sort()).toEqual([200, 409])
+		expect(await stockOf(product)).toBe(5)
+	})
+
+	it('returns 404 for unknown orders', async () => {
+		const admin = await createUser({ username: 'admin', isAdmin: true })
+		await api()
+			.patch('/api/orders/507f1f77bcf86cd799439011/status')
+			.set(admin.auth)
+			.send({ status: 'paid' })
+			.expect(404)
 	})
 })

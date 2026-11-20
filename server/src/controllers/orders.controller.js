@@ -1,16 +1,39 @@
 import { Cart } from '../models/Cart.js'
 import { Order } from '../models/Order.js'
 import { resolveLineItems } from '../services/lineItems.js'
+import { transitionOrder, transitionOrderOrThrow } from '../services/orderStatus.js'
+import {
+	createCheckoutSession,
+	expireCheckoutSession,
+	isPaymentsEnabled,
+} from '../services/payments.js'
 import { calculateTotals } from '../services/pricing.js'
-import { notFound } from '../utils/HttpError.js'
+import { releaseStock, reserveStock } from '../services/stock.js'
+import { HttpError, conflict, notFound } from '../utils/HttpError.js'
+
+const paymentUnavailable = () =>
+	new HttpError(502, 'The payment provider is not available right now. Please try again.')
+
+/** Customers only see their own orders; admins see all of them. */
+const ownerFilter = (user) => (user.isAdmin ? {} : { user: user.id })
+
+/** Opens a Stripe Checkout Session for the order and remembers it. @returns the payment page URL */
+const startCheckout = async (order) => {
+	const session = await createCheckoutSession(order)
+	order.payment = { provider: 'stripe', sessionId: session.id }
+	await order.save()
+	return session.url
+}
 
 /**
- * POST /orders — prices are always taken from the database, never from the client.
- * The user's saved cart is cleared after a successful order.
+ * POST /orders — prices come from the database, stock is reserved atomically,
+ * and the saved cart is cleared. With Stripe configured the response contains
+ * the URL of the payment page; otherwise the order stays pending ("pay later").
  */
 export const createOrder = async (req, res) => {
 	const { items, address } = req.valid.body
 	const resolved = await resolveLineItems(items, { requireStock: true })
+	await reserveStock(resolved)
 
 	const orderItems = resolved.map(({ product, ...item }) => ({
 		...item,
@@ -19,12 +42,33 @@ export const createOrder = async (req, res) => {
 		image: product.images[0],
 		price: product.price,
 	}))
-	const totals = calculateTotals(orderItems)
 
-	const order = await Order.create({ user: req.user.id, items: orderItems, ...totals, address })
+	let order
+	try {
+		order = await Order.create({
+			user: req.user.id,
+			items: orderItems,
+			...calculateTotals(orderItems),
+			address,
+		})
+	} catch (err) {
+		await releaseStock(resolved)
+		throw err
+	}
 	await Cart.deleteOne({ user: req.user.id })
 
-	res.status(201).json(order)
+	let checkoutUrl = null
+	if (isPaymentsEnabled()) {
+		try {
+			checkoutUrl = await startCheckout(order)
+		} catch (err) {
+			console.error('Could not create a checkout session:', err)
+			await transitionOrder(order._id, 'cancelled')
+			throw paymentUnavailable()
+		}
+	}
+
+	res.status(201).json({ order, checkoutUrl })
 }
 
 export const listMyOrders = async (req, res) => {
@@ -32,19 +76,49 @@ export const listMyOrders = async (req, res) => {
 	res.json(orders)
 }
 
+/** GET /orders/:id — the owner or an admin; others get 404 so ids cannot be probed. */
+export const getOrder = async (req, res) => {
+	const order = await Order.findOne({ _id: req.valid.params.id, ...ownerFilter(req.user) }).lean()
+	if (!order) throw notFound('Order')
+	res.json(order)
+}
+
+/** POST /orders/:id/pay — a new payment page for a pending order (e.g. after cancelling payment). */
+export const payOrder = async (req, res) => {
+	if (!isPaymentsEnabled()) throw conflict('Online payment is not available')
+
+	const order = await Order.findOne({ _id: req.valid.params.id, user: req.user.id })
+	if (!order) throw notFound('Order')
+	if (order.status !== 'pending') throw conflict(`A ${order.status} order cannot be paid`)
+
+	await expireCheckoutSession(order.payment?.sessionId)
+	try {
+		res.json({ checkoutUrl: await startCheckout(order) })
+	} catch (err) {
+		console.error('Could not create a checkout session:', err)
+		throw paymentUnavailable()
+	}
+}
+
+/** POST /orders/:id/cancel — customers can cancel unpaid orders; stock is returned. */
+export const cancelMyOrder = async (req, res) => {
+	const order = await transitionOrderOrThrow(req.valid.params.id, 'cancelled', {
+		from: ['pending'],
+		filter: { user: req.user.id },
+	})
+	res.json(order)
+}
+
 export const listOrders = async (_req, res) => {
 	const orders = await Order.find().sort({ createdAt: -1 }).lean()
 	res.json(orders)
 }
 
+/** PATCH /orders/:id/status — admins move orders forward; cancelling returns stock. */
 export const updateOrderStatus = async (req, res) => {
-	const order = await Order.findByIdAndUpdate(
-		req.valid.params.id,
-		{ status: req.valid.body.status },
-		{ returnDocument: 'after', runValidators: true },
-	)
-	if (!order) throw notFound('Order')
-	res.json(order)
+	const { status } = req.valid.body
+	const set = status === 'paid' ? { 'payment.paidAt': new Date() } : {}
+	res.json(await transitionOrderOrThrow(req.valid.params.id, status, { set }))
 }
 
 /** GET /orders/income — revenue per month for the last 12 months (admin dashboard) */

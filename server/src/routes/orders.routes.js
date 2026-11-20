@@ -11,7 +11,7 @@ export const orderRoutes = Router()
 orderRoutes.post('/', requireAuth, validate({ body: createOrderBody }), orders.createOrder)
 orderRoutes.get('/mine', requireAuth, orders.listMyOrders)
 
-// admin
+// admin (static paths must come before /:id)
 orderRoutes.get('/', requireAdmin, orders.listOrders)
 orderRoutes.get('/income', requireAdmin, orders.monthlyIncome)
 orderRoutes.patch(
@@ -20,3 +20,8 @@ orderRoutes.patch(
 	validate({ params: idParams, body: updateOrderStatusBody }),
 	orders.updateOrderStatus,
 )
+
+// owner (or admin for reading)
+orderRoutes.get('/:id', requireAuth, validate({ params: idParams }), orders.getOrder)
+orderRoutes.post('/:id/pay', requireAuth, validate({ params: idParams }), orders.payOrder)
+orderRoutes.post('/:id/cancel', requireAuth, validate({ params: idParams }), orders.cancelMyOrder)
