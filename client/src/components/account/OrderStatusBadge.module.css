@@ -1,0 +1,19 @@
+.pending {
+	background: var(--color-subtle);
+}
+
+.paid,
+.shipped {
+	background: var(--color-text);
+	color: var(--color-inverse);
+}
+
+.delivered {
+	background: var(--color-success-bg);
+	color: var(--color-success);
+}
+
+.cancelled {
+	background: var(--color-danger-bg);
+	color: var(--color-danger);
+}

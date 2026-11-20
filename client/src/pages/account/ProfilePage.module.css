@@ -1,0 +1,12 @@
+.danger {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+	max-width: 32rem;
+	border-color: var(--color-danger-bg);
+}
+
+.dangerTitle {
+	font-size: var(--text-md);
+	color: var(--color-danger);
+}

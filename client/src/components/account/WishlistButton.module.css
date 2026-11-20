@@ -1,0 +1,29 @@
+.icon {
+	display: grid;
+	place-items: center;
+	width: 2.25rem;
+	height: 2.25rem;
+	border: 0;
+	border-radius: 50%;
+	background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+	box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+	transition: transform var(--transition);
+}
+
+.icon:hover {
+	transform: scale(1.08);
+}
+
+.button {
+	flex-shrink: 0;
+	width: var(--control-height);
+	padding-inline: 0;
+}
+
+.filled {
+	fill: currentColor;
+}
+
+.saved {
+	color: var(--color-danger);
+}

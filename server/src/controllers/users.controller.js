@@ -4,8 +4,10 @@ import { hashPassword, verifyPassword } from '../services/password.js'
 import { forbidden, notFound } from '../utils/HttpError.js'
 
 /**
- * Deletes the account and its cart. Orders are kept on purpose:
- * they are business records needed for accounting and refunds.
+ * Deletes the account — with its wishlist and address book, which live on the user
+ * document — and its cart. Kept on purpose:
+ * - orders: business records needed for accounting and refunds;
+ * - reviews: they carry a username snapshot and stay useful for other shoppers.
  */
 const deleteAccount = async (userId) => {
 	const user = await User.findByIdAndDelete(userId)

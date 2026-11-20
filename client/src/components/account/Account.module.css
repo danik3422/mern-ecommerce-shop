@@ -1,0 +1,84 @@
+/* Shared styles of the account sections */
+
+.section {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-5);
+}
+
+.heading {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3);
+}
+
+.title {
+	font-size: var(--text-xl);
+}
+
+.muted {
+	font-size: var(--text-sm);
+	color: var(--color-text-muted);
+}
+
+.card {
+	padding: var(--space-5);
+	border: 1px solid var(--color-border);
+	background: var(--color-surface);
+}
+
+.form {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-4);
+	max-width: 32rem;
+}
+
+.formGrid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: var(--space-3);
+}
+
+.wide {
+	grid-column: 1 / -1;
+}
+
+.actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+}
+
+.badge {
+	display: inline-block;
+	padding: 2px var(--space-2);
+	background: var(--color-subtle);
+	font-size: var(--text-xs);
+	font-weight: var(--weight-medium);
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+.grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(min(13rem, 45%), 1fr));
+	gap: var(--space-6) var(--space-4);
+}
+
+@media (max-width: 40rem) {
+	.formGrid {
+		grid-template-columns: 1fr;
+	}
+
+	.card {
+		padding: var(--space-4);
+	}
+}
+
+.cardAction {
+	margin-top: var(--space-4);
+}
