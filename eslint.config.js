@@ -26,18 +26,6 @@ export default [
 		plugins: { 'react-refresh': reactRefresh.default ?? reactRefresh },
 		rules: {
 			'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
-			'no-restricted-imports': [
-				'error',
-				{
-					patterns: [
-						{
-							group: ['@mui/icons-material/*'],
-							message:
-								"Deep default imports of MUI icons break under Vite (CommonJS interop). Use import { Icon } from '@mui/icons-material'.",
-						},
-					],
-				},
-			],
 		},
 	},
 	{

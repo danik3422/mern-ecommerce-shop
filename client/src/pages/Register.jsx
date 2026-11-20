@@ -1,95 +1,94 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
-import { getErrorMessage } from '../api/client'
+import { getErrorMessage, getFieldErrors } from '../api/client'
 import { useAuth } from '../auth/useAuth'
+import AuthCard from '../components/auth/AuthCard'
+import formStyle from '../components/auth/AuthForm.module.css'
+import Alert from '../components/ui/Alert'
+import Button from '../components/ui/Button'
+import TextField from '../components/ui/TextField'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 const MIN_PASSWORD_LENGTH = 8
 
 const FIELDS = [
 	{ name: 'username', label: 'Username', autoComplete: 'username', minLength: 3 },
-	{ name: 'email', label: 'Email address', type: 'email', autoComplete: 'email' },
+	{ name: 'email', label: 'Email', type: 'email', autoComplete: 'email' },
 	{
 		name: 'password',
-		label: `Password (at least ${MIN_PASSWORD_LENGTH} characters)`,
+		label: 'Password',
 		type: 'password',
 		autoComplete: 'new-password',
 		minLength: MIN_PASSWORD_LENGTH,
+		hint: `At least ${MIN_PASSWORD_LENGTH} characters`,
 	},
 	{ name: 'confirm', label: 'Confirm password', type: 'password', autoComplete: 'new-password' },
 ]
 
 const Register = () => {
+	useDocumentTitle('Create account')
 	const { register } = useAuth()
 	const navigate = useNavigate()
 	const location = useLocation()
 	const [form, setForm] = useState({ username: '', email: '', password: '', confirm: '' })
-	const [error, setError] = useState('')
+	const [error, setError] = useState(null)
 	const [isSubmitting, setIsSubmitting] = useState(false)
+
+	const fieldErrors = {
+		...getFieldErrors(error),
+		...(error === 'mismatch' && { confirm: 'Passwords do not match' }),
+	}
+	const generalError = error && error !== 'mismatch' && !Object.keys(fieldErrors).length
 
 	const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
 	const handleSubmit = async (e) => {
 		e.preventDefault()
-		if (form.password !== form.confirm) return setError('Passwords do not match')
+		if (form.password !== form.confirm) return setError('mismatch')
 
-		setError('')
+		setError(null)
 		setIsSubmitting(true)
 		try {
 			const { username, email, password } = form
 			await register({ username, email, password })
 			navigate(location.state?.from ?? '/', { replace: true })
 		} catch (err) {
-			setError(getErrorMessage(err))
+			setError(err)
 			setIsSubmitting(false)
 		}
 	}
 
 	return (
-		<main className='register'>
-			<div className='register__wrapper'>
-				<div className='register__header'>
-					<h1 className='register__title'>Create an account</h1>
-					<p className='register__text'>
-						Already have an account?{' '}
-						<Link className='register__link' to='/login' state={location.state}>
-							<span>Sign in!</span>
-						</Link>
-					</p>
-				</div>
-
-				<form className='register__form' onSubmit={handleSubmit}>
-					{FIELDS.map(({ name, label, type = 'text', autoComplete, minLength }) => (
-						<label key={name}>
-							<span className='visually-hidden'>{label}</span>
-							<input
-								className='register__input'
-								name={name}
-								type={type}
-								placeholder={label}
-								autoComplete={autoComplete}
-								minLength={minLength}
-								value={form[name]}
-								onChange={handleChange}
-								required
-							/>
-						</label>
-					))}
-					<p className='register__agreement'>
-						By registering for an account, you agree to our
-						<span> Terms of Use.</span> <br /> Please read our
-						<span> Privacy Notice.</span>
-					</p>
-					{error && (
-						<p className='form-error' role='alert'>
-							{error}
-						</p>
-					)}
-					<button className='register__btn' disabled={isSubmitting}>
-						{isSubmitting ? 'Creating…' : 'Create'}
-					</button>
-				</form>
-			</div>
-		</main>
+		<AuthCard
+			title='Create an account'
+			subtitle='Save your bag and check out faster.'
+			footer={
+				<>
+					Already have an account?{' '}
+					<Link to='/login' state={location.state}>
+						Sign in
+					</Link>
+				</>
+			}
+		>
+			<form className={formStyle.form} onSubmit={handleSubmit}>
+				{FIELDS.map(({ name, ...field }) => (
+					<TextField
+						key={name}
+						name={name}
+						value={form[name]}
+						onChange={handleChange}
+						error={fieldErrors[name]}
+						required
+						{...field}
+					/>
+				))}
+				{generalError && <Alert tone='error'>{getErrorMessage(error)}</Alert>}
+				<Button type='submit' fullWidth disabled={isSubmitting}>
+					{isSubmitting ? 'Creating account…' : 'Create account'}
+				</Button>
+			</form>
+		</AuthCard>
 	)
 }
 

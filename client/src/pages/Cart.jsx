@@ -1,102 +1,108 @@
+import { CheckCircle2 } from 'lucide-react'
 import { useState } from 'react'
-import { useNavigate } from 'react-router'
-import styled from 'styled-components'
+import { Link } from 'react-router'
 import { getErrorMessage } from '../api/client'
 import { useAuth } from '../auth/useAuth'
 import { calculateTotals } from '../cart/pricing'
 import { useCart } from '../cart/useCart'
 import { useCartItems } from '../cart/useCartItems'
-import CartLine from '../components/Cart/CartLine'
-import CheckoutForm from '../components/Cart/CheckoutForm'
-import OrderSummary from '../components/Cart/OrderSummary'
-import Footer from '../components/Footer/Footer'
-import Navbar from '../components/Navbar/Navbar'
-import CheckoutBtn from '../components/UI/CheckoutBtn/CheckoutBtn'
+import CartLine from '../components/cart/CartLine'
+import CheckoutForm from '../components/cart/CheckoutForm'
+import OrderSummary from '../components/cart/OrderSummary'
+import Alert from '../components/ui/Alert'
+import Button from '../components/ui/Button'
+import EmptyState from '../components/ui/EmptyState'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { formatMoney } from '../utils/money'
-
-const Divider = styled.hr`
-	background-color: #eee;
-	border: none;
-	height: 1px;
-`
-const Success = styled.p`
-	color: green;
-	text-align: center;
-	padding: 20px;
-`
+import style from './Cart.module.css'
 
 const toPricedItems = (items) =>
 	items.map((item) => ({ price: item.product.price, quantity: item.quantity }))
 
+const ContinueShopping = () => (
+	<Button as={Link} to='/products' variant='secondary'>
+		Continue shopping
+	</Button>
+)
+
 const Cart = () => {
+	useDocumentTitle('Bag')
 	const { user } = useAuth()
 	const { lines, count, setQuantity, clear } = useCart()
 	const { items, isLoading, error } = useCartItems()
-	const navigate = useNavigate()
 	const [placedOrder, setPlacedOrder] = useState(null)
-
-	const totals = calculateTotals(toPricedItems(items))
-	const hasOutOfStock = items.some((item) => !item.product.inStock)
 
 	const handleOrderPlaced = (order) => {
 		clear()
 		setPlacedOrder(order)
 	}
 
+	if (placedOrder) {
+		return (
+			<EmptyState title='Thank you for your order' action={<ContinueShopping />}>
+				<CheckCircle2 size={32} aria-hidden className={style.successIcon} />
+				Order #{placedOrder._id.slice(-8).toUpperCase()} for {formatMoney(placedOrder.amount)} has
+				been placed. We will let you know when it ships.
+			</EmptyState>
+		)
+	}
+
+	if (!lines.length) {
+		return (
+			<EmptyState title='Your bag is empty' action={<ContinueShopping />}>
+				Looks like you have not added anything yet.
+			</EmptyState>
+		)
+	}
+
+	const totals = calculateTotals(toPricedItems(items))
+	const hasSoldOutItems = items.some((item) => !item.product.inStock)
+
 	return (
-		<>
-			<Navbar />
-			<main className='cart__container'>
-				<div className='cart__wrapper'>
-					<h1 className='cart__title'>Your bag</h1>
-					<div className='cart__header'>
-						<CheckoutBtn onClick={() => navigate('/products')}>Continue Shopping</CheckoutBtn>
-						<span>Shopping bag ({count})</span>
-					</div>
+		<div className='container'>
+			<div className={style.header}>
+				<h1 className={style.title}>Bag</h1>
+				<p className={style.count}>
+					{count} {count === 1 ? 'item' : 'items'}
+				</p>
+			</div>
 
-					{placedOrder && (
-						<Success role='status'>
-							Thank you! Order #{placedOrder._id} for {formatMoney(placedOrder.amount)} has been
-							placed.
-						</Success>
-					)}
+			<div className={style.layout}>
+				<section aria-label='Items in your bag'>
+					{isLoading && <p className={style.muted}>Loading your bag…</p>}
+					{error && <Alert tone='error'>Could not load your bag: {getErrorMessage(error)}</Alert>}
+					<ul role='list'>
+						{items.map((item) => (
+							<CartLine key={item.key} item={item} onQuantityChange={setQuantity} />
+						))}
+					</ul>
+				</section>
 
-					<div className='cart__footer'>
-						<div className='cart__info'>
-							{isLoading && <p>Loading your bag…</p>}
-							{error && <p>Could not load the products: {getErrorMessage(error)}</p>}
-							{!lines.length && !placedOrder && <p>Your bag is empty.</p>}
-							{items.map((item, index) => (
-								<div key={item.key}>
-									{index > 0 && <Divider />}
-									<CartLine item={item} onQuantityChange={setQuantity} />
-								</div>
-							))}
-						</div>
-
-						{items.length > 0 && (
-							<OrderSummary totals={totals}>
-								{user ? (
-									<CheckoutForm
-										lines={lines}
-										disabled={hasOutOfStock}
-										onOrderPlaced={handleOrderPlaced}
-									/>
-								) : (
-									<CheckoutBtn
-										type='filled'
-										onClick={() => navigate('/login', { state: { from: '/cart' } })}
-									>
-										Sign in to check out
-									</CheckoutBtn>
-								)}
-							</OrderSummary>
+				{items.length > 0 && (
+					<OrderSummary totals={totals}>
+						{user ? (
+							<CheckoutForm
+								lines={lines}
+								disabled={hasSoldOutItems}
+								onOrderPlaced={handleOrderPlaced}
+							/>
+						) : (
+							<>
+								<Button as={Link} to='/login' state={{ from: '/cart' }} fullWidth>
+									Sign in to check out
+								</Button>
+								<p className={style.muted}>
+									New here?{' '}
+									<Link to='/register' state={{ from: '/cart' }} className='text-link'>
+										Create an account
+									</Link>
+								</p>
+							</>
 						)}
-					</div>
-				</div>
-			</main>
-			<Footer />
-		</>
+					</OrderSummary>
+				)}
+			</div>
+		</div>
 	)
 }
 

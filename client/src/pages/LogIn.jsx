@@ -2,8 +2,15 @@ import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 import { getErrorMessage } from '../api/client'
 import { useAuth } from '../auth/useAuth'
+import AuthCard from '../components/auth/AuthCard'
+import formStyle from '../components/auth/AuthForm.module.css'
+import Alert from '../components/ui/Alert'
+import Button from '../components/ui/Button'
+import TextField from '../components/ui/TextField'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 
 const LogIn = () => {
+	useDocumentTitle('Sign in')
 	const { login } = useAuth()
 	const navigate = useNavigate()
 	const location = useLocation()
@@ -27,54 +34,42 @@ const LogIn = () => {
 	}
 
 	return (
-		<main className='login'>
-			<div className='login__wrapper'>
-				<h1 className='login__title'>Sign in</h1>
-				<form className='login__form' onSubmit={handleSubmit}>
-					<label>
-						<span className='visually-hidden'>Username or email</span>
-						<input
-							className='login__input'
-							name='login'
-							placeholder='Username or email'
-							autoComplete='username'
-							value={form.login}
-							onChange={handleChange}
-							required
-						/>
-					</label>
-					<label>
-						<span className='visually-hidden'>Password</span>
-						<input
-							className='login__input'
-							name='password'
-							type='password'
-							placeholder='Password'
-							autoComplete='current-password'
-							value={form.password}
-							onChange={handleChange}
-							required
-						/>
-					</label>
-					{error && (
-						<p className='form-error' role='alert'>
-							{error}
-						</p>
-					)}
-					<button className='login__btn' disabled={isSubmitting}>
-						{isSubmitting ? 'Signing in…' : 'Log in'}
-					</button>
-					<div className='login__links'>
-						<Link className='login__link' to='/'>
-							Back to shop
-						</Link>
-						<Link className='login__link' to='/register' state={location.state}>
-							Create a new account
-						</Link>
-					</div>
-				</form>
-			</div>
-		</main>
+		<AuthCard
+			title='Sign in'
+			subtitle='Welcome back.'
+			footer={
+				<>
+					New here?{' '}
+					<Link to='/register' state={location.state}>
+						Create an account
+					</Link>
+				</>
+			}
+		>
+			<form className={formStyle.form} onSubmit={handleSubmit}>
+				<TextField
+					label='Username or email'
+					name='login'
+					autoComplete='username'
+					value={form.login}
+					onChange={handleChange}
+					required
+				/>
+				<TextField
+					label='Password'
+					name='password'
+					type='password'
+					autoComplete='current-password'
+					value={form.password}
+					onChange={handleChange}
+					required
+				/>
+				{error && <Alert tone='error'>{error}</Alert>}
+				<Button type='submit' fullWidth disabled={isSubmitting}>
+					{isSubmitting ? 'Signing in…' : 'Sign in'}
+				</Button>
+			</form>
+		</AuthCard>
 	)
 }
 

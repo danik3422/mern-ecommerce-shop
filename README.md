@@ -2,6 +2,9 @@
 
 Clothing store: React client (Vite) and Express + MongoDB API in one npm workspace.
 
+The UI is a small custom design system: design tokens in `client/src/styles/tokens.css`,
+CSS Modules for components and [lucide](https://lucide.dev) icons. It is responsive down to 320px.
+
 ## Project structure
 
 ```
@@ -13,9 +16,15 @@ Clothing store: React client (Vite) and Express + MongoDB API in one npm workspa
 │       ├── auth/              # AuthProvider + useAuth (session in localStorage)
 │       ├── cart/              # CartProvider, pure cart logic, pricing, useCartItems
 │       ├── components/
-│       ├── pages/
-│       ├── styles/
+│       │   ├── layout/        # Header (with mobile menu), Footer, page Layout
+│       │   ├── ui/            # design system: Button, TextField, Select, Alert, ...
+│       │   ├── product/ cart/ home/ auth/
+│       ├── data/              # categories, navigation, filter options
+│       ├── hooks/             # useProducts, useDocumentTitle
+│       ├── pages/             # one component per route (AppRoutes.jsx)
+│       ├── styles/            # tokens.css (colors, spacing, type) + global.css
 │       └── utils/
+│   └── public/images/         # product and site photos (licenses in CREDITS.md)
 ├── server/                    # Express API
 │   ├── src/
 │   │   ├── app.js             # builds the Express app (used by tests)

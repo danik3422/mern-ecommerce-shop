@@ -1,0 +1,146 @@
+.header {
+	position: sticky;
+	top: 0;
+	z-index: 10;
+	border-bottom: 1px solid var(--color-border);
+	background: color-mix(in srgb, var(--color-bg) 92%, transparent);
+	backdrop-filter: blur(8px);
+}
+
+.inner {
+	display: flex;
+	align-items: center;
+	gap: var(--space-5);
+	height: var(--header-height);
+}
+
+.logo {
+	font-size: var(--text-sm);
+	font-weight: var(--weight-semibold);
+	letter-spacing: 0.2em;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+.navList {
+	display: flex;
+	gap: var(--space-5);
+}
+
+.navLink {
+	position: relative;
+	padding-block: var(--space-2);
+	font-size: var(--text-sm);
+	color: var(--color-text-muted);
+	transition: color var(--transition);
+}
+
+.navLink:hover,
+.active {
+	color: var(--color-text);
+}
+
+.active::after {
+	content: '';
+	position: absolute;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	height: 1px;
+	background: currentColor;
+}
+
+.actions {
+	display: flex;
+	align-items: center;
+	gap: var(--space-1);
+	margin-left: auto;
+}
+
+.greeting {
+	margin-right: var(--space-2);
+	font-size: var(--text-sm);
+	color: var(--color-text-muted);
+}
+
+.iconButton {
+	position: relative;
+	display: grid;
+	place-items: center;
+	width: 2.5rem;
+	height: 2.5rem;
+	border: 0;
+	border-radius: 50%;
+	background: transparent;
+	transition: background-color var(--transition);
+}
+
+.iconButton:hover {
+	background: var(--color-subtle);
+}
+
+.badge {
+	position: absolute;
+	top: 2px;
+	right: 0;
+	min-width: 1.125rem;
+	height: 1.125rem;
+	padding-inline: 4px;
+	border-radius: 999px;
+	background: var(--color-text);
+	color: var(--color-inverse);
+	font-size: 0.6875rem;
+	font-weight: var(--weight-semibold);
+	line-height: 1.125rem;
+	text-align: center;
+}
+
+.menuButton {
+	display: none;
+	margin-left: calc(var(--space-2) * -1);
+}
+
+/* Mobile: navigation collapses into a dropdown panel */
+@media (max-width: 52rem) {
+	.inner {
+		gap: var(--space-2);
+	}
+
+	.menuButton {
+		display: grid;
+	}
+
+	.greeting {
+		display: none;
+	}
+
+	.nav {
+		position: absolute;
+		top: 100%;
+		right: 0;
+		left: 0;
+		display: none;
+		border-bottom: 1px solid var(--color-border);
+		background: var(--color-bg);
+	}
+
+	.navOpen {
+		display: block;
+	}
+
+	.navList {
+		flex-direction: column;
+		gap: 0;
+		padding: var(--space-2) var(--gutter) var(--space-4);
+	}
+
+	.navLink {
+		display: block;
+		padding-block: var(--space-3);
+		font-size: var(--text-md);
+	}
+
+	.active::after {
+		display: none;
+	}
+}

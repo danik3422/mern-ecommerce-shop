@@ -1,21 +1,35 @@
-import Categories from '../components/Categories/Categories'
-import Footer from '../components/Footer/Footer'
-import Navbar from '../components/Navbar/Navbar'
-import NewsLetter from '../components/NewsLetter/Newsletter'
-import ProductGrid from '../components/ProductGrid/ProductGrid'
-import Slider from '../components/Slider/Slider'
+import { ArrowRight } from 'lucide-react'
+import { Link } from 'react-router'
+import CategoryTiles from '../components/home/CategoryTiles'
+import Hero from '../components/home/Hero'
+import Section from '../components/home/Section'
+import ProductGrid from '../components/product/ProductGrid'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { useProducts } from '../hooks/useProducts'
 
-const NEWEST_PRODUCTS = { sort: 'newest', limit: 8 }
+const NEW_ARRIVALS = { sort: 'newest', limit: 8 }
 
-const Home = () => (
-	<>
-		<Navbar />
-		<Slider />
-		<Categories />
-		<ProductGrid query={NEWEST_PRODUCTS} />
-		<NewsLetter />
-		<Footer />
-	</>
+const ViewAllLink = () => (
+	<Link to='/products' className='text-link'>
+		View all <ArrowRight size={14} aria-hidden style={{ display: 'inline' }} />
+	</Link>
 )
+
+const Home = () => {
+	useDocumentTitle()
+	const newArrivals = useProducts(NEW_ARRIVALS)
+
+	return (
+		<>
+			<Hero />
+			<Section title='Shop by category'>
+				<CategoryTiles />
+			</Section>
+			<Section title='New arrivals' action={<ViewAllLink />}>
+				<ProductGrid query={newArrivals} skeletonCount={NEW_ARRIVALS.limit} />
+			</Section>
+		</>
+	)
+}
 
 export default Home

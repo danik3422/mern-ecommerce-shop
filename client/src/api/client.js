@@ -26,3 +26,14 @@ export const getErrorMessage = (error) => {
 	if (data?.details?.length) return data.details.map((d) => d.message).join('. ')
 	return data?.message || error?.message || 'Something went wrong'
 }
+
+/**
+ * Field errors from a validation response, keyed by field path:
+ * `{ email: 'Invalid email', 'address.city': '...' }`
+ */
+export const getFieldErrors = (error) =>
+	Object.fromEntries(
+		(error?.response?.data?.details ?? [])
+			.filter((detail) => detail.path)
+			.map((detail) => [detail.path, detail.message]),
+	)

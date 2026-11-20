@@ -1,34 +1,42 @@
-import { useQuery } from '@tanstack/react-query'
-import { useParams } from 'react-router'
+import { Link, useParams } from 'react-router'
 import { getErrorMessage } from '../api/client'
-import { fetchProduct, productKeys } from '../api/products'
-import Footer from '../components/Footer/Footer'
-import Navbar from '../components/Navbar/Navbar'
-import ProductDetails from '../components/ProductDetails/ProductDetails'
+import ProductDetails from '../components/product/ProductDetails'
+import Button from '../components/ui/Button'
+import EmptyState from '../components/ui/EmptyState'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { useProduct } from '../hooks/useProducts'
+import style from './Product.module.css'
 
 const Product = () => {
 	const { id } = useParams()
-	const {
-		data: product,
-		error,
-		isPending,
-		isError,
-	} = useQuery({
-		queryKey: productKeys.detail(id),
-		queryFn: ({ signal }) => fetchProduct(id, signal),
-	})
+	const { data: product, error, isPending, isError } = useProduct(id)
+	useDocumentTitle(product?.title)
+
+	if (isError) {
+		const notFound = [400, 404].includes(error.response?.status)
+		return (
+			<EmptyState
+				title={notFound ? 'Product not found' : 'Something went wrong'}
+				action={
+					<Button as={Link} to='/products' variant='secondary'>
+						Back to the shop
+					</Button>
+				}
+			>
+				{notFound ? 'It may have been removed or the link is wrong.' : getErrorMessage(error)}
+			</EmptyState>
+		)
+	}
 
 	return (
-		<>
-			<Navbar />
-			{isPending && <div className='status-page'>Loading…</div>}
-			{isError && (
-				<div className='status-page'>Could not load the product: {getErrorMessage(error)}</div>
+		<div className={`container ${style.page}`}>
+			{isPending ? (
+				<div className={style.skeleton} aria-busy='true' aria-label='Loading product' />
+			) : (
+				// key resets the chosen options when another product is opened
+				<ProductDetails product={product} key={product._id} />
 			)}
-			{/* key resets the chosen options when another product is opened */}
-			{product && <ProductDetails product={product} key={product._id} />}
-			<Footer />
-		</>
+		</div>
 	)
 }
 

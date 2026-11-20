@@ -1,0 +1,9 @@
+.page {
+	padding-block: var(--space-6);
+}
+
+.skeleton {
+	width: min(100%, 40rem);
+	aspect-ratio: 4 / 5;
+	background: var(--color-subtle);
+}

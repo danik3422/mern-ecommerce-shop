@@ -114,4 +114,16 @@ describe('product management', () => {
 			.send({ ...newProduct, img: 'not a url' })
 			.expect(400)
 	})
+
+	it('accepts local image paths served by the client but not arbitrary strings', async () => {
+		const { auth } = await createUser({ isAdmin: true })
+		const create = (img) =>
+			api()
+				.post('/api/products')
+				.set(auth)
+				.send({ ...newProduct, img })
+
+		await create('/images/products/coat.jpg').expect(201)
+		await create('/images/<script>.jpg').expect(400)
+	})
 })

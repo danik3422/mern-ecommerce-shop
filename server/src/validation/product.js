@@ -6,7 +6,8 @@ const tags = z.array(z.string().trim().toLowerCase().min(1).max(30)).max(20)
 export const createProductBody = z.strictObject({
 	title: z.string().trim().min(1).max(120),
 	description: z.string().trim().min(1).max(2000),
-	img: z.url(),
+	// an absolute URL or a path to an image served by the client, e.g. /images/products/tee.jpg
+	img: z.union([z.url(), z.string().regex(/^\/[\w\-./]+$/, 'Invalid image path')]),
 	categories: tags.default([]),
 	size: z.array(z.string().trim().min(1).max(10)).max(20).default([]),
 	color: tags.default([]),
