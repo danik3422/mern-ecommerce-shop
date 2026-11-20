@@ -1,0 +1,8 @@
+.related {
+	padding-top: var(--space-8);
+}
+
+.title {
+	margin-bottom: var(--space-5);
+	font-size: var(--text-lg);
+}

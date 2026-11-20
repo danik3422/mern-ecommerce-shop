@@ -11,6 +11,13 @@ vi.mock('./api/products', async (importOriginal) => ({
 	...(await importOriginal()),
 	fetchProducts: vi.fn(),
 	fetchProduct: vi.fn(),
+	fetchFacets: vi.fn(async () => ({
+		brands: [],
+		colors: [],
+		sizes: [],
+		price: { min: 0, max: 0 },
+	})),
+	fetchRelatedProducts: vi.fn(async () => []),
 }))
 
 const coat = {

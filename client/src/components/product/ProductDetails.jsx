@@ -6,14 +6,17 @@ import { FREE_SHIPPING_FROM } from '../../cart/pricing'
 import { useCart } from '../../cart/useCart'
 import { formatMoney } from '../../utils/money'
 import { capitalize } from '../../utils/text'
+import { CATEGORY_TITLES } from '../../data/catalog'
 import WishlistButton from '../account/WishlistButton'
 import ProductReviews from '../reviews/ProductReviews'
+import RatingStars from '../reviews/RatingStars'
 import Alert from '../ui/Alert'
 import Button from '../ui/Button'
 import QuantityStepper from '../ui/QuantityStepper'
 import OptionPicker from './OptionPicker'
 import Price from './Price'
 import style from './ProductDetails.module.css'
+import ProductGallery from './ProductGallery'
 import SizePicker from './SizePicker'
 
 const firstAvailableSize = (sizes) => (sizes.find((s) => s.stock > 0) ?? sizes[0]).label
@@ -36,22 +39,45 @@ const ProductDetails = ({ product }) => {
 
 	return (
 		<>
+			<nav aria-label='Breadcrumb' className={style.breadcrumb}>
+				<ol role='list'>
+					<li>
+						<Link to='/'>Home</Link>
+					</li>
+					{category && (
+						<li>
+							<Link to={`/products/${category}`}>
+								{CATEGORY_TITLES[category] ?? capitalize(category)}
+							</Link>
+						</li>
+					)}
+					<li aria-current='page'>{product.title}</li>
+				</ol>
+			</nav>
+
 			<article className={style.product}>
 				<div className={style.media}>
-					<img className={style.image} src={product.images[0]} alt={product.title} />
+					<ProductGallery images={product.images} title={product.title} />
 				</div>
 
 				<div className={style.info}>
-					{category && (
-						<Link to={`/products/${category}`} className='eyebrow'>
-							{capitalize(category)}
-						</Link>
-					)}
 					<div>
-						<p className={style.brand}>{product.brand}</p>
+						<Link
+							to={`/products?brand=${encodeURIComponent(product.brand)}`}
+							className={style.brand}
+						>
+							{product.brand}
+						</Link>
 						<h1 className={style.title}>{product.title}</h1>
 					</div>
-					<Price product={product} size='lg' />
+					<div className={style.priceRow}>
+						<Price product={product} size='lg' />
+						{product.rating?.count > 0 && (
+							<a href='#reviews' className={style.ratingLink}>
+								<RatingStars value={product.rating.average} count={product.rating.count} />
+							</a>
+						)}
+					</div>
 					<p className={style.description}>{product.description}</p>
 
 					{product.colors.length > 0 && (
@@ -97,7 +123,10 @@ const ProductDetails = ({ product }) => {
 					</p>
 				</div>
 			</article>
-			<ProductReviews product={product} />
+			{/* target of the rating link above */}
+			<div id='reviews'>
+				<ProductReviews product={product} />
+			</div>
 		</>
 	)
 }

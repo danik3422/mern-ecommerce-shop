@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router'
 import { getErrorMessage } from '../api/client'
 import ProductDetails from '../components/product/ProductDetails'
+import RelatedProducts from '../components/product/RelatedProducts'
 import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
@@ -33,8 +34,11 @@ const Product = () => {
 			{isPending ? (
 				<div className={style.skeleton} aria-busy='true' aria-label='Loading product' />
 			) : (
-				// key resets the chosen options when another product is opened
-				<ProductDetails product={product} key={product._id} />
+				<>
+					{/* key resets the chosen options and gallery when another product is opened */}
+					<ProductDetails product={product} key={product._id} />
+					<RelatedProducts productId={product._id} />
+				</>
 			)}
 		</div>
 	)
