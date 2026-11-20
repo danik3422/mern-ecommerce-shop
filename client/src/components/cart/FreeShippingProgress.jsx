@@ -1,11 +1,12 @@
 import { Truck } from 'lucide-react'
 import { useShopConfig } from '../../hooks/useShopConfig'
-import { formatMoney } from '../../utils/money'
+import { useI18n } from '../../i18n/useI18n'
 import style from './FreeShippingProgress.module.css'
 
 /** "Add $12.00 more for free shipping" with a progress bar (threshold from the shop config). */
 const FreeShippingProgress = ({ subtotal }) => {
 	const config = useShopConfig()
+	const { t, formatMoney } = useI18n()
 	if (!config) return null
 
 	const threshold = config.freeShippingFrom
@@ -16,18 +17,16 @@ const FreeShippingProgress = ({ subtotal }) => {
 		<div className={style.progress}>
 			<p className={style.text}>
 				<Truck size={16} aria-hidden />
-				{missing > 0 ? (
-					<span>
-						Add <strong>{formatMoney(missing)}</strong> more for free shipping
-					</span>
-				) : (
-					<span>You get free shipping</span>
-				)}
+				<span>
+					{missing > 0
+						? t('shipping.addMore', { amount: formatMoney(missing) })
+						: t('shipping.youGetFree')}
+				</span>
 			</p>
 			<div
 				className={style.track}
 				role='progressbar'
-				aria-label='Progress to free shipping'
+				aria-label={t('shipping.progress')}
 				aria-valuemin={0}
 				aria-valuemax={100}
 				aria-valuenow={percent}

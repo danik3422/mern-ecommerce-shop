@@ -10,6 +10,8 @@ import Modal from '../ui/Modal'
 import Select from '../ui/Select'
 import TextField from '../ui/TextField'
 import style from './NotifyMe.module.css'
+import { useI18n } from '../../i18n/useI18n'
+import { colorName } from '../../i18n/catalogText'
 
 /**
  * "Notify me" for sold-out sizes of the shown color: opens a form that subscribes
@@ -18,6 +20,7 @@ import style from './NotifyMe.module.css'
  * @param appearance 'link' (under the size picker) | 'button' (the color is sold out)
  */
 const NotifyMe = ({ product, variant, appearance = 'link' }) => {
+	const { t } = useI18n()
 	const { user } = useAuth()
 	const soldOutSizes = variant.sizes.filter((s) => s.stock === 0).map((s) => s.label)
 	const [isOpen, setIsOpen] = useState(false)
@@ -29,7 +32,14 @@ const NotifyMe = ({ product, variant, appearance = 'link' }) => {
 
 	const fieldErrors = getFieldErrors(alert.error)
 	const isOneSize = variant.sizes.length === 1
-	const colorName = product.variants.length > 1 ? ` in ${variant.color}` : ''
+	// the product name in the email, with the color when there are several
+	const productName = [
+		product.brand,
+		product.title,
+		product.variants.length > 1 && colorName(t, variant.color),
+	]
+		.filter(Boolean)
+		.join(' ')
 
 	const close = () => {
 		setIsOpen(false)
@@ -45,43 +55,43 @@ const NotifyMe = ({ product, variant, appearance = 'link' }) => {
 		<>
 			{appearance === 'button' ? (
 				<Button variant='secondary' fullWidth onClick={() => setIsOpen(true)}>
-					<Bell size={16} aria-hidden /> Notify me when it&apos;s back
+					<Bell size={16} aria-hidden /> {t('notify.button')}
 				</Button>
 			) : (
 				<button type='button' className={style.link} onClick={() => setIsOpen(true)}>
-					<Bell size={14} aria-hidden /> Size sold out? Get notified
+					<Bell size={14} aria-hidden /> {t('notify.link')}
 				</button>
 			)}
 
 			{isOpen && (
-				<Modal title='Get notified when it’s back' onClose={close}>
+				<Modal title={t('notify.title')} onClose={close}>
 					{alert.isSuccess ? (
 						<div className={style.done}>
-							<Alert tone='success'>{alert.data.message}.</Alert>
+							<Alert tone='success'>
+								{t(isOneSize ? 'notify.done' : 'notify.doneSize', {
+									email: email.trim() || user?.email,
+									size,
+								})}
+							</Alert>
 							<Button variant='secondary' onClick={close}>
-								Close
+								{t('common.close')}
 							</Button>
 						</div>
 					) : (
 						<form className={style.form} onSubmit={handleSubmit}>
 							<p className={style.lead}>
-								We will send one email as soon as{' '}
-								<strong>
-									{product.brand} {product.title}
-									{colorName}
-								</strong>{' '}
-								{isOneSize ? 'is' : 'in your size is'} available again.
+								{t(isOneSize ? 'notify.lead' : 'notify.leadSize', { product: productName })}
 							</p>
 							{!isOneSize && (
 								<Select
-									label='Size'
+									label={t('notify.size')}
 									value={size}
 									onChange={(e) => setSize(e.target.value)}
 									options={soldOutSizes.map((label) => ({ value: label, label }))}
 								/>
 							)}
 							<TextField
-								label='Email'
+								label={t('notify.email')}
 								type='email'
 								autoComplete='email'
 								value={email}
@@ -93,7 +103,7 @@ const NotifyMe = ({ product, variant, appearance = 'link' }) => {
 								<Alert tone='error'>{getErrorMessage(alert.error)}</Alert>
 							)}
 							<Button type='submit' fullWidth disabled={alert.isPending}>
-								{alert.isPending ? 'Saving…' : 'Notify me'}
+								{alert.isPending ? t('notify.saving') : t('notify.submit')}
 							</Button>
 						</form>
 					)}

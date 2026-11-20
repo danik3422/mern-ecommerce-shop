@@ -11,6 +11,7 @@ import TextField from '../ui/TextField'
 import AddressFields from './AddressFields'
 import style from './CheckoutForm.module.css'
 import SavedAddressPicker from './SavedAddressPicker'
+import { useI18n } from '../../i18n/useI18n'
 
 /**
  * Shipping address (saved or new) and the "Place order" button.
@@ -28,6 +29,7 @@ const CheckoutForm = ({
 	disabled,
 	onOrderPlaced,
 }) => {
+	const { t } = useI18n()
 	// the address book may be unavailable — the form then simply asks for a new address
 	const savedAddresses = useQuery({
 		queryKey: accountKeys.addresses,
@@ -80,19 +82,19 @@ const CheckoutForm = ({
 		<form className={style.form} onSubmit={handleSubmit}>
 			{guest && (
 				<TextField
-					label='Email'
+					label={t('address.email')}
 					type='email'
 					autoComplete='email'
 					value={email}
 					onChange={(e) => setEmail(e.target.value)}
 					error={fieldErrors.email}
-					hint='We send your order confirmation and updates here'
+					hint={t('address.emailHint')}
 					required
 				/>
 			)}
 			<fieldset className={style.fieldset}>
-				<legend className={style.legend}>Shipping address</legend>
-				{savedAddresses.isLoading && <p className={style.muted}>Loading your addresses…</p>}
+				<legend className={style.legend}>{t('address.legend')}</legend>
+				{savedAddresses.isLoading && <p className={style.muted}>{t('address.loading')}</p>}
 				{addresses.length > 0 && (
 					<SavedAddressPicker
 						addresses={addresses}
@@ -110,7 +112,7 @@ const CheckoutForm = ({
 									checked={saveAddress}
 									onChange={(e) => setSaveAddress(e.target.checked)}
 								/>
-								Save to my addresses
+								{t('address.save')}
 							</label>
 						)}
 					</div>
@@ -119,7 +121,7 @@ const CheckoutForm = ({
 
 			{order.isError && (
 				<Alert tone='error'>
-					{hasAddressErrors ? 'Please check the highlighted fields.' : getErrorMessage(order.error)}
+					{hasAddressErrors ? t('checkout.checkFields') : getErrorMessage(order.error)}
 				</Alert>
 			)}
 			<Button
@@ -127,7 +129,7 @@ const CheckoutForm = ({
 				fullWidth
 				disabled={disabled || order.isPending || savedAddresses.isLoading}
 			>
-				{order.isPending ? 'Placing order…' : 'Place order'}
+				{order.isPending ? t('checkout.placing') : t('checkout.placeOrder')}
 			</Button>
 		</form>
 	)

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Order } from '../src/models/Order.js'
 import { sendMail } from '../src/services/mailer.js'
 import { api, createProduct, createUser, validAddress } from './helpers.js'
+import { formatAmount } from '../src/services/pricing.js'
 
 vi.mock('../src/services/mailer.js', () => ({ sendMail: vi.fn() }))
 
@@ -94,7 +95,7 @@ describe('order emails', () => {
 			to: 'guest@example.com',
 			subject: expect.stringMatching(/^We received your order — order #[0-9A-F]{8}$/),
 		})
-		expect(placed.text).toContain('1 × Brand Coat (black, M) — $30.00')
+		expect(placed.text).toContain(`1 × Brand Coat (black, M) — ${formatAmount(30)}`)
 		expect(placed.text).toContain(`token=${body.accessToken}`)
 
 		await api()

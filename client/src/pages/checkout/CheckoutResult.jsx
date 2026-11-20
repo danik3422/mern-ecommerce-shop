@@ -13,6 +13,7 @@ import { cx } from '../../utils/cx'
 import style from './CheckoutResult.module.css'
 import OrderReview from './OrderReview'
 import ReturnSection from '../../components/orders/ReturnSection'
+import { useI18n } from '../../i18n/useI18n'
 
 // Stripe usually confirms within seconds; after ~16 s the page stops waiting
 const POLL_INTERVAL_MS = 2000
@@ -21,54 +22,16 @@ const MAX_POLLS = 8
 const isAwaitingOnlinePayment = (order) =>
 	order?.status === 'pending' && order.payment?.provider === 'stripe'
 
-/** Heading, text and icon for the order state. */
+/** Icon and message key (`checkout.states.*`) for the order state. */
 const describe = (order, { result, isPolling }) => {
-	if (order.status === 'cancelled') {
-		return {
-			icon: XCircle,
-			tone: 'muted',
-			title: 'This order was cancelled',
-			text: 'Nothing was charged and the items are back in stock.',
-		}
-	}
-	if (order.status !== 'pending') {
-		return {
-			icon: CheckCircle2,
-			tone: 'success',
-			title: 'Thank you for your order',
-			text: 'Your payment was received. We will let you know when your order ships.',
-		}
-	}
+	if (order.status === 'cancelled') return { icon: XCircle, tone: 'muted', state: 'cancelled' }
+	if (order.status !== 'pending') return { icon: CheckCircle2, tone: 'success', state: 'paid' }
 	if (order.payment?.provider !== 'stripe') {
-		return {
-			icon: CheckCircle2,
-			tone: 'success',
-			title: 'Thank you for your order',
-			text: 'Your order is placed. Online payment is not set up in this shop yet, so payment is collected on delivery.',
-		}
+		return { icon: CheckCircle2, tone: 'success', state: 'payLater' }
 	}
-	if (result === 'cancel') {
-		return {
-			icon: Clock,
-			tone: 'muted',
-			title: 'Payment was not completed',
-			text: 'Your order is saved and the items are reserved for a while. You can try paying again or cancel the order.',
-		}
-	}
-	if (isPolling) {
-		return {
-			icon: Loader2,
-			tone: 'spin',
-			title: 'Confirming your payment…',
-			text: 'This usually takes a few seconds.',
-		}
-	}
-	return {
-		icon: Clock,
-		tone: 'muted',
-		title: 'Payment pending',
-		text: 'We have not received the confirmation from the payment provider yet. Check your orders again in a few minutes.',
-	}
+	if (result === 'cancel') return { icon: Clock, tone: 'muted', state: 'notCompleted' }
+	if (isPolling) return { icon: Loader2, tone: 'spin', state: 'confirming' }
+	return { icon: Clock, tone: 'muted', state: 'pending' }
 }
 
 /**
@@ -77,7 +40,8 @@ const describe = (order, { result, isPolling }) => {
  * @param result 'success' | 'cancel'
  */
 const CheckoutResult = ({ result }) => {
-	useDocumentTitle(result === 'success' ? 'Order confirmation' : 'Payment not completed')
+	const { t } = useI18n()
+	useDocumentTitle(result === 'success' ? t('checkout.titleSuccess') : t('checkout.titleCancel'))
 	const { user } = useAuth()
 	const location = useLocation()
 	const [searchParams] = useSearchParams()
@@ -111,14 +75,14 @@ const CheckoutResult = ({ result }) => {
 
 	const shopLink = (
 		<Button as={Link} to='/products' variant='secondary'>
-			Continue shopping
+			{t('bag.continueShopping')}
 		</Button>
 	)
 
 	if (!orderId) {
 		return (
-			<EmptyState title='Order not found' action={shopLink}>
-				The link is missing the order number.
+			<EmptyState title={t('checkout.orderNotFound')} action={shopLink}>
+				{t('checkout.missingNumber')}
 			</EmptyState>
 		)
 	}
@@ -126,10 +90,10 @@ const CheckoutResult = ({ result }) => {
 	if (!user && !token) {
 		return (
 			<EmptyState
-				title='Sign in to see your order'
+				title={t('checkout.signInToSee')}
 				action={
 					<Button as={Link} to='/login' state={{ from: location.pathname + location.search }}>
-						Sign in
+						{t('checkout.signIn')}
 					</Button>
 				}
 			/>
@@ -137,16 +101,17 @@ const CheckoutResult = ({ result }) => {
 	}
 
 	if (order.isPending) {
-		return <EmptyState title='Loading your order…' />
+		return <EmptyState title={t('checkout.loadingOrder')} />
 	}
 
 	if (order.isError) {
 		const notFound = [400, 404].includes(order.error.response?.status)
 		return (
-			<EmptyState title={notFound ? 'Order not found' : 'Something went wrong'} action={shopLink}>
-				{notFound
-					? 'This order does not exist or belongs to another account.'
-					: getErrorMessage(order.error)}
+			<EmptyState
+				title={notFound ? t('checkout.orderNotFound') : t('checkout.error')}
+				action={shopLink}
+			>
+				{notFound ? t('checkout.notYours') : getErrorMessage(order.error)}
 			</EmptyState>
 		)
 	}
@@ -156,7 +121,7 @@ const CheckoutResult = ({ result }) => {
 	// so the page stops showing "Confirming…" once polling ends
 	const waiting =
 		order.dataUpdatedAt > 0 && isPolling(queryClient.getQueryState(orderKeys.detail(orderId)))
-	const { icon: Icon, tone, title, text } = describe(data, { result, isPolling: waiting })
+	const { icon: Icon, tone, state } = describe(data, { result, isPolling: waiting })
 	const canRetryPayment = isAwaitingOnlinePayment(data) && !waiting
 	const canCancel = data.status === 'pending' && (result === 'cancel' || canRetryPayment)
 	const actionError = pay.error ?? cancel.error
@@ -165,8 +130,8 @@ const CheckoutResult = ({ result }) => {
 		<div className={cx('container', style.page)}>
 			<div className={style.status} role='status'>
 				<Icon size={36} aria-hidden className={cx(style.icon, style[tone])} />
-				<h1 className={style.title}>{title}</h1>
-				<p className={style.text}>{text}</p>
+				<h1 className={style.title}>{t(`checkout.states.${state}.title`)}</h1>
+				<p className={style.text}>{t(`checkout.states.${state}.text`)}</p>
 			</div>
 
 			{actionError && <Alert tone='error'>{getErrorMessage(actionError)}</Alert>}
@@ -174,7 +139,7 @@ const CheckoutResult = ({ result }) => {
 			<div className={style.actions}>
 				{canRetryPayment && (
 					<Button onClick={() => pay.mutate()} disabled={pay.isPending || cancel.isPending}>
-						{pay.isPending ? 'Opening payment…' : 'Try payment again'}
+						{pay.isPending ? t('checkout.openingPayment') : t('checkout.retryPayment')}
 					</Button>
 				)}
 				{canCancel && (
@@ -183,25 +148,24 @@ const CheckoutResult = ({ result }) => {
 						onClick={() => cancel.mutate()}
 						disabled={pay.isPending || cancel.isPending}
 					>
-						{cancel.isPending ? 'Cancelling…' : 'Cancel order'}
+						{cancel.isPending ? t('checkout.cancelling') : t('checkout.cancelOrder')}
 					</Button>
 				)}
 				{!canRetryPayment && shopLink}
 				{user && (
 					<Button as={Link} to='/account' variant='ghost'>
-						My orders
+						{t('checkout.myOrders')}
 					</Button>
 				)}
 			</div>
 
 			{!user && (
 				<p className={style.guestNote}>
-					We sent the order details to <strong>{data.email}</strong>. The link in that email opens
-					this page again.{' '}
+					{t('checkout.guestNote', { email: data.email })}{' '}
 					<Link to='/register' className='text-link'>
-						Create an account
+						{t('checkout.guestCreate')}
 					</Link>{' '}
-					to follow your orders in one place.
+					{t('checkout.guestCreateBenefit')}
 				</p>
 			)}
 

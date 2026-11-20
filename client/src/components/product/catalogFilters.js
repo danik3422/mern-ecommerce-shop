@@ -7,6 +7,7 @@
  *      &onSale=true&inStock=true&sort=price_asc&page=2
  */
 import { SALE_CATEGORY } from '../../data/catalog'
+import { colorName } from '../../i18n/catalogText'
 
 const LIST_KEYS = ['brand', 'color', 'size']
 const PRICE_KEYS = ['minPrice', 'maxPrice']
@@ -79,11 +80,10 @@ export const toFacetScope = (filters, category) => {
 	return scope
 }
 
-const formatPrice = (value) => `$${value}`
-
 /**
  * One chip per active filter value, each with the URL change that removes it.
- * @returns `[{ key, label, change }]`
+ * Chips carry data, not text, so they can be shown in any language (see describeChip).
+ * @returns `[{ key, kind, value?, min?, max?, change }]`
  */
 export const activeFilterChips = (filters) => {
 	const chips = []
@@ -91,21 +91,45 @@ export const activeFilterChips = (filters) => {
 		for (const value of filters[key]) {
 			chips.push({
 				key: `${key}:${value}`,
-				label: key === 'size' ? `Size ${value}` : value,
+				kind: key,
+				value,
 				change: { [key]: filters[key].filter((item) => item !== value) },
 			})
 		}
 	}
 	if (filters.minPrice !== '' || filters.maxPrice !== '') {
-		const label =
-			filters.minPrice !== '' && filters.maxPrice !== ''
-				? `${formatPrice(filters.minPrice)} – ${formatPrice(filters.maxPrice)}`
-				: filters.minPrice !== ''
-					? `From ${formatPrice(filters.minPrice)}`
-					: `Up to ${formatPrice(filters.maxPrice)}`
-		chips.push({ key: 'price', label, change: { minPrice: '', maxPrice: '' } })
+		chips.push({
+			key: 'price',
+			kind: 'price',
+			min: filters.minPrice === '' ? undefined : Number(filters.minPrice),
+			max: filters.maxPrice === '' ? undefined : Number(filters.maxPrice),
+			change: { minPrice: '', maxPrice: '' },
+		})
 	}
-	if (filters.onSale) chips.push({ key: 'onSale', label: 'On sale', change: { onSale: false } })
-	if (filters.inStock) chips.push({ key: 'inStock', label: 'In stock', change: { inStock: false } })
+	if (filters.onSale) chips.push({ key: 'onSale', kind: 'onSale', change: { onSale: false } })
+	if (filters.inStock) chips.push({ key: 'inStock', kind: 'inStock', change: { inStock: false } })
 	return chips
+}
+
+/** The text of a chip in the current language, e.g. "Rozmiar M" or "Od 40,00 zł". */
+export const describeChip = (chip, { t, formatMoney }) => {
+	switch (chip.kind) {
+		case 'size':
+			return t('filters.sizeChip', { size: chip.value })
+		case 'color':
+			return colorName(t, chip.value)
+		case 'price':
+			if (chip.min !== undefined && chip.max !== undefined) {
+				return t('filters.range', { min: formatMoney(chip.min), max: formatMoney(chip.max) })
+			}
+			return chip.min !== undefined
+				? t('filters.from', { amount: formatMoney(chip.min) })
+				: t('filters.upTo', { amount: formatMoney(chip.max) })
+		case 'onSale':
+			return t('filters.onSale')
+		case 'inStock':
+			return t('filters.inStock')
+		default:
+			return chip.value
+	}
 }

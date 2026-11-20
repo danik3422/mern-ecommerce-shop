@@ -8,25 +8,27 @@ import Alert from '../components/ui/Alert'
 import Button from '../components/ui/Button'
 import TextField from '../components/ui/TextField'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { useI18n } from '../i18n/useI18n'
 
 const MIN_PASSWORD_LENGTH = 8
 
 const FIELDS = [
-	{ name: 'username', label: 'Username', autoComplete: 'username', minLength: 3 },
-	{ name: 'email', label: 'Email', type: 'email', autoComplete: 'email' },
+	{ name: 'username', labelKey: 'auth.username', autoComplete: 'username', minLength: 3 },
+	{ name: 'email', labelKey: 'auth.email', type: 'email', autoComplete: 'email' },
 	{
 		name: 'password',
-		label: 'Password',
+		labelKey: 'auth.password',
 		type: 'password',
 		autoComplete: 'new-password',
 		minLength: MIN_PASSWORD_LENGTH,
-		hint: `At least ${MIN_PASSWORD_LENGTH} characters`,
+		hintKey: 'auth.passwordHint',
 	},
-	{ name: 'confirm', label: 'Confirm password', type: 'password', autoComplete: 'new-password' },
+	{ name: 'confirm', labelKey: 'auth.confirm', type: 'password', autoComplete: 'new-password' },
 ]
 
 const Register = () => {
-	useDocumentTitle('Create account')
+	const { t } = useI18n()
+	useDocumentTitle(t('auth.registerTitle'))
 	const { register } = useAuth()
 	const navigate = useNavigate()
 	const location = useLocation()
@@ -36,7 +38,7 @@ const Register = () => {
 
 	const fieldErrors = {
 		...getFieldErrors(error),
-		...(error === 'mismatch' && { confirm: 'Passwords do not match' }),
+		...(error === 'mismatch' && { confirm: t('auth.mismatch') }),
 	}
 	const generalError = error && error !== 'mismatch' && !Object.keys(fieldErrors).length
 
@@ -60,24 +62,26 @@ const Register = () => {
 
 	return (
 		<AuthCard
-			title='Create an account'
-			subtitle='Save your bag and check out faster.'
+			title={t('auth.createAccount')}
+			subtitle={t('auth.registerSubtitle')}
 			footer={
 				<>
-					Already have an account?{' '}
+					{t('auth.haveAccount')}{' '}
 					<Link to='/login' state={location.state}>
-						Sign in
+						{t('auth.signIn')}
 					</Link>
 				</>
 			}
 		>
 			<form className={formStyle.form} onSubmit={handleSubmit}>
-				{FIELDS.map(({ name, ...field }) => (
+				{FIELDS.map(({ name, labelKey, hintKey, ...field }) => (
 					<TextField
 						key={name}
 						name={name}
 						value={form[name]}
 						onChange={handleChange}
+						label={t(labelKey)}
+						hint={hintKey && t(hintKey, { count: MIN_PASSWORD_LENGTH })}
 						error={fieldErrors[name]}
 						required
 						{...field}
@@ -85,7 +89,7 @@ const Register = () => {
 				))}
 				{generalError && <Alert tone='error'>{getErrorMessage(error)}</Alert>}
 				<Button type='submit' fullWidth disabled={isSubmitting}>
-					{isSubmitting ? 'Creating account…' : 'Create account'}
+					{isSubmitting ? t('auth.creating') : t('auth.create')}
 				</Button>
 			</form>
 		</AuthCard>

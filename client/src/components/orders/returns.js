@@ -1,3 +1,4 @@
+/** Reason codes; the English labels are used in the admin panel, the shop translates them. */
 export const RETURN_REASONS = [
 	{ value: 'too_small', label: 'Too small' },
 	{ value: 'too_big', label: 'Too big' },
@@ -23,10 +24,3 @@ export const canRequestReturn = (order, windowDays, now = new Date()) =>
 	!order.returnRequest &&
 	Boolean(returnDeadline(order, windowDays)) &&
 	now <= returnDeadline(order, windowDays)
-
-export const RETURN_STATUS_TEXT = {
-	requested: 'Return requested — we will review it shortly.',
-	approved: 'Return approved — please send the items back.',
-	rejected: 'Return rejected.',
-	refunded: 'Return completed and refunded.',
-}

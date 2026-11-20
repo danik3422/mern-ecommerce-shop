@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import { DEFAULT_I18N as format } from '../../i18n/defaults'
 import {
 	activeFilterChips,
+	describeChip,
 	clearFilterParams,
 	readFilters,
 	toApiQuery,
@@ -99,11 +101,17 @@ describe('catalog filters in the URL', () => {
 		const filters = readFilters(params('brand=A,B&size=M&minPrice=10&maxPrice=50&onSale=true'))
 		const chips = activeFilterChips(filters)
 
-		expect(chips.map((c) => c.label)).toEqual(['A', 'B', 'Size M', '$10 – $50', 'On sale'])
+		expect(chips.map((c) => describeChip(c, format))).toEqual([
+			'A',
+			'B',
+			'Size M',
+			`${format.formatMoney(10)} – ${format.formatMoney(50)}`,
+			'On sale',
+		])
 		expect(chips[0].change).toEqual({ brand: ['B'] })
 		expect(chips[3].change).toEqual({ minPrice: '', maxPrice: '' })
 
 		const fromOnly = activeFilterChips(readFilters(params('minPrice=10')))
-		expect(fromOnly[0].label).toBe('From $10')
+		expect(describeChip(fromOnly[0], format)).toBe(`From ${format.formatMoney(10)}`)
 	})
 })

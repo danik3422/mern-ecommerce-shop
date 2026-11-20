@@ -8,9 +8,11 @@ import Alert from '../components/ui/Alert'
 import Button from '../components/ui/Button'
 import TextField from '../components/ui/TextField'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { useI18n } from '../i18n/useI18n'
 
 const LogIn = () => {
-	useDocumentTitle('Sign in')
+	const { t } = useI18n()
+	useDocumentTitle(t('auth.signIn'))
 	const { login } = useAuth()
 	const navigate = useNavigate()
 	const location = useLocation()
@@ -35,20 +37,20 @@ const LogIn = () => {
 
 	return (
 		<AuthCard
-			title='Sign in'
-			subtitle='Welcome back.'
+			title={t('auth.signIn')}
+			subtitle={t('auth.welcomeBack')}
 			footer={
 				<>
-					New here?{' '}
+					{t('auth.newHere')}{' '}
 					<Link to='/register' state={location.state}>
-						Create an account
+						{t('auth.createAccount')}
 					</Link>
 				</>
 			}
 		>
 			<form className={formStyle.form} onSubmit={handleSubmit}>
 				<TextField
-					label='Username or email'
+					label={t('auth.login')}
 					name='login'
 					autoComplete='username'
 					value={form.login}
@@ -56,7 +58,7 @@ const LogIn = () => {
 					required
 				/>
 				<TextField
-					label='Password'
+					label={t('auth.password')}
 					name='password'
 					type='password'
 					autoComplete='current-password'
@@ -66,7 +68,7 @@ const LogIn = () => {
 				/>
 				{error && <Alert tone='error'>{error}</Alert>}
 				<Button type='submit' fullWidth disabled={isSubmitting}>
-					{isSubmitting ? 'Signing in…' : 'Sign in'}
+					{isSubmitting ? t('auth.signingIn') : t('auth.signIn')}
 				</Button>
 			</form>
 		</AuthCard>

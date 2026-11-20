@@ -4,13 +4,16 @@ import { Link, NavLink, useLocation } from 'react-router'
 import { useAuth } from '../../auth/useAuth'
 import { useCart } from '../../cart/useCart'
 import { NAV_LINKS } from '../../data/catalog'
+import { useI18n } from '../../i18n/useI18n'
 import { cx } from '../../utils/cx'
 import style from './Header.module.css'
+import LanguageSwitcher from './LanguageSwitcher'
 import SearchForm from './SearchForm'
 
 const Header = () => {
 	const { user, logout } = useAuth()
 	const { count } = useCart()
+	const { t } = useI18n()
 	const { pathname } = useLocation()
 	const [isMenuOpen, setIsMenuOpen] = useState(false)
 	const [menuPath, setMenuPath] = useState(pathname)
@@ -30,7 +33,7 @@ const Header = () => {
 					onClick={() => setIsMenuOpen((open) => !open)}
 					aria-expanded={isMenuOpen}
 					aria-controls='main-navigation'
-					aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+					aria-label={isMenuOpen ? t('layout.closeMenu') : t('layout.openMenu')}
 				>
 					{isMenuOpen ? <X size={20} aria-hidden /> : <Menu size={20} aria-hidden />}
 				</button>
@@ -42,27 +45,27 @@ const Header = () => {
 				<nav
 					id='main-navigation'
 					className={cx(style.nav, isMenuOpen && style.navOpen)}
-					aria-label='Main'
+					aria-label={t('layout.mainNav')}
 				>
 					<div className={style.mobileSearch}>
 						<SearchForm />
 					</div>
 					<ul role='list' className={style.navList}>
-						{NAV_LINKS.map(({ to, label, end }) => (
+						{NAV_LINKS.map(({ to, labelKey, end }) => (
 							<li key={to}>
 								<NavLink
 									to={to}
 									end={end}
 									className={({ isActive }) => cx(style.navLink, isActive && style.active)}
 								>
-									{label}
+									{t(labelKey)}
 								</NavLink>
 							</li>
 						))}
 						{user && (
 							<li className={style.mobileOnly}>
 								<button type='button' className={style.navLink} onClick={logout}>
-									Sign out
+									{t('layout.signOut')}
 								</button>
 							</li>
 						)}
@@ -74,8 +77,14 @@ const Header = () => {
 				</div>
 
 				<div className={style.actions}>
+					<LanguageSwitcher className={style.language} />
 					{user?.isAdmin && (
-						<Link to='/admin' className={style.iconButton} aria-label='Admin panel' title='Admin'>
+						<Link
+							to='/admin'
+							className={style.iconButton}
+							aria-label={t('layout.admin')}
+							title={t('layout.admin')}
+						>
 							<LayoutDashboard size={20} aria-hidden />
 						</Link>
 					)}
@@ -84,16 +93,16 @@ const Header = () => {
 							<Link
 								to='/account'
 								className={style.iconButton}
-								aria-label={`Account of ${user.username}`}
-								title='Account'
+								aria-label={t('layout.accountOf', { name: user.username })}
+								title={t('layout.account')}
 							>
 								<User size={20} aria-hidden />
 							</Link>
 							<Link
 								to='/account/wishlist'
 								className={cx(style.iconButton, style.hideOnMobile)}
-								aria-label='Wishlist'
-								title='Wishlist'
+								aria-label={t('layout.wishlist')}
+								title={t('layout.wishlist')}
 							>
 								<Heart size={20} aria-hidden />
 							</Link>
@@ -101,22 +110,27 @@ const Header = () => {
 								type='button'
 								className={cx(style.iconButton, style.hideOnMobile)}
 								onClick={logout}
-								aria-label='Sign out'
-								title='Sign out'
+								aria-label={t('layout.signOut')}
+								title={t('layout.signOut')}
 							>
 								<LogOut size={20} aria-hidden />
 							</button>
 						</>
 					) : (
-						<Link to='/login' className={style.iconButton} aria-label='Sign in' title='Sign in'>
+						<Link
+							to='/login'
+							className={style.iconButton}
+							aria-label={t('layout.signIn')}
+							title={t('layout.signIn')}
+						>
 							<User size={20} aria-hidden />
 						</Link>
 					)}
 					<Link
 						to='/cart'
 						className={style.iconButton}
-						aria-label={`Bag, ${count} ${count === 1 ? 'item' : 'items'}`}
-						title='Bag'
+						aria-label={t('layout.bagCount', { count })}
+						title={t('layout.bag')}
 					>
 						<ShoppingBag size={20} aria-hidden />
 						{count > 0 && (

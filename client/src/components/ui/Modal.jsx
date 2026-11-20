@@ -2,6 +2,7 @@ import { X } from 'lucide-react'
 import { useId } from 'react'
 import { createPortal } from 'react-dom'
 import { useModal } from '../../hooks/useModal'
+import { useI18n } from '../../i18n/useI18n'
 import { cx } from '../../utils/cx'
 import style from './Modal.module.css'
 
@@ -12,6 +13,7 @@ import style from './Modal.module.css'
  */
 const Modal = ({ title, onClose, size = 'md', hideTitle = false, children }) => {
 	const dialogRef = useModal(onClose)
+	const { t } = useI18n()
 	const titleId = useId()
 
 	return createPortal(
@@ -33,7 +35,7 @@ const Modal = ({ title, onClose, size = 'md', hideTitle = false, children }) => 
 						type='button'
 						className={style.close}
 						onClick={onClose}
-						aria-label='Close'
+						aria-label={t('common.close')}
 						data-autofocus
 					>
 						<X size={20} aria-hidden />

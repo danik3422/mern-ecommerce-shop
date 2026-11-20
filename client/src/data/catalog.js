@@ -1,27 +1,19 @@
-/** Category tiles on the home page. */
+/** Category tiles on the home page; titles and descriptions are translated by slug. */
 export const CATEGORIES = [
 	{
 		slug: 'women',
-		title: 'Women',
-		description: 'Tees, knitwear and everyday layers',
 		img: '/images/site/category-women.jpg',
 	},
 	{
 		slug: 'men',
-		title: 'Men',
-		description: 'Tees, denim and outerwear',
 		img: '/images/products/black-leather-jacket-2.jpg',
 	},
 	{
 		slug: 'dresses',
-		title: 'Dresses',
-		description: 'From wrap dresses to maxis',
 		img: '/images/products/floral-wrap-dress.jpg',
 	},
 	{
 		slug: 'coats',
-		title: 'Coats & jackets',
-		description: 'Layers for cold days',
 		img: '/images/site/category-coats.jpg',
 	},
 ]
@@ -29,31 +21,19 @@ export const CATEGORIES = [
 /** Pseudo-category: /products/sale lists discounted products of all categories. */
 export const SALE_CATEGORY = 'sale'
 
+/** `labelKey` is a translation key (see i18n/messages). */
 export const NAV_LINKS = [
-	{ to: '/products/women', label: 'Women' },
-	{ to: '/products/men', label: 'Men' },
-	{ to: '/products/dresses', label: 'Dresses' },
-	{ to: '/products/coats', label: 'Coats' },
-	{ to: '/products/jeans', label: 'Denim' },
-	{ to: '/products/accessories', label: 'Accessories' },
-	{ to: `/products/${SALE_CATEGORY}`, label: 'Sale' },
+	{ to: '/products/women', labelKey: 'nav.women' },
+	{ to: '/products/men', labelKey: 'nav.men' },
+	{ to: '/products/dresses', labelKey: 'nav.dresses' },
+	{ to: '/products/coats', labelKey: 'nav.coats' },
+	{ to: '/products/jeans', labelKey: 'nav.jeans' },
+	{ to: '/products/accessories', labelKey: 'nav.accessories' },
+	{ to: `/products/${SALE_CATEGORY}`, labelKey: 'nav.sale' },
 ]
 
-/** Page titles for category slugs that read better than the capitalized slug. */
-export const CATEGORY_TITLES = {
-	jeans: 'Jeans & trousers',
-	tshirts: 'T-shirts',
-	coats: 'Coats & jackets',
-	[SALE_CATEGORY]: 'Sale',
-}
-
-export const SORT_OPTIONS = [
-	{ value: 'newest', label: 'Newest' },
-	{ value: 'price_asc', label: 'Price: low to high' },
-	{ value: 'price_desc', label: 'Price: high to low' },
-	{ value: 'rating', label: 'Top rated' },
-	{ value: 'discount', label: 'Biggest discount' },
-]
+/** Sort orders of the catalog; labels are translated as `sort.<value>`. */
+export const SORT_VALUES = ['newest', 'price_asc', 'price_desc', 'rating', 'discount']
 
 /** Muted swatch shades for color names stored on products; unknown names fall back to CSS colors. */
 const SWATCHES = {

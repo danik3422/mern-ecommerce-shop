@@ -8,25 +8,29 @@ import OrderCard from '../../components/account/OrderCard'
 import Alert from '../../components/ui/Alert'
 import Button from '../../components/ui/Button'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
+import { useI18n } from '../../i18n/useI18n'
 
 const OrdersPage = () => {
-	useDocumentTitle('My orders')
+	const { t } = useI18n()
+	useDocumentTitle(t('orders.title'))
 	const { user } = useAuth()
 	const orders = useQuery({ queryKey: [...accountKeys.orders, user._id], queryFn: fetchMyOrders })
 
 	return (
 		<section className={shared.section} aria-labelledby='orders-title'>
 			<h1 id='orders-title' className={shared.title}>
-				Orders
+				{t('account.orders')}
 			</h1>
 
-			{orders.isPending && <p className={shared.muted}>Loading your orders…</p>}
+			{orders.isPending && <p className={shared.muted}>{t('orders.loading')}</p>}
 			{orders.isError && (
-				<Alert tone='error'>Could not load your orders: {getErrorMessage(orders.error)}</Alert>
+				<Alert tone='error'>
+					{t('orders.loadError', { error: getErrorMessage(orders.error) })}
+				</Alert>
 			)}
 			{orders.data?.length === 0 && (
 				<div className={shared.card}>
-					<p>You have not placed any orders yet.</p>
+					<p>{t('orders.empty')}</p>
 					<Button
 						as={Link}
 						to='/products'
@@ -34,7 +38,7 @@ const OrdersPage = () => {
 						size='sm'
 						className={shared.cardAction}
 					>
-						Start shopping
+						{t('orders.startShopping')}
 					</Button>
 				</div>
 			)}

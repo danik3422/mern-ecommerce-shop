@@ -18,15 +18,20 @@ import EmptyState from '../components/ui/EmptyState'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import style from './Cart.module.css'
 import { stockOf } from '../utils/variants'
+import { useI18n } from '../i18n/useI18n'
 
-const ContinueShopping = () => (
-	<Button as={Link} to='/products' variant='secondary'>
-		Continue shopping
-	</Button>
-)
+const ContinueShopping = () => {
+	const { t } = useI18n()
+	return (
+		<Button as={Link} to='/products' variant='secondary'>
+			{t('bag.continueShopping')}
+		</Button>
+	)
+}
 
 const Cart = () => {
-	useDocumentTitle('Bag')
+	const { t } = useI18n()
+	useDocumentTitle(t('bag.title'))
 	const { user } = useAuth()
 	const { lines, count, setQuantity, clear } = useCart()
 	const { items, isLoading, error } = useCartItems()
@@ -64,13 +69,13 @@ const Cart = () => {
 	}
 
 	if (isRedirecting) {
-		return <EmptyState title='Taking you to the payment page…' />
+		return <EmptyState title={t('bag.redirecting')} />
 	}
 
 	if (!lines.length) {
 		return (
-			<EmptyState title='Your bag is empty' action={<ContinueShopping />}>
-				Looks like you have not added anything yet.
+			<EmptyState title={t('bag.empty')} action={<ContinueShopping />}>
+				{t('bag.emptyText')}
 			</EmptyState>
 		)
 	}
@@ -80,16 +85,16 @@ const Cart = () => {
 	return (
 		<div className='container'>
 			<div className={style.header}>
-				<h1 className={style.title}>Bag</h1>
-				<p className={style.count}>
-					{count} {count === 1 ? 'item' : 'items'}
-				</p>
+				<h1 className={style.title}>{t('bag.title')}</h1>
+				<p className={style.count}>{t('bag.count', { count })}</p>
 			</div>
 
 			<div className={style.layout}>
-				<section aria-label='Items in your bag'>
-					{isLoading && <p className={style.muted}>Loading your bag…</p>}
-					{error && <Alert tone='error'>Could not load your bag: {getErrorMessage(error)}</Alert>}
+				<section aria-label={t('bag.items')}>
+					{isLoading && <p className={style.muted}>{t('bag.loading')}</p>}
+					{error && (
+						<Alert tone='error'>{t('bag.loadError', { error: getErrorMessage(error) })}</Alert>
+					)}
 					<ul role='list'>
 						{items.map((item) => (
 							<CartLine key={item.key} item={item} onQuantityChange={setQuantity} />
@@ -137,17 +142,17 @@ const Cart = () => {
 						) : (
 							<div className={style.checkoutChoice}>
 								<Button as={Link} to='/login' state={{ from: '/cart' }} fullWidth>
-									Sign in to check out
+									{t('bag.signInToCheckout')}
 								</Button>
 								<Button variant='secondary' fullWidth onClick={() => setCheckoutAsGuest(true)}>
-									Check out as guest
+									{t('bag.checkoutAsGuest')}
 								</Button>
 								<p className={style.muted}>
-									New here?{' '}
+									{t('bag.newHere')}{' '}
 									<Link to='/register' state={{ from: '/cart' }} className='text-link'>
-										Create an account
+										{t('bag.createAccount')}
 									</Link>{' '}
-									to track orders and save addresses.
+									{t('bag.createAccountBenefit')}
 								</p>
 							</div>
 						)}

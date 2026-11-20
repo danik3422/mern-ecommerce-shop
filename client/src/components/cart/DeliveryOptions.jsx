@@ -1,6 +1,6 @@
 import { useShopConfig } from '../../hooks/useShopConfig'
-import { formatMoney } from '../../utils/money'
 import style from './DeliveryOptions.module.css'
+import { useI18n } from '../../i18n/useI18n'
 
 /**
  * Delivery method radio group with the price each method would cost for this bag:
@@ -10,6 +10,7 @@ import style from './DeliveryOptions.module.css'
  */
 const DeliveryOptions = ({ value, onChange, quotedShipping, discountedSubtotal }) => {
 	const config = useShopConfig()
+	const { t, formatMoney } = useI18n()
 	if (!config) return null
 
 	const priceOf = (method) => {
@@ -23,7 +24,7 @@ const DeliveryOptions = ({ value, onChange, quotedShipping, discountedSubtotal }
 
 	return (
 		<fieldset className={style.fieldset}>
-			<legend className={style.legend}>Delivery</legend>
+			<legend className={style.legend}>{t('delivery.legend')}</legend>
 			{config.shippingMethods.map((method) => {
 				const price = priceOf(method)
 				return (
@@ -36,12 +37,16 @@ const DeliveryOptions = ({ value, onChange, quotedShipping, discountedSubtotal }
 							onChange={() => onChange(method.id)}
 						/>
 						<span className={style.text}>
-							<span className={style.label}>{method.label}</span>
+							<span className={style.label}>
+								{t(`delivery.${method.id}`, { defaultValue: method.label })}
+							</span>
 							<span className={style.days}>
-								{method.days[0]}–{method.days[1]} business days
+								{t('delivery.days', { from: method.days[0], to: method.days[1] })}
 							</span>
 						</span>
-						<span className={style.price}>{price === 0 ? 'Free' : formatMoney(price)}</span>
+						<span className={style.price}>
+							{price === 0 ? t('shipping.free') : formatMoney(price)}
+						</span>
 					</label>
 				)
 			})}

@@ -1,10 +1,10 @@
 /** Shipping address fields, in the order they are shown in forms. */
 export const ADDRESS_FIELDS = [
-	{ name: 'fullName', label: 'Full name', autoComplete: 'name' },
-	{ name: 'street', label: 'Street and house number', autoComplete: 'street-address' },
-	{ name: 'postalCode', label: 'Postal code', autoComplete: 'postal-code' },
-	{ name: 'city', label: 'City', autoComplete: 'address-level2' },
-	{ name: 'country', label: 'Country', autoComplete: 'country-name' },
+	{ name: 'fullName', labelKey: 'address.fullName', autoComplete: 'name' },
+	{ name: 'street', labelKey: 'address.street', autoComplete: 'street-address' },
+	{ name: 'postalCode', labelKey: 'address.postalCode', autoComplete: 'postal-code' },
+	{ name: 'city', labelKey: 'address.city', autoComplete: 'address-level2' },
+	{ name: 'country', labelKey: 'address.country', autoComplete: 'country-name' },
 ]
 
 export const EMPTY_ADDRESS = Object.fromEntries(ADDRESS_FIELDS.map(({ name }) => [name, '']))

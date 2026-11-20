@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as productsApi from '../../api/products'
 import SearchForm from './SearchForm'
+import { formatMoney } from '../../utils/money'
 
 vi.mock('../../api/products', async (importOriginal) => ({
 	...(await importOriginal()),
@@ -59,7 +60,7 @@ describe('SearchForm', () => {
 		fireEvent.change(input(), { target: { value: 'ki' } })
 
 		expect(
-			await screen.findByRole('option', { name: 'Kiiki Trail Print Tee, $24.00' }),
+			await screen.findByRole('option', { name: `Kiiki Trail Print Tee, ${formatMoney(24)}` }),
 		).toBeInTheDocument()
 		expect(screen.getByRole('option', { name: 'Brand Kiiki, 2 items' })).toBeInTheDocument()
 		expect(screen.queryByRole('option', { name: /Maris/ })).not.toBeInTheDocument()

@@ -31,9 +31,12 @@ const product = ({
 	colors,
 	sizes = CLOTHING,
 	stock,
+	price,
+	compareAtPrice,
 	...fields
 }) => ({
 	slug,
+	...pln({ price, compareAtPrice }),
 	variants: colors.map((color, index) => ({
 		color,
 		images: (photosByColor[color] ?? photos).map((photo) => `/images/products/${photo}.jpg`),
@@ -45,6 +48,23 @@ const product = ({
 /** Different stock numbers for additional colors, so variants are visibly independent. */
 const withStockOffset = (labels, offset) =>
 	labels.map((label, i) => ({ label, stock: (i * 5 + offset * 3) % 8 }))
+
+/**
+ * Demo prices are written in a rough "base" unit and turned into złoty shop prices:
+ * ×4, rounded to the nearest 10 and ending in .99 (25 → 99.99 zł).
+ */
+const toPln = (base) => Math.round((base * 4) / 10) * 10 - 0.01
+
+const pln = ({ price, compareAtPrice }) => {
+	const prices = { price: toPln(price) }
+	if (compareAtPrice) {
+		prices.compareAtPrice = toPln(compareAtPrice)
+		if (prices.compareAtPrice <= prices.price) {
+			throw new Error(`Compare-at price must stay above the price (${price} / ${compareAtPrice})`)
+		}
+	}
+	return prices
+}
 
 const products = [
 	// women

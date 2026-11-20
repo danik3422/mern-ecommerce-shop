@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { money } from '../test/money'
 
 const stats = {
 	revenue: 1234.5,
@@ -72,7 +73,7 @@ describe('admin panel access', () => {
 
 		expect(await screen.findByRole('heading', { level: 1, name: 'Dashboard' })).toBeInTheDocument()
 		expect(screen.getByRole('navigation', { name: 'Admin' })).toBeInTheDocument()
-		expect(await screen.findByText('$1,234.50')).toBeInTheDocument()
+		expect(await screen.findByText(money(1234.5))).toBeInTheDocument()
 		expect(screen.getByRole('img', { name: /revenue, last 30 days/i })).toBeInTheDocument()
 		expect(screen.getByRole('link', { name: 'Coat' })).toHaveAttribute('href', '/admin/products/p1')
 		expect(screen.getByText('Signed in as boss')).toBeInTheDocument()

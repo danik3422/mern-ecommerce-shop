@@ -4,15 +4,14 @@ import { useState } from 'react'
 import { getErrorMessage, getFieldErrors } from '../../api/client'
 import { requestReturn } from '../../api/orders'
 import { useShopConfig } from '../../hooks/useShopConfig'
-import { formatMoney } from '../../utils/money'
 import Alert from '../ui/Alert'
 import Button from '../ui/Button'
 import Modal from '../ui/Modal'
 import Select from '../ui/Select'
-import { RETURN_REASONS, RETURN_STATUS_TEXT, canRequestReturn, returnDeadline } from './returns'
+import { RETURN_REASONS, canRequestReturn, returnDeadline } from './returns'
 import style from './ReturnSection.module.css'
-
-const dateFormatter = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' })
+import { useI18n } from '../../i18n/useI18n'
+import { colorName } from '../../i18n/catalogText'
 
 /**
  * Return status of an order, or a "Return items" button while the order can be returned.
@@ -21,6 +20,7 @@ const dateFormatter = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' })
  */
 const ReturnSection = ({ order, token, onChange }) => {
 	const config = useShopConfig()
+	const { t, formatDate, formatMoney } = useI18n()
 	const [isOpen, setIsOpen] = useState(false)
 	const request = order.returnRequest
 
@@ -29,9 +29,12 @@ const ReturnSection = ({ order, token, onChange }) => {
 			<Alert tone={request.status === 'rejected' ? 'error' : 'info'} className={style.status}>
 				<RotateCcw size={16} aria-hidden />
 				<span>
-					{RETURN_STATUS_TEXT[request.status]}{' '}
-					{request.status === 'refunded' && `${formatMoney(request.refundAmount)} refunded.`}
-					{request.note && <span className={style.note}> Note from the shop: {request.note}</span>}
+					{t(`returns.status.${request.status}`)}{' '}
+					{request.status === 'refunded' &&
+						t('returns.refunded', { amount: formatMoney(request.refundAmount) })}
+					{request.note && (
+						<span className={style.note}> {t('returns.shopNote', { note: request.note })}</span>
+					)}
 				</span>
 			</Alert>
 		)
@@ -44,12 +47,12 @@ const ReturnSection = ({ order, token, onChange }) => {
 		<>
 			<p className={style.hint}>
 				<Button variant='secondary' size='sm' onClick={() => setIsOpen(true)}>
-					<RotateCcw size={14} aria-hidden /> Return items
+					<RotateCcw size={14} aria-hidden /> {t('returns.button')}
 				</Button>
-				<span>Free returns until {dateFormatter.format(deadline)}</span>
+				<span>{t('returns.freeUntil', { date: formatDate(deadline) })}</span>
 			</p>
 			{isOpen && (
-				<Modal title='Return items' onClose={() => setIsOpen(false)}>
+				<Modal title={t('returns.title')} onClose={() => setIsOpen(false)}>
 					<ReturnForm
 						order={order}
 						token={token}
@@ -65,6 +68,7 @@ const ReturnSection = ({ order, token, onChange }) => {
 }
 
 const ReturnForm = ({ order, token, onDone }) => {
+	const { t, formatMoney } = useI18n()
 	// quantity to return per order line (0 = keep)
 	const [quantities, setQuantities] = useState(() => order.items.map(() => 0))
 	const [reason, setReason] = useState(RETURN_REASONS[0].value)
@@ -99,7 +103,7 @@ const ReturnForm = ({ order, token, onDone }) => {
 	return (
 		<form className={style.form} onSubmit={handleSubmit}>
 			<fieldset className={style.fieldset}>
-				<legend className={style.legend}>Which items do you want to return?</legend>
+				<legend className={style.legend}>{t('returns.which')}</legend>
 				<ul role='list' className={style.items}>
 					{order.items.map((item, index) => (
 						<li key={index} className={style.item}>
@@ -107,17 +111,19 @@ const ReturnForm = ({ order, token, onDone }) => {
 							<span className={style.title}>
 								{item.brand} {item.title}
 								<span className={style.meta}>
-									{item.color} · {item.size} · {formatMoney(item.price)}
+									{[item.color && colorName(t, item.color), item.size, formatMoney(item.price)]
+										.filter(Boolean)
+										.join(' · ')}
 								</span>
 							</span>
 							<Select
-								label={`Quantity to return of ${item.title}`}
+								label={t('returns.quantityOf', { title: item.title })}
 								hideLabel
 								value={String(quantities[index])}
 								onChange={(e) => setQuantity(index, Number(e.target.value))}
 								options={Array.from({ length: item.quantity + 1 }, (_, q) => ({
 									value: String(q),
-									label: q === 0 ? 'Keep' : `Return ${q}`,
+									label: q === 0 ? t('returns.keep') : t('returns.returnCount', { count: q }),
 								}))}
 								className={style.quantity}
 							/>
@@ -126,13 +132,16 @@ const ReturnForm = ({ order, token, onDone }) => {
 				</ul>
 			</fieldset>
 			<Select
-				label='Reason'
+				label={t('returns.reason')}
 				value={reason}
 				onChange={(e) => setReason(e.target.value)}
-				options={RETURN_REASONS}
+				options={RETURN_REASONS.map(({ value }) => ({
+					value,
+					label: t(`returns.reasons.${value}`),
+				}))}
 			/>
 			<label className={style.commentLabel}>
-				Comment (optional)
+				{t('returns.comment')}
 				<textarea
 					className={style.comment}
 					value={comment}
@@ -145,7 +154,7 @@ const ReturnForm = ({ order, token, onDone }) => {
 				<Alert tone='error'>{Object.values(fieldErrors)[0] ?? getErrorMessage(submit.error)}</Alert>
 			)}
 			<Button type='submit' fullWidth disabled={!chosen.length || submit.isPending}>
-				{submit.isPending ? 'Sending…' : 'Request return'}
+				{submit.isPending ? t('returns.sending') : t('returns.submit')}
 			</Button>
 		</form>
 	)

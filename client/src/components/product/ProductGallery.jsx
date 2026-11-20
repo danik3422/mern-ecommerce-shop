@@ -3,12 +3,14 @@ import { useState } from 'react'
 import { cx } from '../../utils/cx'
 import ImageViewer from './ImageViewer'
 import style from './ProductGallery.module.css'
+import { useI18n } from '../../i18n/useI18n'
 
 /**
  * Main image with thumbnails. Thumbnails are buttons; on the main image the
  * left/right arrow keys and the previous/next buttons switch images.
  */
 const ProductGallery = ({ images, title }) => {
+	const { t } = useI18n()
 	const [index, setIndex] = useState(0)
 	const [isViewerOpen, setIsViewerOpen] = useState(false)
 	const count = images.length
@@ -26,8 +28,8 @@ const ProductGallery = ({ images, title }) => {
 			type='button'
 			className={style.expand}
 			onClick={openViewer}
-			aria-label='Open images in full screen'
-			title='Full screen'
+			aria-label={t('gallery.openFullscreen')}
+			title={t('gallery.fullscreen')}
 		>
 			<Maximize2 size={18} aria-hidden />
 		</button>
@@ -58,19 +60,19 @@ const ProductGallery = ({ images, title }) => {
 		<section
 			className={style.gallery}
 			aria-roledescription='carousel'
-			aria-label={`${title} images`}
+			aria-label={t('gallery.images', { title })}
 		>
 			<div
 				className={style.main}
 				role='group'
 				tabIndex={0}
 				onKeyDown={handleKeyDown}
-				aria-label={`Image ${index + 1} of ${count}. Use the arrow keys to switch images.`}
+				aria-label={t('gallery.instructions', { index: index + 1, count })}
 			>
 				<img
 					className={style.image}
 					src={images[index]}
-					alt={`${title}, image ${index + 1}`}
+					alt={t('gallery.alt', { title, index: index + 1 })}
 					onClick={openViewer}
 				/>
 				{expandButton}
@@ -78,7 +80,7 @@ const ProductGallery = ({ images, title }) => {
 					type='button'
 					className={cx(style.arrow, style.prev)}
 					onClick={() => show(index - 1)}
-					aria-label='Previous image'
+					aria-label={t('gallery.previous')}
 				>
 					<ChevronLeft size={20} aria-hidden />
 				</button>
@@ -86,7 +88,7 @@ const ProductGallery = ({ images, title }) => {
 					type='button'
 					className={cx(style.arrow, style.next)}
 					onClick={() => show(index + 1)}
-					aria-label='Next image'
+					aria-label={t('gallery.next')}
 				>
 					<ChevronRight size={20} aria-hidden />
 				</button>
@@ -98,7 +100,7 @@ const ProductGallery = ({ images, title }) => {
 							type='button'
 							className={cx(style.thumbnail, i === index && style.active)}
 							onClick={() => setIndex(i)}
-							aria-label={`Show image ${i + 1} of ${count}`}
+							aria-label={t('gallery.show', { index: i + 1, count })}
 							aria-current={i === index}
 						>
 							<img src={src} alt='' loading='lazy' />

@@ -7,42 +7,44 @@ import AddressesPage from './AddressesPage'
 import OrdersPage from './OrdersPage'
 import ProfilePage from './ProfilePage'
 import WishlistPage from './WishlistPage'
+import { useI18n } from '../../i18n/useI18n'
 
 const SECTIONS = [
-	{ to: '/account', label: 'Orders', icon: Package, end: true },
-	{ to: '/account/wishlist', label: 'Wishlist', icon: Heart },
-	{ to: '/account/addresses', label: 'Addresses', icon: MapPin },
-	{ to: '/account/profile', label: 'Profile', icon: UserRound },
+	{ to: '/account', labelKey: 'account.orders', icon: Package, end: true },
+	{ to: '/account/wishlist', labelKey: 'account.wishlist', icon: Heart },
+	{ to: '/account/addresses', labelKey: 'account.addresses', icon: MapPin },
+	{ to: '/account/profile', labelKey: 'account.profile', icon: UserRound },
 ]
 
 /** /account/* — side navigation (tabs on mobile) and the active section. */
 const AccountPage = () => {
 	const { user, logout } = useAuth()
+	const { t } = useI18n()
 
 	return (
 		<div className={cx('container', style.page)}>
 			<div className={style.intro}>
-				<p className='eyebrow'>My account</p>
-				<p className={style.greeting}>Hi, {user.username}</p>
+				<p className='eyebrow'>{t('account.myAccount')}</p>
+				<p className={style.greeting}>{t('account.hi', { name: user.username })}</p>
 			</div>
 
 			<div className={style.layout}>
-				<nav className={style.nav} aria-label='Account'>
+				<nav className={style.nav} aria-label={t('account.nav')}>
 					<ul role='list' className={style.navList}>
-						{SECTIONS.map(({ to, label, icon: Icon, end }) => (
+						{SECTIONS.map(({ to, labelKey, icon: Icon, end }) => (
 							<li key={to}>
 								<NavLink
 									to={to}
 									end={end}
 									className={({ isActive }) => cx(style.navLink, isActive && style.active)}
 								>
-									<Icon size={18} aria-hidden /> {label}
+									<Icon size={18} aria-hidden /> {t(labelKey)}
 								</NavLink>
 							</li>
 						))}
 						<li className={style.signOut}>
 							<button type='button' className={style.navLink} onClick={logout}>
-								<LogOut size={18} aria-hidden /> Sign out
+								<LogOut size={18} aria-hidden /> {t('account.signOut')}
 							</button>
 						</li>
 					</ul>

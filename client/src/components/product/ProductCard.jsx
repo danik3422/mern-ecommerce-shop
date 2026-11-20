@@ -4,35 +4,43 @@ import RatingStars from '../reviews/RatingStars'
 import Price from './Price'
 import QuickAdd from './QuickAdd'
 import style from './ProductCard.module.css'
+import { useI18n } from '../../i18n/useI18n'
 
-const ProductCard = ({ product }) => (
-	// `quick-add-host` lets QuickAdd react to hovering anywhere on the card
-	<div className={`${style.card} quick-add-host`}>
-		<Link to={`/product/${product.slug}`} className={style.link}>
-			<div className={style.media}>
-				<img className={style.image} src={product.images[0]} alt='' loading='lazy' />
-				{/* a second photo is revealed on hover */}
-				{product.images[1] && (
-					<img className={style.hoverImage} src={product.images[1]} alt='' loading='lazy' />
-				)}
-				{!product.inStock && <span className={style.tag}>Sold out</span>}
-				{product.inStock && product.onSale && (
-					<span className={`${style.tag} ${style.saleTag}`}>Sale</span>
-				)}
+const ProductCard = ({ product }) => {
+	const { t } = useI18n()
+	return (
+		// `quick-add-host` lets QuickAdd react to hovering anywhere on the card
+		<div className={`${style.card} quick-add-host`}>
+			<Link to={`/product/${product.slug}`} className={style.link}>
+				<div className={style.media}>
+					<img className={style.image} src={product.images[0]} alt='' loading='lazy' />
+					{/* a second photo is revealed on hover */}
+					{product.images[1] && (
+						<img className={style.hoverImage} src={product.images[1]} alt='' loading='lazy' />
+					)}
+					{!product.inStock && <span className={style.tag}>{t('card.soldOut')}</span>}
+					{product.inStock && product.onSale && (
+						<span className={`${style.tag} ${style.saleTag}`}>{t('card.sale')}</span>
+					)}
+				</div>
+				<div className={style.info}>
+					<p className={style.brand}>{product.brand}</p>
+					<h3 className={style.title}>{product.title}</h3>
+					<Price product={product} />
+					<RatingStars
+						value={product.rating?.average ?? 0}
+						count={product.rating?.count}
+						size={12}
+					/>
+				</div>
+			</Link>
+			<QuickAdd product={product} />
+			<div className={style.wishlist}>
+				<WishlistButton productId={product._id} />
 			</div>
-			<div className={style.info}>
-				<p className={style.brand}>{product.brand}</p>
-				<h3 className={style.title}>{product.title}</h3>
-				<Price product={product} />
-				<RatingStars value={product.rating?.average ?? 0} count={product.rating?.count} size={12} />
-			</div>
-		</Link>
-		<QuickAdd product={product} />
-		<div className={style.wishlist}>
-			<WishlistButton productId={product._id} />
 		</div>
-	</div>
-)
+	)
+}
 
 export const ProductCardSkeleton = () => (
 	<div className={style.card} aria-hidden>

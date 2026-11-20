@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Order } from '../src/models/Order.js'
 import * as payments from '../src/services/payments.js'
 import { api, createProduct, createUser, validAddress, stockOf } from './helpers.js'
+import { price, roundMoney } from './pricingHelpers.js'
 
 // Stripe is never called in tests: the payments service is replaced with mocks
 vi.mock('../src/services/payments.js', () => ({
@@ -68,7 +69,8 @@ describe('payments with Stripe', () => {
 		expect(checkoutUrl).toMatch(/^https:\/\/checkout\.stripe\.com\//)
 		expect(order.payment).toMatchObject({ provider: 'stripe', sessionId: expect.any(String) })
 		const [sessionOrder] = vi.mocked(payments.createCheckoutSession).mock.calls.at(-1)
-		expect(sessionOrder.amount).toBe(60)
+		// 2 × 30 is below the free-shipping threshold
+		expect(sessionOrder.amount).toBe(roundMoney(60 + price('standard')))
 	})
 
 	it('cancels the order and returns stock when Stripe is unavailable', async () => {

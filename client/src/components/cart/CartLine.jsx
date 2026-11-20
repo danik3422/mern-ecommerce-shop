@@ -1,16 +1,18 @@
 import { Link } from 'react-router'
 import { MAX_QUANTITY } from '../../cart/cartLines'
-import { formatMoney } from '../../utils/money'
-import { capitalize } from '../../utils/text'
 import Button from '../ui/Button'
 import QuantityStepper from '../ui/QuantityStepper'
 import style from './CartLine.module.css'
+import { useI18n } from '../../i18n/useI18n'
+import { colorName } from '../../i18n/catalogText'
+import { stockOf } from '../../utils/variants'
 
 /** @param item `{ key, quantity, color, size, product }` from useCartItems */
 const CartLine = ({ item, onQuantityChange }) => {
+	const { t, formatMoney } = useI18n()
 	const { product } = item
 	const productUrl = `/product/${product.slug}`
-	const options = [item.color && capitalize(item.color), item.size].filter(Boolean).join(' · ')
+	const options = [item.color && colorName(t, item.color), item.size].filter(Boolean).join(' · ')
 
 	return (
 		<li className={style.line}>
@@ -26,11 +28,11 @@ const CartLine = ({ item, onQuantityChange }) => {
 					<p className={style.price}>{formatMoney(product.price * item.quantity)}</p>
 				</div>
 				{options && <p className={style.options}>{options}</p>}
-				{item.quantity > 1 && <p className={style.options}>{formatMoney(product.price)} each</p>}
-				{!product.inStock && (
-					<p className={style.warning}>
-						Not enough stock in this size — reduce the quantity or remove it
-					</p>
+				{item.quantity > 1 && (
+					<p className={style.options}>{t('bag.each', { price: formatMoney(product.price) })}</p>
+				)}
+				{stockOf(item.variant, item.size) < item.quantity && (
+					<p className={style.warning}>{t('bag.notEnoughStock')}</p>
 				)}
 
 				<div className={style.controls}>
@@ -38,10 +40,10 @@ const CartLine = ({ item, onQuantityChange }) => {
 						value={item.quantity}
 						onChange={(quantity) => onQuantityChange(item.key, quantity)}
 						max={MAX_QUANTITY}
-						label={`quantity of ${product.title}`}
+						label={t('bag.quantityOf', { title: product.title })}
 					/>
 					<Button variant='ghost' size='sm' onClick={() => onQuantityChange(item.key, 0)}>
-						Remove
+						{t('bag.remove')}
 					</Button>
 				</div>
 			</div>

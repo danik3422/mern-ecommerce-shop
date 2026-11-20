@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { shopKeys } from '../../api/shop'
 import FreeShippingProgress from './FreeShippingProgress'
+import { money } from '../../test/money'
 
 const renderProgress = (subtotal) => {
 	const queryClient = new QueryClient()
@@ -17,7 +18,7 @@ const renderProgress = (subtotal) => {
 describe('FreeShippingProgress', () => {
 	it('shows how much is missing for free shipping', () => {
 		renderProgress(38)
-		expect(screen.getByText(/more for free shipping/)).toHaveTextContent('Add $12.00 more')
+		expect(screen.getByText(/more for free shipping/)).toHaveTextContent(`Add ${money(12)} more`)
 		expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '76')
 	})
 

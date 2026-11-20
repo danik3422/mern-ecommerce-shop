@@ -7,6 +7,7 @@ import { toApiItems } from '../../cart/cartLines'
 import Button from '../ui/Button'
 import TextField from '../ui/TextField'
 import style from './PromoCodeField.module.css'
+import { useI18n } from '../../i18n/useI18n'
 
 /**
  * Promo code input. "Apply" checks the code with the server first, so the reason
@@ -16,6 +17,7 @@ import style from './PromoCodeField.module.css'
  * @param notice a message to show, e.g. why an applied code was removed
  */
 const PromoCodeField = ({ lines, shippingMethod, appliedCode, onApply, notice }) => {
+	const { t } = useI18n()
 	const [code, setCode] = useState('')
 	const check = useMutation({
 		mutationFn: (promoCode) => fetchQuote({ items: toApiItems(lines), shippingMethod, promoCode }),
@@ -29,14 +31,12 @@ const PromoCodeField = ({ lines, shippingMethod, appliedCode, onApply, notice })
 		return (
 			<div className={style.applied}>
 				<Tag size={16} aria-hidden />
-				<span>
-					Code <strong>{appliedCode}</strong> applied
-				</span>
+				<span>{t('promo.applied', { code: appliedCode })}</span>
 				<Button
 					variant='ghost'
 					size='sm'
 					onClick={() => onApply(null)}
-					aria-label='Remove promo code'
+					aria-label={t('promo.remove')}
 				>
 					<X size={16} aria-hidden />
 				</Button>
@@ -57,7 +57,7 @@ const PromoCodeField = ({ lines, shippingMethod, appliedCode, onApply, notice })
 			}}
 		>
 			<TextField
-				label='Promo code'
+				label={t('promo.label')}
 				value={code}
 				onChange={(e) => {
 					setCode(e.target.value)
@@ -68,7 +68,7 @@ const PromoCodeField = ({ lines, shippingMethod, appliedCode, onApply, notice })
 				className={style.field}
 			/>
 			<Button type='submit' variant='secondary' disabled={!code.trim() || check.isPending}>
-				Apply
+				{t('promo.apply')}
 			</Button>
 		</form>
 	)

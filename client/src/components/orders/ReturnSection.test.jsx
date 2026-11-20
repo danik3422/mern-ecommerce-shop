@@ -5,6 +5,7 @@ import * as ordersApi from '../../api/orders'
 import { shopKeys } from '../../api/shop'
 import { canRequestReturn } from './returns'
 import ReturnSection from './ReturnSection'
+import { money } from '../../test/money'
 
 vi.mock('../../api/orders', async (importOriginal) => ({
 	...(await importOriginal()),
@@ -99,7 +100,9 @@ describe('returns', () => {
 				returnRequest: { status: 'refunded', refundAmount: 45, note: 'Thanks!' },
 			}),
 		})
-		expect(screen.getByText(/Return completed and refunded/)).toHaveTextContent('$45.00 refunded')
+		expect(screen.getByText(/Return completed and refunded/)).toHaveTextContent(
+			`${money(45)} refunded`,
+		)
 		expect(screen.getByText(/Note from the shop: Thanks!/)).toBeInTheDocument()
 		expect(screen.queryByRole('button', { name: /return items/i })).not.toBeInTheDocument()
 	})

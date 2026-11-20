@@ -11,9 +11,15 @@ import NotFound from './pages/NotFound'
 import Product from './pages/Product'
 import ProductList from './pages/ProductList'
 import Register from './pages/Register'
+import { useI18n } from './i18n/useI18n'
 
 // The admin panel is only needed by staff, so it is loaded on demand in its own chunk
 const AdminApp = lazy(() => import('./admin/AdminApp'))
+
+const AdminFallback = () => {
+	const { t } = useI18n()
+	return <p className='container'>{t('account.loadingAdmin')}</p>
+}
 
 const AppRoutes = () => (
 	<Routes>
@@ -41,7 +47,7 @@ const AppRoutes = () => (
 			path='admin/*'
 			element={
 				<RequireAuth admin>
-					<Suspense fallback={<p className='container'>Loading admin…</p>}>
+					<Suspense fallback={<AdminFallback />}>
 						<AdminApp />
 					</Suspense>
 				</RequireAuth>

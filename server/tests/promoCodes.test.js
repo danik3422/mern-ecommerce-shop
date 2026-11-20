@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { PromoCode } from '../src/models/PromoCode.js'
 import { api, createProduct, createUser, validAddress } from './helpers.js'
+import { formatAmount } from '../src/services/pricing.js'
+import { price, roundMoney } from './pricingHelpers.js'
 
 const line = (product, quantity = 1) => ({
 	productId: product.id,
@@ -35,8 +37,8 @@ describe('checkout quote and promo codes', () => {
 		expect(body).toMatchObject({
 			subtotal: 60,
 			discount: 12,
-			shipping: 9.9,
-			amount: 57.9,
+			shipping: price('express'),
+			amount: roundMoney(48 + price('express')),
 			promo: { code: 'SPRING20', description: '20% off' },
 		})
 	})
@@ -47,11 +49,13 @@ describe('checkout quote and promo codes', () => {
 		['expired', { endsAt: new Date(Date.now() - 1000) }, 'CODE', /expired/],
 		['not started', { startsAt: new Date(Date.now() + 86_400_000) }, 'CODE', /not active yet/],
 		['used up', { maxUses: 1, usedCount: 1 }, 'CODE', /used up/],
-		['below minimum', { minSubtotal: 100 }, 'CODE', /at least \$100/],
+		['below minimum', { minSubtotal: 100 }, 'CODE', `at least ${formatAmount(100)}`],
 	])('explains why a %s code cannot be used', async (_case, overrides, code, message) => {
 		await PromoCode.create({ code: 'CODE', type: 'fixed', value: 5, ...overrides })
 		const { body } = await quote({ items: [line(product)], promoCode: code }).expect(400)
-		expect(body.details).toEqual([{ path: 'promoCode', message: expect.stringMatching(message) }])
+		expect(body.details).toEqual([
+			{ path: 'promoCode', message: expect.stringContaining(message.source ?? message) },
+		])
 	})
 
 	it('counts a use per order, gives it back on cancel and never exceeds the limit', async () => {
@@ -69,7 +73,11 @@ describe('checkout quote and promo codes', () => {
 		const statuses = [first.status, second.status].sort()
 		expect(statuses).toEqual([201, 409])
 		const winner = first.status === 201 ? first : second
-		expect(winner.body.order).toMatchObject({ discount: 5, promoCode: 'ONCE', amount: 29.9 })
+		expect(winner.body.order).toMatchObject({
+			discount: 5,
+			promoCode: 'ONCE',
+			amount: roundMoney(25 + price('standard')),
+		})
 		expect((await PromoCode.findOne({ code: 'ONCE' })).usedCount).toBe(1)
 
 		const winnerAuth = first.status === 201 ? alice.auth : bob.auth
@@ -84,7 +92,11 @@ describe('checkout quote and promo codes', () => {
 			.set(auth)
 			.send({ items: [line(product)], address: validAddress, shippingMethod: 'locker' })
 			.expect(201)
-		expect(body.order.shippingMethod).toEqual({ id: 'locker', label: 'Parcel locker', price: 2.9 })
+		expect(body.order.shippingMethod).toEqual({
+			id: 'locker',
+			label: 'Parcel locker',
+			price: price('locker'),
+		})
 	})
 })
 

@@ -16,18 +16,19 @@ import ProductGrid from '../components/product/ProductGrid'
 import Button from '../components/ui/Button'
 import Drawer from '../components/ui/Drawer'
 import Select from '../components/ui/Select'
-import { CATEGORY_TITLES, SALE_CATEGORY, SORT_OPTIONS } from '../data/catalog'
+import { SALE_CATEGORY, SORT_VALUES } from '../data/catalog'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useFacets, useProducts } from '../hooks/useProducts'
-import { capitalize } from '../utils/text'
 import style from './ProductList.module.css'
+import { categoryTitle } from '../i18n/catalogText'
+import { useI18n } from '../i18n/useI18n'
 
 const PAGE_SIZE = 24
 
-const pageTitle = (category, q) => {
-	if (q) return `Results for “${q}”`
-	if (!category) return 'All products'
-	return CATEGORY_TITLES[category] ?? capitalize(category)
+const pageTitle = (t, category, q) => {
+	if (q) return t('list.resultsFor', { query: q })
+	if (!category) return t('list.allProducts')
+	return categoryTitle(t, category)
 }
 
 /** Catalog: category, sale or search results with filters kept in the URL. */
@@ -35,10 +36,11 @@ const ProductList = () => {
 	const { category } = useParams()
 	const [searchParams, setSearchParams] = useSearchParams()
 	const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+	const { t } = useI18n()
 
 	const filters = readFilters(searchParams)
 	const isSale = category === SALE_CATEGORY
-	const title = pageTitle(category, filters.q)
+	const title = pageTitle(t, category, filters.q)
 	useDocumentTitle(title)
 
 	const products = useProducts(toApiQuery(filters, category, PAGE_SIZE))
@@ -50,7 +52,7 @@ const ProductList = () => {
 
 	const chips = activeFilterChips(isSale ? { ...filters, onSale: false } : filters)
 	const total = products.data?.total
-	const countText = total === undefined ? '' : `${total} ${total === 1 ? 'product' : 'products'}`
+	const countText = total === undefined ? '' : t('common.products', { count: total })
 
 	const filterPanel = (
 		<FilterPanel
@@ -65,9 +67,7 @@ const ProductList = () => {
 		<div className='container'>
 			<div className={style.header}>
 				<div>
-					{filters.q && category && (
-						<p className='eyebrow'>{CATEGORY_TITLES[category] ?? capitalize(category)}</p>
-					)}
+					{filters.q && category && <p className='eyebrow'>{categoryTitle(t, category)}</p>}
 					<h1 className={style.title}>{title}</h1>
 				</div>
 				<p className={style.count} aria-live='polite'>
@@ -83,15 +83,15 @@ const ProductList = () => {
 					onClick={() => setIsDrawerOpen(true)}
 					aria-haspopup='dialog'
 				>
-					<SlidersHorizontal size={16} aria-hidden /> Filters
+					<SlidersHorizontal size={16} aria-hidden /> {t('list.filters')}
 					{chips.length > 0 && ` (${chips.length})`}
 				</Button>
 				<Select
-					label='Sort by'
+					label={t('list.sortBy')}
 					hideLabel
 					name='sort'
 					value={filters.sort}
-					options={SORT_OPTIONS}
+					options={SORT_VALUES.map((value) => ({ value, label: t(`sort.${value}`) }))}
 					onChange={(e) => applyChanges({ sort: e.target.value })}
 					className={style.sort}
 				/>
@@ -100,25 +100,23 @@ const ProductList = () => {
 			<ActiveFilters chips={chips} onRemove={applyChanges} onClearAll={clearAll} />
 
 			<div className={style.layout}>
-				<aside className={style.sidebar} aria-label='Filters'>
+				<aside className={style.sidebar} aria-label={t('list.filters')}>
 					{filterPanel}
 				</aside>
 
-				<section className={style.results} aria-label='Products'>
+				<section className={style.results} aria-label={t('search.products')}>
 					{products.data?.total === 0 ? (
 						<div className={style.empty}>
 							<p>
-								{filters.q
-									? `No products found for “${filters.q}”.`
-									: 'No products match these filters.'}
+								{filters.q ? t('list.noResultsFor', { query: filters.q }) : t('list.noMatches')}
 							</p>
 							{chips.length > 0 ? (
 								<Button variant='secondary' onClick={clearAll}>
-									Clear filters
+									{t('list.clearFilters')}
 								</Button>
 							) : (
 								<Button as={Link} to='/products' variant='secondary'>
-									Browse all products
+									{t('list.browseAll')}
 								</Button>
 							)}
 						</div>
@@ -142,13 +140,15 @@ const ProductList = () => {
 
 			{isDrawerOpen && (
 				<Drawer
-					title='Filters'
+					title={t('list.filters')}
 					side='left'
-					closeLabel='Close filters'
+					closeLabel={t('list.closeFilters')}
 					onClose={closeDrawer}
 					footer={
 						<Button fullWidth onClick={closeDrawer}>
-							{total === undefined ? 'Show products' : `Show ${countText}`}
+							{total === undefined
+								? t('list.showProducts')
+								: t('list.show', { products: countText })}
 						</Button>
 					}
 				>

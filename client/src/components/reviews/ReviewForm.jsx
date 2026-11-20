@@ -8,6 +8,7 @@ import Button from '../ui/Button'
 import TextField from '../ui/TextField'
 import style from './ProductReviews.module.css'
 import StarRatingInput from './StarRatingInput'
+import { useI18n } from '../../i18n/useI18n'
 
 const EMPTY = { rating: 0, title: '', body: '' }
 
@@ -16,6 +17,7 @@ const isExpectedRefusal = (error) => [403, 409].includes(error?.response?.status
 
 const ReviewForm = ({ productId, onDone }) => {
 	const queryClient = useQueryClient()
+	const { t } = useI18n()
 	const bodyId = useId()
 	const [form, setForm] = useState(EMPTY)
 	const [ratingError, setRatingError] = useState('')
@@ -34,21 +36,21 @@ const ReviewForm = ({ productId, onDone }) => {
 
 	const handleSubmit = (e) => {
 		e.preventDefault()
-		if (!form.rating) return setRatingError('Choose a rating from 1 to 5')
+		if (!form.rating) return setRatingError(t('reviews.chooseRating'))
 		setRatingError('')
 		const { title, ...rest } = form
 		review.mutate(title.trim() ? { ...rest, title } : rest)
 	}
 
 	return (
-		<form className={style.form} onSubmit={handleSubmit} aria-label='Write a review'>
+		<form className={style.form} onSubmit={handleSubmit} aria-label={t('reviews.write')}>
 			<StarRatingInput
 				value={form.rating}
 				onChange={(rating) => setForm({ ...form, rating })}
 				error={ratingError || fieldErrors.rating}
 			/>
 			<TextField
-				label='Title (optional)'
+				label={t('reviews.titleField')}
 				name='title'
 				maxLength={120}
 				value={form.title}
@@ -57,7 +59,7 @@ const ReviewForm = ({ productId, onDone }) => {
 			/>
 			<div className={fieldStyle.field}>
 				<label className={fieldStyle.label} htmlFor={bodyId}>
-					Your review
+					{t('reviews.body')}
 				</label>
 				<textarea
 					id={bodyId}
@@ -86,10 +88,10 @@ const ReviewForm = ({ productId, onDone }) => {
 
 			<div className={style.formActions}>
 				<Button type='submit' disabled={review.isPending}>
-					{review.isPending ? 'Posting…' : 'Post review'}
+					{review.isPending ? t('reviews.posting') : t('reviews.post')}
 				</Button>
 				<Button variant='ghost' onClick={onDone}>
-					Cancel
+					{t('common.cancel')}
 				</Button>
 			</div>
 		</form>

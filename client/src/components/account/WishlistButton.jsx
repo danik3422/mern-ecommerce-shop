@@ -5,6 +5,7 @@ import Button from '../ui/Button'
 import { useToast } from '../ui/toast/useToast'
 import { useWishlist } from './useWishlist'
 import style from './WishlistButton.module.css'
+import { useI18n } from '../../i18n/useI18n'
 
 /**
  * Heart toggle that adds/removes a product from the wishlist.
@@ -16,6 +17,7 @@ const WishlistButton = ({ productId, variant = 'icon' }) => {
 	const navigate = useNavigate()
 	const location = useLocation()
 	const toast = useToast()
+	const { t } = useI18n()
 
 	const handleClick = (e) => {
 		// the icon sits on top of a product link
@@ -28,16 +30,16 @@ const WishlistButton = ({ productId, variant = 'icon' }) => {
 		toggle()
 		toast.show(
 			isSaved
-				? { message: 'Removed from your wishlist' }
+				? { message: t('wishlist.removed') }
 				: {
-						message: 'Saved to your wishlist',
+						message: t('wishlist.added'),
 						tone: 'success',
-						action: { label: 'View', to: '/account/wishlist' },
+						action: { label: t('wishlist.view'), to: '/account/wishlist' },
 					},
 		)
 	}
 
-	const label = isSaved ? 'Remove from wishlist' : 'Add to wishlist'
+	const label = isSaved ? t('wishlist.remove') : t('wishlist.add')
 	const icon = <Heart size={18} aria-hidden className={cx(isSaved && style.filled)} />
 
 	if (variant === 'button') {

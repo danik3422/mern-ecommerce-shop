@@ -3,8 +3,6 @@ import { Link, useSearchParams } from 'react-router'
 import { MAX_QUANTITY } from '../../cart/cartLines'
 import { useCart } from '../../cart/useCart'
 import { findVariant, isVariantInStock, stockOf } from '../../utils/variants'
-import { capitalize } from '../../utils/text'
-import { CATEGORY_TITLES } from '../../data/catalog'
 import { rememberViewedProduct } from '../../hooks/useRecentlyViewed'
 import WishlistButton from '../account/WishlistButton'
 import FreeShippingNote from '../cart/FreeShippingNote'
@@ -21,11 +19,14 @@ import style from './ProductDetails.module.css'
 import ProductGallery from './ProductGallery'
 import SizeGuide from './SizeGuide'
 import SizePicker from './SizePicker'
+import { useI18n } from '../../i18n/useI18n'
+import { categoryTitle, colorName } from '../../i18n/catalogText'
 
 // nothing is preselected when every size is sold out
 const firstAvailableSize = (sizes) => sizes.find((s) => s.stock > 0)?.label ?? null
 
 const ProductDetails = ({ product }) => {
+	const { t } = useI18n()
 	const { addItem } = useCart()
 	const [searchParams, setSearchParams] = useSearchParams()
 	// the color lives in the URL (?color=black), so a link opens the same color;
@@ -88,16 +89,14 @@ const ProductDetails = ({ product }) => {
 
 	return (
 		<>
-			<nav aria-label='Breadcrumb' className={style.breadcrumb}>
+			<nav aria-label={t('product.breadcrumb')} className={style.breadcrumb}>
 				<ol role='list'>
 					<li>
-						<Link to='/'>Home</Link>
+						<Link to='/'>{t('product.home')}</Link>
 					</li>
 					{category && (
 						<li>
-							<Link to={`/products/${category}`}>
-								{CATEGORY_TITLES[category] ?? capitalize(category)}
-							</Link>
+							<Link to={`/products/${category}`}>{categoryTitle(t, category)}</Link>
 						</li>
 					)}
 					<li aria-current='page'>{product.title}</li>
@@ -132,7 +131,8 @@ const ProductDetails = ({ product }) => {
 
 					{product.variants.length > 1 && (
 						<OptionPicker
-							legend='Color'
+							legend={t('product.color')}
+							formatOption={(option) => colorName(t, option)}
 							name='color'
 							variant='swatch'
 							options={product.colors}
@@ -158,16 +158,14 @@ const ProductDetails = ({ product }) => {
 								max={Math.min(MAX_QUANTITY, sizeStock || 1)}
 							/>
 							<Button fullWidth onClick={handleAdd} disabled={!canAdd}>
-								Add to bag
+								{t('product.addToBag')}
 							</Button>
 							<WishlistButton productId={product._id} variant='button' />
 						</div>
 					) : (
 						<div className={style.soldOut}>
 							<Alert>
-								{product.variants.length > 1
-									? `This color is sold out — try another color.`
-									: 'This product is sold out.'}
+								{product.variants.length > 1 ? t('product.colorSoldOut') : t('product.soldOut')}
 							</Alert>
 							<NotifyMe product={product} variant={variant} appearance='button' />
 						</div>
@@ -184,7 +182,9 @@ const ProductDetails = ({ product }) => {
 						<p className={style.stickyTitle}>{product.title}</p>
 						<Price product={product} />
 					</div>
-					<Button onClick={handleAdd}>Add to bag{isOneSize ? '' : ` · ${size}`}</Button>
+					<Button onClick={handleAdd}>
+						{isOneSize ? t('product.addToBag') : t('product.addToBagSize', { size })}
+					</Button>
 				</div>
 			)}
 

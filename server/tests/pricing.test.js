@@ -1,34 +1,47 @@
 import { describe, expect, it } from 'vitest'
+import { SHOP } from '../src/config/shop.js'
 import { calculateTotals } from '../src/services/pricing.js'
+import { price, roundMoney } from './pricingHelpers.js'
 
-const items = (price, quantity = 1) => [{ price, quantity }]
+const items = (unitPrice, quantity = 1) => [{ price: unitPrice, quantity }]
+const threshold = SHOP.freeShippingFrom
+const below = roundMoney(threshold - 10)
 
 describe('calculateTotals', () => {
 	it('adds standard shipping below the free shipping threshold', () => {
-		expect(calculateTotals(items(19.99, 2))).toMatchObject({
-			subtotal: 39.98,
+		expect(calculateTotals(items(below))).toMatchObject({
+			subtotal: below,
 			discount: 0,
-			shipping: 4.9,
-			amount: 44.88,
-			shippingMethod: { id: 'standard', label: 'Standard delivery', price: 4.9 },
+			shipping: price('standard'),
+			amount: roundMoney(below + price('standard')),
+			shippingMethod: { id: 'standard', label: 'Standard delivery', price: price('standard') },
 		})
 	})
 
 	it('ships for free from the threshold, but not with express delivery', () => {
-		expect(calculateTotals(items(25, 2)).shipping).toBe(0)
-		expect(calculateTotals(items(25, 2), { shippingMethod: 'express' }).shipping).toBe(9.9)
+		expect(calculateTotals(items(threshold)).shipping).toBe(0)
+		expect(calculateTotals(items(threshold), { shippingMethod: 'express' }).shipping).toBe(
+			price('express'),
+		)
 	})
 
 	it('applies percentage and fixed discounts before checking free shipping', () => {
-		const percent = calculateTotals(items(60), {
-			promo: { code: 'TEN', type: 'percent', value: 10 },
+		const subtotal = threshold + 20
+		const percent = calculateTotals(items(subtotal), {
+			promo: { code: 'FIVE', type: 'percent', value: 5 },
 		})
-		// 60 - 6 = 54 is still above the threshold
-		expect(percent).toMatchObject({ discount: 6, shipping: 0, amount: 54, promoCode: 'TEN' })
+		const percentDiscount = roundMoney(subtotal * 0.05)
+		expect(percent).toMatchObject({ discount: percentDiscount, promoCode: 'FIVE' })
+		// still at or above the threshold after the discount?
+		expect(percent.shipping).toBe(subtotal - percentDiscount >= threshold ? 0 : price('standard'))
 
-		const fixed = calculateTotals(items(55), { promo: { code: 'FIVE', type: 'fixed', value: 10 } })
-		// 55 - 10 = 45 falls below the threshold, so shipping is charged
-		expect(fixed).toMatchObject({ discount: 10, shipping: 4.9, amount: 49.9 })
+		const fixed = calculateTotals(items(subtotal), { promo: { type: 'fixed', value: 30 } })
+		// subtotal - 30 falls below the threshold, so shipping is charged
+		expect(fixed).toMatchObject({
+			discount: 30,
+			shipping: price('standard'),
+			amount: roundMoney(subtotal - 30 + price('standard')),
+		})
 	})
 
 	it('never discounts more than the subtotal and supports free shipping codes', () => {

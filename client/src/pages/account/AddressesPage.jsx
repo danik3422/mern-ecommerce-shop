@@ -16,12 +16,14 @@ import Alert from '../../components/ui/Alert'
 import Button from '../../components/ui/Button'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import style from './AddressesPage.module.css'
+import { useI18n } from '../../i18n/useI18n'
 
 const MAX_ADDRESSES = 10
 
 /** `editing`: null — nothing open, 'new' — add form, otherwise the id of the edited address */
 const AddressesPage = () => {
-	useDocumentTitle('Addresses')
+	const { t } = useI18n()
+	useDocumentTitle(t('addresses.title'))
 	const { user } = useAuth()
 	const queryClient = useQueryClient()
 	const [editing, setEditing] = useState(null)
@@ -50,7 +52,9 @@ const AddressesPage = () => {
 	const removal = useMutation({ mutationFn: (id) => deleteAddress(id), onSuccess: refresh })
 
 	const handleDelete = (address) => {
-		if (window.confirm(`Delete the address of ${address.fullName}, ${address.city}?`)) {
+		if (
+			window.confirm(t('addresses.confirmDelete', { name: address.fullName, city: address.city }))
+		) {
 			removal.mutate(address._id)
 		}
 	}
@@ -63,29 +67,29 @@ const AddressesPage = () => {
 		<section className={shared.section} aria-labelledby='addresses-title'>
 			<div className={shared.heading}>
 				<h1 id='addresses-title' className={shared.title}>
-					Addresses
+					{t('addresses.title')}
 				</h1>
 				{editing !== 'new' && canAdd && (
 					<Button variant='secondary' size='sm' onClick={() => setEditing('new')}>
-						<Plus size={16} aria-hidden /> Add address
+						<Plus size={16} aria-hidden /> {t('addresses.add')}
 					</Button>
 				)}
 			</div>
 
-			{addresses.isPending && <p className={shared.muted}>Loading your addresses…</p>}
+			{addresses.isPending && <p className={shared.muted}>{t('address.loading')}</p>}
 			{addresses.isError && (
 				<Alert tone='error'>
-					Could not load your addresses: {getErrorMessage(addresses.error)}
+					{t('addresses.loadError', { error: getErrorMessage(addresses.error) })}
 				</Alert>
 			)}
 			{actionError && <Alert tone='error'>{getErrorMessage(actionError)}</Alert>}
 
 			{editing === 'new' && (
 				<div className={shared.card}>
-					<h2 className={style.formTitle}>New address</h2>
+					<h2 className={style.formTitle}>{t('addresses.newTitle')}</h2>
 					<AddressForm
 						mutation={creation}
-						submitLabel='Save address'
+						submitLabel={t('addresses.save')}
 						onCancel={() => setEditing(null)}
 					/>
 				</div>
@@ -93,7 +97,7 @@ const AddressesPage = () => {
 
 			{addresses.data && list.length === 0 && editing !== 'new' && (
 				<div className={shared.card}>
-					<p>Save your shipping address to check out faster.</p>
+					<p>{t('addresses.empty')}</p>
 				</div>
 			)}
 
@@ -101,17 +105,17 @@ const AddressesPage = () => {
 				{list.map((address) =>
 					editing === address._id ? (
 						<li key={address._id} className={shared.card}>
-							<h2 className={style.formTitle}>Edit address</h2>
+							<h2 className={style.formTitle}>{t('addresses.editTitle')}</h2>
 							<AddressForm
 								address={address}
 								mutation={update}
-								submitLabel='Save changes'
+								submitLabel={t('addresses.saveChanges')}
 								onCancel={() => setEditing(null)}
 							/>
 						</li>
 					) : (
 						<li key={address._id} className={`${shared.card} ${style.address}`}>
-							{address.isDefault && <span className={shared.badge}>Default</span>}
+							{address.isDefault && <span className={shared.badge}>{t('address.default')}</span>}
 							<address className={style.lines}>
 								<strong>{address.fullName}</strong>
 								<br />
@@ -123,7 +127,7 @@ const AddressesPage = () => {
 							</address>
 							<div className={shared.actions}>
 								<Button variant='ghost' size='sm' onClick={() => setEditing(address._id)}>
-									Edit
+									{t('addresses.edit')}
 								</Button>
 								{!address.isDefault && (
 									<Button
@@ -132,7 +136,7 @@ const AddressesPage = () => {
 										onClick={() => makeDefault.mutate(address._id)}
 										disabled={makeDefault.isPending}
 									>
-										Make default
+										{t('addresses.makeDefault')}
 									</Button>
 								)}
 								<Button
@@ -141,7 +145,7 @@ const AddressesPage = () => {
 									onClick={() => handleDelete(address)}
 									disabled={removal.isPending}
 								>
-									Delete
+									{t('addresses.delete')}
 								</Button>
 							</div>
 						</li>
@@ -149,7 +153,7 @@ const AddressesPage = () => {
 				)}
 			</ul>
 
-			{!canAdd && <p className={shared.muted}>You can save up to {MAX_ADDRESSES} addresses.</p>}
+			{!canAdd && <p className={shared.muted}>{t('addresses.limit', { count: MAX_ADDRESSES })}</p>}
 		</section>
 	)
 }

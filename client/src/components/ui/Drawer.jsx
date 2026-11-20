@@ -2,6 +2,7 @@ import { X } from 'lucide-react'
 import { useId } from 'react'
 import { createPortal } from 'react-dom'
 import { useModal } from '../../hooks/useModal'
+import { useI18n } from '../../i18n/useI18n'
 import { cx } from '../../utils/cx'
 import style from './Drawer.module.css'
 
@@ -10,8 +11,9 @@ import style from './Drawer.module.css'
  * @param side 'left' | 'right'
  * @param footer content pinned to the bottom, e.g. action buttons
  */
-const Drawer = ({ title, side = 'right', onClose, footer, children, closeLabel = 'Close' }) => {
+const Drawer = ({ title, side = 'right', onClose, footer, children, closeLabel }) => {
 	const dialogRef = useModal(onClose)
+	const { t } = useI18n()
 	const titleId = useId()
 
 	return createPortal(
@@ -33,7 +35,7 @@ const Drawer = ({ title, side = 'right', onClose, footer, children, closeLabel =
 						type='button'
 						className={style.close}
 						onClick={onClose}
-						aria-label={closeLabel}
+						aria-label={closeLabel ?? t('common.close')}
 						data-autofocus
 					>
 						<X size={20} aria-hidden />

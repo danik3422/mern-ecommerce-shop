@@ -3,12 +3,14 @@ import { useState } from 'react'
 import { cx } from '../../utils/cx'
 import Modal from '../ui/Modal'
 import style from './ImageViewer.module.css'
+import { useI18n } from '../../i18n/useI18n'
 
 /**
  * Full-screen image viewer: arrows / ← → switch images, clicking the image
  * zooms in at that point (click again to zoom out).
  */
 const ImageViewer = ({ images, title, startIndex = 0, onClose }) => {
+	const { t } = useI18n()
 	const [index, setIndex] = useState(startIndex)
 	const [zoom, setZoom] = useState(null) // { x, y } in percent while zoomed in
 	const count = images.length
@@ -35,7 +37,7 @@ const ImageViewer = ({ images, title, startIndex = 0, onClose }) => {
 
 	return (
 		<Modal
-			title={`${title} — image ${index + 1} of ${count}`}
+			title={t('gallery.viewerTitle', { title, index: index + 1, count })}
 			size='full'
 			hideTitle
 			onClose={onClose}
@@ -46,12 +48,12 @@ const ImageViewer = ({ images, title, startIndex = 0, onClose }) => {
 					type='button'
 					className={cx(style.stage, zoom && style.zoomed)}
 					onClick={toggleZoom}
-					aria-label={zoom ? 'Zoom out' : 'Zoom in'}
+					aria-label={zoom ? t('gallery.zoomOut') : t('gallery.zoomIn')}
 				>
 					<img
 						className={style.image}
 						src={images[index]}
-						alt={`${title}, image ${index + 1}`}
+						alt={t('gallery.alt', { title, index: index + 1 })}
 						style={zoom ? { transformOrigin: `${zoom.x}% ${zoom.y}%` } : undefined}
 					/>
 				</button>
@@ -61,7 +63,7 @@ const ImageViewer = ({ images, title, startIndex = 0, onClose }) => {
 							type='button'
 							className={cx(style.arrow, style.prev)}
 							onClick={() => show(index - 1)}
-							aria-label='Previous image'
+							aria-label={t('gallery.previous')}
 						>
 							<ChevronLeft size={24} aria-hidden />
 						</button>
@@ -69,7 +71,7 @@ const ImageViewer = ({ images, title, startIndex = 0, onClose }) => {
 							type='button'
 							className={cx(style.arrow, style.next)}
 							onClick={() => show(index + 1)}
-							aria-label='Next image'
+							aria-label={t('gallery.next')}
 						>
 							<ChevronRight size={24} aria-hidden />
 						</button>

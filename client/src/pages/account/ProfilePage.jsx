@@ -10,6 +10,7 @@ import Button from '../../components/ui/Button'
 import TextField from '../../components/ui/TextField'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import style from './ProfilePage.module.css'
+import { useI18n } from '../../i18n/useI18n'
 
 /** Only the fields that changed are sent; email and password changes need the current password. */
 const buildChanges = (form, user) => {
@@ -24,7 +25,8 @@ const buildChanges = (form, user) => {
 }
 
 const ProfilePage = () => {
-	useDocumentTitle('Profile')
+	const { t } = useI18n()
+	useDocumentTitle(t('profile.title'))
 	const { user, updateUser, logout } = useAuth()
 	const navigate = useNavigate()
 	const [form, setForm] = useState({
@@ -70,11 +72,7 @@ const ProfilePage = () => {
 	}
 
 	const handleDelete = () => {
-		if (
-			window.confirm(
-				'Delete your account? Your bag, wishlist and addresses will be removed. This cannot be undone.',
-			)
-		) {
+		if (window.confirm(t('profile.confirmDelete'))) {
 			removal.mutate()
 		}
 	}
@@ -85,11 +83,11 @@ const ProfilePage = () => {
 		<div className={shared.section}>
 			<section className={shared.section} aria-labelledby='profile-title'>
 				<h1 id='profile-title' className={shared.title}>
-					Profile
+					{t('profile.title')}
 				</h1>
 				<form className={shared.form} onSubmit={handleSubmit}>
 					<TextField
-						label='Username'
+						label={t('auth.username')}
 						name='username'
 						autoComplete='username'
 						minLength={3}
@@ -99,7 +97,7 @@ const ProfilePage = () => {
 						required
 					/>
 					<TextField
-						label='Email'
+						label={t('auth.email')}
 						name='email'
 						type='email'
 						autoComplete='email'
@@ -109,23 +107,23 @@ const ProfilePage = () => {
 						required
 					/>
 					<TextField
-						label='New password'
+						label={t('profile.newPassword')}
 						name='newPassword'
 						type='password'
 						autoComplete='new-password'
 						minLength={8}
-						hint='Leave empty to keep your current password'
+						hint={t('profile.newPasswordHint')}
 						value={form.newPassword}
 						onChange={handleChange}
 						error={fieldErrors.newPassword}
 					/>
 					{needsCurrentPassword && (
 						<TextField
-							label='Current password'
+							label={t('profile.currentPassword')}
 							name='currentPassword'
 							type='password'
 							autoComplete='current-password'
-							hint='Required to change your email or password'
+							hint={t('profile.currentPasswordHint')}
 							value={form.currentPassword}
 							onChange={handleChange}
 							error={currentPasswordError}
@@ -133,10 +131,10 @@ const ProfilePage = () => {
 						/>
 					)}
 					{generalError && <Alert tone='error'>{getErrorMessage(profile.error)}</Alert>}
-					{profile.isSuccess && <Alert tone='success'>Your profile has been updated.</Alert>}
+					{profile.isSuccess && <Alert tone='success'>{t('profile.updated')}</Alert>}
 					<div className={shared.actions}>
 						<Button type='submit' disabled={!hasChanges || profile.isPending}>
-							{profile.isPending ? 'Saving…' : 'Save changes'}
+							{profile.isPending ? t('common.saving') : t('profile.save')}
 						</Button>
 					</div>
 				</form>
@@ -144,16 +142,13 @@ const ProfilePage = () => {
 
 			<section className={`${shared.card} ${style.danger}`} aria-labelledby='delete-title'>
 				<h2 id='delete-title' className={style.dangerTitle}>
-					Delete account
+					{t('profile.deleteTitle')}
 				</h2>
-				<p className={shared.muted}>
-					Your bag, wishlist and saved addresses will be removed. Past orders are kept for our
-					records.
-				</p>
+				<p className={shared.muted}>{t('profile.deleteText')}</p>
 				{removal.isError && <Alert tone='error'>{getErrorMessage(removal.error)}</Alert>}
 				<div>
 					<Button variant='secondary' size='sm' onClick={handleDelete} disabled={removal.isPending}>
-						{removal.isPending ? 'Deleting…' : 'Delete my account'}
+						{removal.isPending ? t('profile.deleting') : t('profile.deleteButton')}
 					</Button>
 				</div>
 			</section>

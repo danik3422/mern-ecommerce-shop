@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { Product } from '../src/models/Product.js'
 import { api, createProduct, createUser, validAddress, stockOf } from './helpers.js'
+import { price, roundMoney } from './pricingHelpers.js'
+import { SHOP } from '../src/config/shop.js'
 
 const orderBody = (product, overrides = {}) => ({
 	items: [{ productId: product.id, quantity: 2, color: 'black', size: 'M', ...overrides }],
@@ -31,8 +33,8 @@ describe('POST /api/orders', () => {
 		expect(created.body.checkoutUrl).toBeNull()
 		expect(created.body.order).toMatchObject({
 			subtotal: 39.98,
-			shipping: 4.9,
-			amount: 44.88,
+			shipping: price('standard'),
+			amount: roundMoney(39.98 + price('standard')),
 			status: 'pending',
 			payment: { provider: 'none' },
 		})
@@ -225,7 +227,8 @@ describe('order management', () => {
 	})
 
 	it('moves orders through allowed statuses only', async () => {
-		const product = await createProduct({ price: 25 })
+		// two items reach the free-shipping threshold exactly
+		const product = await createProduct({ price: SHOP.freeShippingFrom / 2 })
 		const customer = await createUser({ username: 'alice' })
 		const admin = await createUser({ username: 'admin', isAdmin: true })
 		const order = await placeOrder(customer.auth, orderBody(product))
@@ -244,7 +247,7 @@ describe('order management', () => {
 		await setStatus('teleported').expect(400)
 
 		const income = await api().get('/api/orders/income').set(admin.auth).expect(200)
-		expect(income.body[0].total).toBe(50) // free shipping from 50
+		expect(income.body[0].total).toBe(SHOP.freeShippingFrom)
 	})
 
 	it('returns stock exactly once when an admin cancels a paid order', async () => {

@@ -5,6 +5,7 @@ import { useCart } from '../../cart/useCart'
 import { cx } from '../../utils/cx'
 import { useToast } from '../ui/toast/useToast'
 import style from './QuickAdd.module.css'
+import { useI18n } from '../../i18n/useI18n'
 
 /**
  * Size picker over a product card image: hover (or the bag button on touch screens)
@@ -12,6 +13,7 @@ import style from './QuickAdd.module.css'
  * Products with several colors link to the product page instead of guessing a color.
  */
 const QuickAdd = ({ product }) => {
+	const { t } = useI18n()
 	const { addItem } = useCart()
 	const toast = useToast()
 	const [isOpen, setIsOpen] = useState(false)
@@ -26,9 +28,11 @@ const QuickAdd = ({ product }) => {
 		addItem({ productId: product._id, size, color: product.colors[0], quantity: 1 })
 		setIsOpen(false)
 		toast.show({
-			message: `${product.title}${isOneSize ? '' : `, ${size}`} added to your bag`,
+			message: isOneSize
+				? t('card.added', { title: product.title })
+				: t('card.addedInSize', { title: product.title, size }),
 			tone: 'success',
-			action: { label: 'View bag', to: '/cart' },
+			action: { label: t('card.viewBag'), to: '/cart' },
 		})
 	}
 
@@ -39,7 +43,7 @@ const QuickAdd = ({ product }) => {
 				className={style.toggle}
 				onClick={() => setIsOpen((open) => !open)}
 				aria-expanded={isOpen}
-				aria-label={`Quick add ${product.title}`}
+				aria-label={t('card.quickAddProduct', { title: product.title })}
 			>
 				<ShoppingBag size={16} aria-hidden />
 			</button>
@@ -47,16 +51,20 @@ const QuickAdd = ({ product }) => {
 			<div className={style.panel}>
 				{needsColorChoice ? (
 					<Link to={`/product/${product.slug}`} className={style.link}>
-						Choose color &amp; size
+						{t('card.chooseOptions')}
 					</Link>
 				) : isOneSize ? (
 					<button type='button' className={style.addButton} onClick={() => add(sizes[0].label)}>
-						Add to bag
+						{t('card.addToBag')}
 					</button>
 				) : (
 					<>
-						<p className={style.label}>Quick add</p>
-						<div className={style.sizes} role='group' aria-label={`Sizes of ${product.title}`}>
+						<p className={style.label}>{t('card.quickAdd')}</p>
+						<div
+							className={style.sizes}
+							role='group'
+							aria-label={t('card.sizesOf', { title: product.title })}
+						>
 							{sizes.map((size) => (
 								<button
 									key={size.label}
@@ -66,8 +74,8 @@ const QuickAdd = ({ product }) => {
 									disabled={size.stock === 0}
 									aria-label={
 										size.stock === 0
-											? `${size.label}, sold out`
-											: `Add ${product.title} in size ${size.label}`
+											? t('card.sizeSoldOut', { size: size.label })
+											: t('card.addInSize', { title: product.title, size: size.label })
 									}
 								>
 									{size.label}

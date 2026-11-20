@@ -10,6 +10,7 @@ import { AuthProvider } from '../auth/AuthProvider'
 import { CartProvider } from '../cart/CartProvider'
 import { makeProduct } from '../test/fixtures'
 import Cart from './Cart'
+import { money } from '../test/money'
 
 // AuthProvider restores the session when its module is imported, so sign in before imports run
 const SESSION = vi.hoisted(() => {
@@ -102,10 +103,10 @@ describe('Cart checkout options', () => {
 	it('updates totals for the delivery method and promo code and orders with both', async () => {
 		renderCart()
 		await screen.findByRole('complementary', { name: 'Order summary' })
-		expect(await within(summary()).findByText('$44.90')).toBeInTheDocument()
+		expect(await within(summary()).findByText(money(44.9))).toBeInTheDocument()
 
 		fireEvent.click(screen.getByRole('radio', { name: /Express delivery/ }))
-		expect(await within(summary()).findByText('$49.90')).toBeInTheDocument()
+		expect(await within(summary()).findByText(money(49.9))).toBeInTheDocument()
 
 		const promo = screen.getByLabelText('Promo code')
 		fireEvent.change(promo, { target: { value: 'nope' } })
@@ -115,7 +116,7 @@ describe('Cart checkout options', () => {
 		fireEvent.change(promo, { target: { value: 'save10' } })
 		fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
 		expect(await screen.findByText(/applied/)).toHaveTextContent('Code SAVE10 applied')
-		expect(await within(summary()).findByText('−$4.00')).toBeInTheDocument()
+		expect(await within(summary()).findByText(`−${money(4)}`)).toBeInTheDocument()
 
 		// the address book is unavailable here, so the new address form appears
 		await screen.findByLabelText('Full name')

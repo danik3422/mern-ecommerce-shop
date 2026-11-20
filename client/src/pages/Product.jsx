@@ -8,8 +8,10 @@ import EmptyState from '../components/ui/EmptyState'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { useProduct } from '../hooks/useProducts'
 import style from './Product.module.css'
+import { useI18n } from '../i18n/useI18n'
 
 const Product = () => {
+	const { t } = useI18n()
 	const { id } = useParams()
 	const { data: product, error, isPending, isError } = useProduct(id)
 	useDocumentTitle(product?.title)
@@ -18,14 +20,14 @@ const Product = () => {
 		const notFound = [400, 404].includes(error.response?.status)
 		return (
 			<EmptyState
-				title={notFound ? 'Product not found' : 'Something went wrong'}
+				title={notFound ? t('product.notFound') : t('product.error')}
 				action={
 					<Button as={Link} to='/products' variant='secondary'>
-						Back to the shop
+						{t('product.backToShop')}
 					</Button>
 				}
 			>
-				{notFound ? 'It may have been removed or the link is wrong.' : getErrorMessage(error)}
+				{notFound ? t('product.notFoundText') : getErrorMessage(error)}
 			</EmptyState>
 		)
 	}
@@ -33,7 +35,7 @@ const Product = () => {
 	return (
 		<div className={`container ${style.page}`}>
 			{isPending ? (
-				<div className={style.skeleton} aria-busy='true' aria-label='Loading product' />
+				<div className={style.skeleton} aria-busy='true' aria-label={t('product.loading')} />
 			) : (
 				<>
 					{/* key resets the chosen options and gallery when another product is opened */}

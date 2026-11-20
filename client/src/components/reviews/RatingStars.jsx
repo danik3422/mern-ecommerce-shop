@@ -1,5 +1,6 @@
 import { Star } from 'lucide-react'
 import style from './RatingStars.module.css'
+import { useI18n } from '../../i18n/useI18n'
 
 /**
  * Read-only star rating, e.g. on product cards: ★★★★☆ (12)
@@ -7,13 +8,14 @@ import style from './RatingStars.module.css'
  * @param count number of reviews; nothing is rendered when there are none
  */
 const RatingStars = ({ value, count, size = 14 }) => {
+	const { t } = useI18n()
 	if (!count) return null
 	const rounded = Math.round(value * 2) / 2
 
 	return (
 		<p className={style.rating}>
 			<span className='visually-hidden'>
-				Rated {value.toFixed(1)} out of 5, {count} {count === 1 ? 'review' : 'reviews'}
+				{t('reviews.ratedSummary', { rating: value.toFixed(1), count })}
 			</span>
 			<span className={style.stars} aria-hidden>
 				{[1, 2, 3, 4, 5].map((n) => (

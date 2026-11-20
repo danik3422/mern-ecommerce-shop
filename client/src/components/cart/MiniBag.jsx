@@ -1,12 +1,12 @@
 import { Link } from 'react-router'
 import { lineKey } from '../../cart/cartLines'
 import { useCartItems } from '../../cart/useCartItems'
-import { formatMoney } from '../../utils/money'
-import { capitalize } from '../../utils/text'
 import Button from '../ui/Button'
 import Drawer from '../ui/Drawer'
 import FreeShippingProgress from './FreeShippingProgress'
 import style from './MiniBag.module.css'
+import { useI18n } from '../../i18n/useI18n'
+import { colorName } from '../../i18n/catalogText'
 
 /**
  * Side panel shown after adding to the bag: the bag contents with the new line
@@ -14,26 +14,27 @@ import style from './MiniBag.module.css'
  * @param addedLine the line that was just added `{ productId, size, color }`
  */
 const MiniBag = ({ addedLine, onClose }) => {
+	const { t, formatMoney } = useI18n()
 	const { items } = useCartItems()
 	const addedKey = addedLine && lineKey(addedLine)
 	const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
 
 	return (
 		<Drawer
-			title='Added to your bag'
+			title={t('bag.added')}
 			onClose={onClose}
-			closeLabel='Close bag'
+			closeLabel={t('bag.closeBag')}
 			footer={
 				<div className={style.footer}>
 					<p className={style.subtotal}>
-						<span>Subtotal</span>
+						<span>{t('bag.subtotal')}</span>
 						<span>{formatMoney(subtotal)}</span>
 					</p>
 					<Button as={Link} to='/cart' fullWidth onClick={onClose}>
-						Go to checkout
+						{t('bag.goToCheckout')}
 					</Button>
 					<Button variant='secondary' fullWidth onClick={onClose}>
-						Continue shopping
+						{t('bag.continueShopping')}
 					</Button>
 				</div>
 			}
@@ -51,7 +52,11 @@ const MiniBag = ({ addedLine, onClose }) => {
 							<p className={style.brand}>{item.product.brand}</p>
 							<p>{item.product.title}</p>
 							<p className={style.meta}>
-								{[item.color && capitalize(item.color), item.size, `Qty ${item.quantity}`]
+								{[
+									item.color && colorName(t, item.color),
+									item.size,
+									t('bag.qty', { count: item.quantity }),
+								]
 									.filter(Boolean)
 									.join(' · ')}
 							</p>

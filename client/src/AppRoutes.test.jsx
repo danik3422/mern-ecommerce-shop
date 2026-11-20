@@ -144,14 +144,14 @@ describe('routes', () => {
 		renderAt('/product/arrow-jacket')
 
 		// black is sold out, so the first color in stock is shown
-		expect(await screen.findByRole('radio', { name: 'white' })).toBeChecked()
+		expect(await screen.findByRole('radio', { name: 'White' })).toBeChecked()
 		expect(screen.getByRole('img', { name: /arrow jacket/i })).toHaveAttribute('src', '/white.jpg')
 
-		fireEvent.click(screen.getByRole('radio', { name: 'black' }))
+		fireEvent.click(screen.getByRole('radio', { name: 'Black' }))
 		expect(screen.getByRole('img', { name: /arrow jacket/i })).toHaveAttribute('src', '/black.jpg')
 		expect(screen.getByText('This color is sold out — try another color.')).toBeInTheDocument()
 
-		fireEvent.click(screen.getByRole('radio', { name: 'white' }))
+		fireEvent.click(screen.getByRole('radio', { name: 'White' }))
 		fireEvent.click(screen.getByRole('radio', { name: 'L' }))
 		fireEvent.click(screen.getByRole('button', { name: 'Add to bag' }))
 

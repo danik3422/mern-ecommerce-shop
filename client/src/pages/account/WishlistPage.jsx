@@ -8,9 +8,11 @@ import ProductCard from '../../components/product/ProductCard'
 import Alert from '../../components/ui/Alert'
 import Button from '../../components/ui/Button'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
+import { useI18n } from '../../i18n/useI18n'
 
 const WishlistPage = () => {
-	useDocumentTitle('Wishlist')
+	const { t } = useI18n()
+	useDocumentTitle(t('wishlist.title'))
 	const { user } = useAuth()
 	const wishlist = useQuery({
 		queryKey: [...accountKeys.wishlist, user._id],
@@ -21,22 +23,22 @@ const WishlistPage = () => {
 		<section className={shared.section} aria-labelledby='wishlist-title'>
 			<div className={shared.heading}>
 				<h1 id='wishlist-title' className={shared.title}>
-					Wishlist
+					{t('wishlist.title')}
 				</h1>
 				{wishlist.data?.length > 0 && (
-					<p className={shared.muted}>
-						{wishlist.data.length} {wishlist.data.length === 1 ? 'item' : 'items'}
-					</p>
+					<p className={shared.muted}>{t('bag.count', { count: wishlist.data.length })}</p>
 				)}
 			</div>
 
-			{wishlist.isPending && <p className={shared.muted}>Loading your wishlist…</p>}
+			{wishlist.isPending && <p className={shared.muted}>{t('wishlist.loading')}</p>}
 			{wishlist.isError && (
-				<Alert tone='error'>Could not load your wishlist: {getErrorMessage(wishlist.error)}</Alert>
+				<Alert tone='error'>
+					{t('wishlist.loadError', { error: getErrorMessage(wishlist.error) })}
+				</Alert>
 			)}
 			{wishlist.data?.length === 0 && (
 				<div className={shared.card}>
-					<p>Save items you love with the heart icon and find them here later.</p>
+					<p>{t('wishlist.empty')}</p>
 					<Button
 						as={Link}
 						to='/products'
@@ -44,7 +46,7 @@ const WishlistPage = () => {
 						size='sm'
 						className={shared.cardAction}
 					>
-						Browse products
+						{t('wishlist.browse')}
 					</Button>
 				</div>
 			)}

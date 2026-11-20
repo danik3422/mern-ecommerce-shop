@@ -3,6 +3,7 @@ import { fetchProducts, productKeys } from '../../api/products'
 import { useRecentlyViewed } from '../../hooks/useRecentlyViewed'
 import ProductCard from './ProductCard'
 import style from './RecentlyViewed.module.css'
+import { useI18n } from '../../i18n/useI18n'
 
 /**
  * Products this visitor looked at recently, newest first.
@@ -10,6 +11,7 @@ import style from './RecentlyViewed.module.css'
  * @param limit how many to show
  */
 const RecentlyViewed = ({ excludeId, limit = 4 }) => {
+	const { t } = useI18n()
 	const { ids } = useRecentlyViewed()
 	const visibleIds = ids.filter((id) => id !== excludeId).slice(0, limit)
 	const params = { ids: visibleIds.join(','), limit }
@@ -29,7 +31,7 @@ const RecentlyViewed = ({ excludeId, limit = 4 }) => {
 	return (
 		<section className={style.section} aria-labelledby='recently-viewed-title'>
 			<h2 id='recently-viewed-title' className={style.title}>
-				Recently viewed
+				{t('product.recent')}
 			</h2>
 			<ul role='list' className={style.grid}>
 				{products.map((product) => (

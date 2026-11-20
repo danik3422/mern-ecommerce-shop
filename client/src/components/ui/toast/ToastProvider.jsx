@@ -1,6 +1,7 @@
 import { CheckCircle2, Info, X, XCircle } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router'
+import { useI18n } from '../../../i18n/useI18n'
 import { cx } from '../../../utils/cx'
 import { ToastContext } from './ToastContext'
 import style from './Toast.module.css'
@@ -14,6 +15,7 @@ let nextId = 0
 /** Short-lived notifications in a live region at the bottom of the screen. */
 export const ToastProvider = ({ children }) => {
 	const [toasts, setToasts] = useState([])
+	const { t } = useI18n()
 	const timers = useRef(new Map())
 
 	const dismiss = useCallback((id) => {
@@ -65,7 +67,7 @@ export const ToastProvider = ({ children }) => {
 								type='button'
 								className={style.close}
 								onClick={() => dismiss(id)}
-								aria-label='Dismiss notification'
+								aria-label={t('common.dismiss')}
 							>
 								<X size={16} aria-hidden />
 							</button>

@@ -13,6 +13,10 @@ Clothing store: React client (Vite) and Express + MongoDB API in one npm workspa
   viewed products, full-screen image zoom and a size guide.
 - **Account:** orders with status (pay or cancel pending ones), profile, address book, wishlist,
   reviews from verified buyers.
+- **Languages and currency:** the shop is in English and Polish (switcher in the header and
+  footer; the first visit follows the browser language), prices are in PLN. Translations live in
+  `client/src/i18n/messages/{en,pl}`; the admin panel, emails and API errors stay English.
+  The currency, free-shipping threshold and delivery methods are set in `server/src/config/shop.js`.
 - **Admin panel** (`/admin`): dashboard with revenue chart and low stock, products with image
   upload and stock per size, orders with status changes, customers, review moderation.
 
@@ -35,6 +39,7 @@ CSS Modules for components and [lucide](https://lucide.dev) icons. It is respons
 │       │   ├── product/ cart/ home/ auth/
 │       ├── data/              # categories, navigation, filter options
 │       ├── hooks/             # useProducts, useDocumentTitle
+│       ├── i18n/              # I18nProvider, useI18n, translator, en/pl messages
 │       ├── pages/             # one component per route (AppRoutes.jsx)
 │       ├── styles/            # tokens.css (colors, spacing, type) + global.css
 │       └── utils/

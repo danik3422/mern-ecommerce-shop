@@ -3,15 +3,17 @@ import Alert from '../ui/Alert'
 import Button from '../ui/Button'
 import ProductCard, { ProductCardSkeleton } from './ProductCard'
 import style from './ProductGrid.module.css'
+import { useI18n } from '../../i18n/useI18n'
 
 /**
  * Shows products, skeletons while loading, or an error with a retry button.
  * @param query result of `useProducts`
  */
 const ProductGrid = ({ query, skeletonCount = 8 }) => {
+	const { t } = useI18n()
 	if (query.isPending) {
 		return (
-			<div className={style.grid} aria-busy='true' aria-label='Loading products'>
+			<div className={style.grid} aria-busy='true' aria-label={t('grid.loading')}>
 				{Array.from({ length: skeletonCount }, (_, i) => (
 					<ProductCardSkeleton key={i} />
 				))}
@@ -22,16 +24,16 @@ const ProductGrid = ({ query, skeletonCount = 8 }) => {
 	if (query.isError) {
 		return (
 			<Alert tone='error' className={style.error}>
-				Could not load products: {getErrorMessage(query.error)}.{' '}
+				{t('grid.error', { error: getErrorMessage(query.error) })}{' '}
 				<Button variant='ghost' size='sm' onClick={() => query.refetch()}>
-					Try again
+					{t('common.tryAgain')}
 				</Button>
 			</Alert>
 		)
 	}
 
 	if (!query.data.items.length) {
-		return <p className={style.empty}>No products match these filters.</p>
+		return <p className={style.empty}>{t('grid.empty')}</p>
 	}
 
 	return (

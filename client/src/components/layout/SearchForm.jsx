@@ -1,7 +1,7 @@
 import { Clock, Search, X } from 'lucide-react'
 import { useId, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
-import { formatMoney } from '../../utils/money'
+import { useI18n } from '../../i18n/useI18n'
 import { cx } from '../../utils/cx'
 import { addRecentSearch, clearRecentSearches, getRecentSearches } from './recentSearches'
 import style from './SearchForm.module.css'
@@ -14,6 +14,7 @@ import { useSearchSuggestions } from './useSearchSuggestions'
  */
 const SearchForm = ({ onSearch }) => {
 	const navigate = useNavigate()
+	const { t, formatMoney } = useI18n()
 	const [searchParams] = useSearchParams()
 	const [query, setQuery] = useState(searchParams.get('q') ?? '')
 	const [isOpen, setIsOpen] = useState(false)
@@ -44,16 +45,19 @@ const SearchForm = ({ onSearch }) => {
 		? [
 				...suggestions.brands.map((brand) => ({
 					kind: 'brand',
-					group: 'Brands',
+					group: t('search.brands'),
 					key: `brand-${brand.value}`,
 					value: brand.value,
 					label: brand.value,
-					hint: `${brand.count} ${brand.count === 1 ? 'item' : 'items'}`,
-					ariaLabel: `Brand ${brand.value}, ${brand.count} ${brand.count === 1 ? 'item' : 'items'}`,
+					hint: t('common.items', { count: brand.count }),
+					ariaLabel: t('search.brandOption', {
+						brand: brand.value,
+						items: t('common.items', { count: brand.count }),
+					}),
 				})),
 				...suggestions.products.map((product) => ({
 					kind: 'product',
-					group: 'Products',
+					group: t('search.products'),
 					key: product._id,
 					value: product.slug,
 					product,
@@ -64,14 +68,19 @@ const SearchForm = ({ onSearch }) => {
 					group: 'all',
 					key: 'all',
 					value: trimmed,
-					label: `Search for “${trimmed}”`,
-					hint: suggestions.total ? `${suggestions.total} results` : undefined,
-					ariaLabel: `Search for “${trimmed}”${suggestions.total ? `, ${suggestions.total} results` : ''}`,
+					label: t('search.searchFor', { query: trimmed }),
+					hint: suggestions.total ? t('search.results', { count: suggestions.total }) : undefined,
+					ariaLabel: [
+						t('search.searchFor', { query: trimmed }),
+						suggestions.total && t('search.results', { count: suggestions.total }),
+					]
+						.filter(Boolean)
+						.join(', '),
 				},
 			]
 		: recent.map((text) => ({
 				kind: 'recent',
-				group: 'Recent searches',
+				group: t('search.recent'),
 				key: `recent-${text}`,
 				value: text,
 				label: text,
@@ -123,7 +132,7 @@ const SearchForm = ({ onSearch }) => {
 	return (
 		<form role='search' className={style.form} onSubmit={handleSubmit}>
 			<label htmlFor={id} className='visually-hidden'>
-				Search products and brands
+				{t('search.label')}
 			</label>
 			<Search size={16} className={style.icon} aria-hidden />
 			<input
@@ -131,7 +140,7 @@ const SearchForm = ({ onSearch }) => {
 				id={id}
 				type='search'
 				className={style.input}
-				placeholder='Search products and brands'
+				placeholder={t('search.placeholder')}
 				value={query}
 				onChange={(e) => {
 					setQuery(e.target.value)
@@ -151,7 +160,12 @@ const SearchForm = ({ onSearch }) => {
 
 			{showList && (
 				<div className={style.panel}>
-					<ul id={listboxId} role='listbox' aria-label='Search suggestions' className={style.list}>
+					<ul
+						id={listboxId}
+						role='listbox'
+						aria-label={t('search.suggestions')}
+						className={style.list}
+					>
 						{options.map((option, index) => {
 							const heading = headingAt(index)
 							return (
@@ -209,7 +223,7 @@ const SearchForm = ({ onSearch }) => {
 								setRecent([])
 							}}
 						>
-							<X size={14} aria-hidden /> Clear recent searches
+							<X size={14} aria-hidden /> {t('search.clearRecent')}
 						</button>
 					)}
 				</div>

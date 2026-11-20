@@ -4,8 +4,6 @@ import { useId, useState } from 'react'
 import { accountKeys } from '../../api/account'
 import { getErrorMessage } from '../../api/client'
 import { cancelOrder, payOrder } from '../../api/orders'
-import { formatMoney } from '../../utils/money'
-import { capitalize } from '../../utils/text'
 import { cx } from '../../utils/cx'
 import ReturnSection from '../orders/ReturnSection'
 import Alert from '../ui/Alert'
@@ -13,13 +11,14 @@ import Button from '../ui/Button'
 import shared from './Account.module.css'
 import style from './OrderCard.module.css'
 import OrderStatusBadge from './OrderStatusBadge'
-
-const dateFormatter = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' })
+import { useI18n } from '../../i18n/useI18n'
+import { colorName } from '../../i18n/catalogText'
 
 /** Short, human-friendly order number from the Mongo id. */
 const orderNumber = (order) => order._id.slice(-8).toUpperCase()
 
 const OrderCard = ({ order }) => {
+	const { t, formatMoney, formatDate } = useI18n()
 	const queryClient = useQueryClient()
 	const detailsId = useId()
 	const [isOpen, setIsOpen] = useState(false)
@@ -38,7 +37,7 @@ const OrderCard = ({ order }) => {
 	})
 
 	const handleCancel = () => {
-		if (window.confirm(`Cancel order #${orderNumber(order)}? This cannot be undone.`)) {
+		if (window.confirm(t('orders.confirmCancel', { number: orderNumber(order) }))) {
 			cancellation.mutate()
 		}
 	}
@@ -49,12 +48,10 @@ const OrderCard = ({ order }) => {
 		<li className={cx(shared.card, style.order)}>
 			<div className={style.summary}>
 				<div className={style.meta}>
-					<p className={style.number}>Order #{orderNumber(order)}</p>
+					<p className={style.number}>{t('checkout.order', { number: orderNumber(order) })}</p>
 					<p className={shared.muted}>
-						<time dateTime={order.createdAt}>
-							{dateFormatter.format(new Date(order.createdAt))}
-						</time>{' '}
-						· {itemCount} {itemCount === 1 ? 'item' : 'items'} · {formatMoney(order.amount)}
+						<time dateTime={order.createdAt}>{formatDate(order.createdAt)}</time> ·{' '}
+						{t('bag.count', { count: itemCount })} · {formatMoney(order.amount)}
 					</p>
 				</div>
 				<OrderStatusBadge status={order.status} />
@@ -65,12 +62,12 @@ const OrderCard = ({ order }) => {
 					aria-expanded={isOpen}
 					aria-controls={detailsId}
 				>
-					{isOpen ? 'Hide details' : 'Details'}
+					{isOpen ? t('orders.hideDetails') : t('orders.details')}
 					<ChevronDown size={16} aria-hidden className={cx(style.chevron, isOpen && style.open)} />
 				</button>
 			</div>
 
-			<ul role='list' className={style.thumbnails} aria-label='Items'>
+			<ul role='list' className={style.thumbnails} aria-label={t('orders.items')}>
 				{order.items.map((item, index) => (
 					<li key={index}>
 						<img src={item.image} alt={item.title} className={style.thumbnail} loading='lazy' />
@@ -81,7 +78,7 @@ const OrderCard = ({ order }) => {
 			{order.status === 'pending' && (
 				<div className={shared.actions}>
 					<Button size='sm' onClick={() => payment.mutate()} disabled={payment.isPending}>
-						{payment.isPending ? 'Opening payment…' : 'Pay now'}
+						{payment.isPending ? t('checkout.openingPayment') : t('orders.payNow')}
 					</Button>
 					<Button
 						size='sm'
@@ -89,12 +86,12 @@ const OrderCard = ({ order }) => {
 						onClick={handleCancel}
 						disabled={cancellation.isPending}
 					>
-						Cancel order
+						{t('checkout.cancelOrder')}
 					</Button>
 				</div>
 			)}
 			{payment.isSuccess && !payment.data?.checkoutUrl && (
-				<Alert>Online payment is not available yet. We will contact you about payment.</Alert>
+				<Alert>{t('orders.noOnlinePayment')}</Alert>
 			)}
 			{error && <Alert tone='error'>{getErrorMessage(error)}</Alert>}
 			<ReturnSection
@@ -112,8 +109,13 @@ const OrderCard = ({ order }) => {
 									<span className={style.brand}>{item.brand}</span> {item.title}
 								</p>
 								<p className={shared.muted}>
-									{[item.color && capitalize(item.color), item.size].filter(Boolean).join(' · ')} ·
-									Qty {item.quantity}
+									{[
+										item.color && colorName(t, item.color),
+										item.size,
+										t('bag.qty', { count: item.quantity }),
+									]
+										.filter(Boolean)
+										.join(' · ')}
 								</p>
 							</div>
 							<p className={style.price}>{formatMoney(item.price * item.quantity)}</p>
@@ -123,7 +125,7 @@ const OrderCard = ({ order }) => {
 
 				<div className={style.footer}>
 					<div>
-						<h3 className='eyebrow'>Shipping address</h3>
+						<h3 className='eyebrow'>{t('address.legend')}</h3>
 						<address className={style.address}>
 							{order.address.fullName}
 							<br />
@@ -136,15 +138,15 @@ const OrderCard = ({ order }) => {
 					</div>
 					<dl className={style.totals}>
 						<div>
-							<dt>Subtotal</dt>
+							<dt>{t('summary.subtotal')}</dt>
 							<dd>{formatMoney(order.subtotal)}</dd>
 						</div>
 						<div>
-							<dt>Shipping</dt>
-							<dd>{order.shipping ? formatMoney(order.shipping) : 'Free'}</dd>
+							<dt>{t('delivery.shipping')}</dt>
+							<dd>{order.shipping ? formatMoney(order.shipping) : t('shipping.free')}</dd>
 						</div>
 						<div className={style.total}>
-							<dt>Total</dt>
+							<dt>{t('summary.total')}</dt>
 							<dd>{formatMoney(order.amount)}</dd>
 						</div>
 					</dl>

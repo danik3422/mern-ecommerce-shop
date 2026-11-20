@@ -1,10 +1,11 @@
 import { Check, ChevronDown } from 'lucide-react'
 import { useId, useState } from 'react'
 import { swatchColor } from '../../data/catalog'
-import { capitalize } from '../../utils/text'
 import Button from '../ui/Button'
 import { toggleValue } from './catalogFilters'
 import style from './FilterPanel.module.css'
+import { colorName } from '../../i18n/catalogText'
+import { useI18n } from '../../i18n/useI18n'
 
 /** Collapsible group; <details> keeps it keyboard- and screen-reader-friendly for free. */
 const FilterSection = ({ title, count, children, defaultOpen = true }) => (
@@ -37,6 +38,7 @@ const CheckboxOption = ({ checked, onChange, label, count }) => (
  */
 const PriceFilter = ({ minPrice, maxPrice, bounds, onApply }) => {
 	const id = useId()
+	const { t } = useI18n()
 	const [min, setMin] = useState(minPrice)
 	const [max, setMax] = useState(maxPrice)
 	const invalid = min !== '' && max !== '' && Number(min) > Number(max)
@@ -50,7 +52,7 @@ const PriceFilter = ({ minPrice, maxPrice, bounds, onApply }) => {
 		<form className={style.price} onSubmit={handleSubmit}>
 			<div className={style.priceInputs}>
 				<label className={style.priceField} htmlFor={`${id}-min`}>
-					<span>Min</span>
+					<span>{t('filters.min')}</span>
 					<input
 						id={`${id}-min`}
 						type='number'
@@ -63,7 +65,7 @@ const PriceFilter = ({ minPrice, maxPrice, bounds, onApply }) => {
 				</label>
 				<span aria-hidden>–</span>
 				<label className={style.priceField} htmlFor={`${id}-max`}>
-					<span>Max</span>
+					<span>{t('filters.max')}</span>
 					<input
 						id={`${id}-max`}
 						type='number'
@@ -76,9 +78,9 @@ const PriceFilter = ({ minPrice, maxPrice, bounds, onApply }) => {
 					/>
 				</label>
 			</div>
-			{invalid && <p className={style.error}>Min must not be higher than max.</p>}
+			{invalid && <p className={style.error}>{t('filters.minAboveMax')}</p>}
 			<Button type='submit' variant='secondary' size='sm' disabled={invalid}>
-				Apply price
+				{t('filters.applyPrice')}
 			</Button>
 		</form>
 	)
@@ -92,31 +94,32 @@ const PriceFilter = ({ minPrice, maxPrice, bounds, onApply }) => {
  * @param hideSaleToggle on the sale page every product is discounted
  */
 const FilterPanel = ({ filters, facets, onChange, hideSaleToggle = false }) => {
+	const { t } = useI18n()
 	const toggle = (key, value) => onChange({ [key]: toggleValue(filters[key], value) })
 	const priceCount = Number(filters.minPrice !== '') + Number(filters.maxPrice !== '')
 
 	return (
 		<div className={style.panel}>
 			<FilterSection
-				title='Availability'
+				title={t('filters.availability')}
 				count={Number(filters.inStock) + Number(!hideSaleToggle && filters.onSale)}
 			>
 				{!hideSaleToggle && (
 					<CheckboxOption
-						label='On sale'
+						label={t('filters.onSale')}
 						checked={filters.onSale}
 						onChange={() => onChange({ onSale: !filters.onSale })}
 					/>
 				)}
 				<CheckboxOption
-					label='In stock only'
+					label={t('filters.inStockOnly')}
 					checked={filters.inStock}
 					onChange={() => onChange({ inStock: !filters.inStock })}
 				/>
 			</FilterSection>
 
 			{facets?.brands.length > 0 && (
-				<FilterSection title='Brand' count={filters.brand.length}>
+				<FilterSection title={t('filters.brand')} count={filters.brand.length}>
 					{facets.brands.map(({ value, count }) => (
 						<CheckboxOption
 							key={value}
@@ -130,7 +133,7 @@ const FilterPanel = ({ filters, facets, onChange, hideSaleToggle = false }) => {
 			)}
 
 			{facets?.sizes.length > 0 && (
-				<FilterSection title='Size' count={filters.size.length}>
+				<FilterSection title={t('filters.size')} count={filters.size.length}>
 					<div className={style.pills}>
 						{facets.sizes.map(({ value }) => (
 							<label key={value} className={style.pill}>
@@ -148,10 +151,10 @@ const FilterPanel = ({ filters, facets, onChange, hideSaleToggle = false }) => {
 			)}
 
 			{facets?.colors.length > 0 && (
-				<FilterSection title='Color' count={filters.color.length}>
+				<FilterSection title={t('filters.color')} count={filters.color.length}>
 					<div className={style.swatches}>
 						{facets.colors.map(({ value, count }) => (
-							<label key={value} className={style.swatchOption} title={capitalize(value)}>
+							<label key={value} className={style.swatchOption} title={colorName(t, value)}>
 								<input
 									type='checkbox'
 									checked={filters.color.includes(value)}
@@ -164,7 +167,7 @@ const FilterPanel = ({ filters, facets, onChange, hideSaleToggle = false }) => {
 									aria-hidden
 								/>
 								<span className={style.swatchLabel}>
-									{capitalize(value)} <span className={style.count}>{count}</span>
+									{colorName(t, value)} <span className={style.count}>{count}</span>
 								</span>
 							</label>
 						))}
@@ -172,7 +175,7 @@ const FilterPanel = ({ filters, facets, onChange, hideSaleToggle = false }) => {
 				</FilterSection>
 			)}
 
-			<FilterSection title='Price' count={priceCount ? 1 : 0}>
+			<FilterSection title={t('filters.price')} count={priceCount ? 1 : 0}>
 				<PriceFilter
 					key={`${filters.minPrice}-${filters.maxPrice}`}
 					minPrice={filters.minPrice}
