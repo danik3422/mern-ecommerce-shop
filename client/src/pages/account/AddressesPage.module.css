@@ -1,0 +1,32 @@
+.list {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr));
+	gap: var(--space-4);
+}
+
+.list > li:has(form) {
+	grid-column: 1 / -1;
+}
+
+.address {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--space-3);
+}
+
+.lines {
+	flex: 1;
+	font-style: normal;
+	font-size: var(--text-sm);
+	line-height: 1.6;
+}
+
+.address > div {
+	margin-left: calc(var(--space-2) * -1);
+}
+
+.formTitle {
+	margin-bottom: var(--space-4);
+	font-size: var(--text-md);
+}

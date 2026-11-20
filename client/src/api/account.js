@@ -24,6 +24,10 @@ export const updateProfile = (changes) => http.patch('/users/me', changes).then(
 export const deleteAccount = () => http.delete('/users/me')
 export const fetchMyOrders = () => http.get('/orders/mine').then((r) => r.data)
 
+/**
+ * Query keys. Data is per user, so hooks append the user id:
+ * `[...accountKeys.addresses, userId]` — invalidating `accountKeys.addresses` still matches.
+ */
 export const accountKeys = {
 	wishlistIds: ['account', 'wishlist', 'ids'],
 	wishlist: ['account', 'wishlist'],

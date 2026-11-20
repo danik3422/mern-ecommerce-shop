@@ -12,5 +12,6 @@ export const deleteReview = (productId, reviewId) =>
 	http.delete(`/products/${productId}/reviews/${reviewId}`)
 
 export const reviewKeys = {
+	all: (productId) => ['reviews', productId],
 	list: (productId, params) => ['reviews', productId, params],
 }
