@@ -1,4 +1,20 @@
 import { Router } from 'express'
+import * as admin from '../controllers/admin.controller.js'
+import { requireAdmin } from '../middleware/auth.js'
+import { validate } from '../middleware/validate.js'
+import { receiveImage } from '../services/uploads.js'
+import { adminOrdersQuery, adminProductsQuery, adminReviewsQuery } from '../validation/admin.js'
+import { idParams } from '../validation/common.js'
 
 /** Mounted at /api/admin — dashboard stats, product listing incl. hidden ones, uploads. */
 export const adminRoutes = Router()
+
+adminRoutes.use(requireAdmin)
+
+adminRoutes.get('/stats', admin.getStats)
+adminRoutes.get('/products', validate({ query: adminProductsQuery }), admin.listProducts)
+adminRoutes.get('/products/:id', validate({ params: idParams }), admin.getProduct)
+adminRoutes.get('/orders', validate({ query: adminOrdersQuery }), admin.listOrders)
+adminRoutes.get('/orders/:id', validate({ params: idParams }), admin.getOrder)
+adminRoutes.get('/reviews', validate({ query: adminReviewsQuery }), admin.listReviews)
+adminRoutes.post('/uploads', receiveImage, admin.uploadImage)
