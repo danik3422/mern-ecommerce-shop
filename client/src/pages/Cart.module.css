@@ -27,11 +27,6 @@
 	margin-top: var(--space-5);
 }
 
-.successIcon {
-	margin: 0 auto var(--space-3);
-	color: var(--color-success);
-}
-
 @media (max-width: 52rem) {
 	.layout {
 		grid-template-columns: 1fr;

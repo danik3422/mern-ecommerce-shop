@@ -1,9 +1,9 @@
-import { CheckCircle2 } from 'lucide-react'
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { getErrorMessage } from '../api/client'
 import { useAuth } from '../auth/useAuth'
 import { calculateTotals } from '../cart/pricing'
+import { redirectToPayment } from '../cart/redirect'
 import { useCart } from '../cart/useCart'
 import { useCartItems } from '../cart/useCartItems'
 import CartLine from '../components/cart/CartLine'
@@ -13,7 +13,6 @@ import Alert from '../components/ui/Alert'
 import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
-import { formatMoney } from '../utils/money'
 import style from './Cart.module.css'
 
 const toPricedItems = (items) =>
@@ -30,21 +29,22 @@ const Cart = () => {
 	const { user } = useAuth()
 	const { lines, count, setQuantity, clear } = useCart()
 	const { items, isLoading, error } = useCartItems()
-	const [placedOrder, setPlacedOrder] = useState(null)
+	const navigate = useNavigate()
+	const [isRedirecting, setIsRedirecting] = useState(false)
 
-	const handleOrderPlaced = (order) => {
+	// the server has reserved the stock and emptied the saved cart, so the local one goes too
+	const handleOrderPlaced = ({ order, checkoutUrl }) => {
 		clear()
-		setPlacedOrder(order)
+		if (checkoutUrl) {
+			setIsRedirecting(true)
+			redirectToPayment(checkoutUrl)
+		} else {
+			navigate(`/checkout/success?order=${order._id}`)
+		}
 	}
 
-	if (placedOrder) {
-		return (
-			<EmptyState title='Thank you for your order' action={<ContinueShopping />}>
-				<CheckCircle2 size={32} aria-hidden className={style.successIcon} />
-				Order #{placedOrder._id.slice(-8).toUpperCase()} for {formatMoney(placedOrder.amount)} has
-				been placed. We will let you know when it ships.
-			</EmptyState>
-		)
+	if (isRedirecting) {
+		return <EmptyState title='Taking you to the payment page…' />
 	}
 
 	if (!lines.length) {
