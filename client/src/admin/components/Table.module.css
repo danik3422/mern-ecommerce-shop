@@ -1,0 +1,124 @@
+/* Shared table and panel styles for admin pages */
+.panel {
+	border: 1px solid var(--color-border);
+	background: var(--color-surface);
+}
+
+.scroll {
+	overflow-x: auto;
+}
+
+.table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: var(--text-sm);
+}
+
+.table th {
+	padding: var(--space-3) var(--space-4);
+	border-bottom: 1px solid var(--color-border);
+	color: var(--color-text-muted);
+	font-size: var(--text-xs);
+	font-weight: var(--weight-medium);
+	letter-spacing: 0.04em;
+	text-align: left;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+.table td {
+	padding: var(--space-3) var(--space-4);
+	border-bottom: 1px solid var(--color-border);
+	vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+	border-bottom: 0;
+}
+
+.table tbody tr:hover {
+	background: var(--color-bg);
+}
+
+.numeric {
+	font-variant-numeric: tabular-nums;
+	text-align: right !important;
+	white-space: nowrap;
+}
+
+.muted {
+	color: var(--color-text-muted);
+}
+
+.rowLink {
+	font-weight: var(--weight-medium);
+}
+
+.rowLink:hover {
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
+.thumb {
+	width: 2.5rem;
+	height: 3.25rem;
+	object-fit: cover;
+	background: var(--color-subtle);
+}
+
+.empty {
+	padding: var(--space-7) var(--space-4);
+	color: var(--color-text-muted);
+	text-align: center;
+}
+
+.toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: var(--space-3);
+	margin-bottom: var(--space-4);
+}
+
+.toolbar > * {
+	min-width: 10rem;
+}
+
+.search {
+	flex: 1;
+	max-width: 24rem;
+}
+
+.check {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	height: var(--control-height);
+	font-size: var(--text-sm);
+	min-width: auto !important;
+}
+
+.actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: var(--space-1);
+	white-space: nowrap;
+}
+
+.nowrap {
+	white-space: nowrap;
+}
+
+.searchRow {
+	display: flex;
+	gap: var(--space-2);
+}
+
+.danger {
+	color: var(--color-danger);
+}
+
+.searchButton {
+	width: var(--control-height);
+	padding-inline: 0;
+}

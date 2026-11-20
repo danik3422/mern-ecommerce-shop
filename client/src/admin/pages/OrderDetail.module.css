@@ -1,0 +1,97 @@
+.grid {
+	display: grid;
+	grid-template-columns: minmax(0, 1.7fr) minmax(16rem, 1fr);
+	gap: var(--space-4);
+	align-items: start;
+}
+
+.items {
+	overflow-x: auto;
+}
+
+.product {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+}
+
+.totals th {
+	padding: var(--space-2) var(--space-4);
+	color: var(--color-text-muted);
+	font-size: var(--text-sm);
+	font-weight: var(--weight-regular);
+	letter-spacing: 0;
+	text-align: right;
+	text-transform: none;
+	border: 0;
+}
+
+.totals td {
+	padding: var(--space-2) var(--space-4);
+	border: 0;
+}
+
+.totals tr:first-child th,
+.totals tr:first-child td {
+	border-top: 1px solid var(--color-border);
+}
+
+.grandTotal th,
+.grandTotal td {
+	color: var(--color-text) !important;
+	font-weight: var(--weight-semibold) !important;
+}
+
+.side {
+	display: grid;
+	gap: var(--space-4);
+}
+
+.card {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+	padding: var(--space-5);
+	font-size: var(--text-sm);
+}
+
+.cardTitle {
+	font-size: var(--text-md);
+}
+
+.statusForm {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+}
+
+.hint {
+	color: var(--color-text-muted);
+}
+
+.address {
+	font-style: normal;
+	color: var(--color-text-muted);
+}
+
+.facts {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: var(--space-1) var(--space-4);
+}
+
+.facts dt {
+	color: var(--color-text-muted);
+}
+
+.mono {
+	overflow-wrap: anywhere;
+	font-family: ui-monospace, monospace;
+	font-size: var(--text-xs);
+}
+
+@media (max-width: 64rem) {
+	.grid {
+		grid-template-columns: 1fr;
+	}
+}
