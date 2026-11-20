@@ -1,0 +1,51 @@
+.items {
+	display: grid;
+	gap: var(--space-3);
+	margin-top: var(--space-5);
+}
+
+.item {
+	display: grid;
+	grid-template-columns: 4.5rem 1fr auto;
+	gap: var(--space-3);
+	padding: var(--space-2);
+	border: 1px solid transparent;
+	font-size: var(--text-sm);
+}
+
+.item[aria-current='true'] {
+	border-color: var(--color-text);
+	background: var(--color-surface);
+}
+
+.image {
+	width: 100%;
+	aspect-ratio: 3 / 4;
+	object-fit: cover;
+	background: var(--color-subtle);
+}
+
+.brand {
+	font-weight: var(--weight-semibold);
+}
+
+.meta {
+	color: var(--color-text-muted);
+}
+
+.price {
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.footer {
+	display: grid;
+	gap: var(--space-2);
+}
+
+.subtotal {
+	display: flex;
+	justify-content: space-between;
+	margin-bottom: var(--space-2);
+	font-weight: var(--weight-semibold);
+}

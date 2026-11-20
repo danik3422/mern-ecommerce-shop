@@ -10,11 +10,11 @@ import {
 	toFacetScope,
 	updateFilterParams,
 } from '../components/product/catalogFilters'
-import FilterDrawer from '../components/product/FilterDrawer'
 import FilterPanel from '../components/product/FilterPanel'
 import Pagination from '../components/product/Pagination'
 import ProductGrid from '../components/product/ProductGrid'
 import Button from '../components/ui/Button'
+import Drawer from '../components/ui/Drawer'
 import Select from '../components/ui/Select'
 import { CATEGORY_TITLES, SALE_CATEGORY, SORT_OPTIONS } from '../data/catalog'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
@@ -141,8 +141,10 @@ const ProductList = () => {
 			</div>
 
 			{isDrawerOpen && (
-				<FilterDrawer
+				<Drawer
 					title='Filters'
+					side='left'
+					closeLabel='Close filters'
 					onClose={closeDrawer}
 					footer={
 						<Button fullWidth onClick={closeDrawer}>
@@ -151,7 +153,7 @@ const ProductList = () => {
 					}
 				>
 					{filterPanel}
-				</FilterDrawer>
+				</Drawer>
 			)}
 		</div>
 	)

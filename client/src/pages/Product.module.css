@@ -7,3 +7,10 @@
 	aspect-ratio: 4 / 5;
 	background: var(--color-subtle);
 }
+
+/* room for the sticky "Add to bag" bar on small screens */
+@media (max-width: 52rem) {
+	.page {
+		padding-bottom: var(--space-9);
+	}
+}

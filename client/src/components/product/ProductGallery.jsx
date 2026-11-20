@@ -1,6 +1,7 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react'
 import { useState } from 'react'
 import { cx } from '../../utils/cx'
+import ImageViewer from './ImageViewer'
 import style from './ProductGallery.module.css'
 
 /**
@@ -9,6 +10,7 @@ import style from './ProductGallery.module.css'
  */
 const ProductGallery = ({ images, title }) => {
 	const [index, setIndex] = useState(0)
+	const [isViewerOpen, setIsViewerOpen] = useState(false)
 	const count = images.length
 	const show = (next) => setIndex((next + count) % count)
 
@@ -17,12 +19,37 @@ const ProductGallery = ({ images, title }) => {
 		if (e.key === 'ArrowLeft') show(index - 1)
 	}
 
+	const openViewer = () => setIsViewerOpen(true)
+
+	const expandButton = (
+		<button
+			type='button'
+			className={style.expand}
+			onClick={openViewer}
+			aria-label='Open images in full screen'
+			title='Full screen'
+		>
+			<Maximize2 size={18} aria-hidden />
+		</button>
+	)
+
+	const viewer = isViewerOpen && (
+		<ImageViewer
+			images={images}
+			title={title}
+			startIndex={index}
+			onClose={() => setIsViewerOpen(false)}
+		/>
+	)
+
 	if (count === 1) {
 		return (
 			<div className={style.gallery}>
 				<div className={style.main}>
-					<img className={style.image} src={images[0]} alt={title} />
+					<img className={style.image} src={images[0]} alt={title} onClick={openViewer} />
+					{expandButton}
 				</div>
+				{viewer}
 			</div>
 		)
 	}
@@ -40,7 +67,13 @@ const ProductGallery = ({ images, title }) => {
 				onKeyDown={handleKeyDown}
 				aria-label={`Image ${index + 1} of ${count}. Use the arrow keys to switch images.`}
 			>
-				<img className={style.image} src={images[index]} alt={`${title}, image ${index + 1}`} />
+				<img
+					className={style.image}
+					src={images[index]}
+					alt={`${title}, image ${index + 1}`}
+					onClick={openViewer}
+				/>
+				{expandButton}
 				<button
 					type='button'
 					className={cx(style.arrow, style.prev)}
@@ -73,6 +106,7 @@ const ProductGallery = ({ images, title }) => {
 					</li>
 				))}
 			</ul>
+			{viewer}
 		</section>
 	)
 }

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as productsApi from './api/products'
@@ -104,7 +104,11 @@ describe('routes', () => {
 
 		screen.getByRole('button', { name: 'Add to bag' }).click()
 
-		expect(await screen.findByText(/added to your bag/i)).toBeInTheDocument()
+		const miniBag = await screen.findByRole('dialog', { name: 'Added to your bag' })
+		expect(within(miniBag).getByRole('link', { name: 'Go to checkout' })).toHaveAttribute(
+			'href',
+			'/cart',
+		)
 		expect(JSON.parse(localStorage.getItem('cart'))).toEqual([
 			{ productId: 'p1', color: 'green', size: 'L', quantity: 1 },
 		])
@@ -114,5 +118,28 @@ describe('routes', () => {
 	it('sends guests from account pages to sign in', async () => {
 		renderAt('/account')
 		expect(await screen.findByRole('heading', { level: 1, name: 'Sign in' })).toBeInTheDocument()
+	})
+
+	it('shows recently viewed products on the home page', async () => {
+		const { unmount } = renderAt('/product/arrow-jacket')
+		await screen.findByRole('heading', { level: 1, name: /arrow jacket/i })
+		unmount()
+
+		renderAt('/')
+		const section = await screen.findByRole('region', { name: 'Recently viewed' })
+		expect(await within(section).findByRole('link', { name: /arrow jacket/i })).toBeInTheDocument()
+	})
+
+	it('shows the sticky "Add to bag" bar once the main button scrolls away', async () => {
+		renderAt('/product/arrow-jacket')
+		const addButton = await screen.findByRole('button', { name: 'Add to bag' })
+		const bar = screen.getByRole('button', { name: 'Add to bag · L', hidden: true }).parentElement
+		expect(bar).not.toBeVisible()
+
+		// jsdom has no layout: pretend the purchase row is now above the viewport
+		vi.spyOn(addButton.parentElement, 'getBoundingClientRect').mockReturnValue({ bottom: -10 })
+		fireEvent.scroll(window)
+
+		await waitFor(() => expect(bar).toBeVisible())
 	})
 })

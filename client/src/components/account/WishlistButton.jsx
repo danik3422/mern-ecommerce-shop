@@ -2,6 +2,7 @@ import { Heart } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router'
 import { cx } from '../../utils/cx'
 import Button from '../ui/Button'
+import { useToast } from '../ui/toast/useToast'
 import { useWishlist } from './useWishlist'
 import style from './WishlistButton.module.css'
 
@@ -14,6 +15,7 @@ const WishlistButton = ({ productId, variant = 'icon' }) => {
 	const { isSaved, isSignedIn, toggle } = useWishlist(productId)
 	const navigate = useNavigate()
 	const location = useLocation()
+	const toast = useToast()
 
 	const handleClick = (e) => {
 		// the icon sits on top of a product link
@@ -24,6 +26,15 @@ const WishlistButton = ({ productId, variant = 'icon' }) => {
 			return
 		}
 		toggle()
+		toast.show(
+			isSaved
+				? { message: 'Removed from your wishlist' }
+				: {
+						message: 'Saved to your wishlist',
+						tone: 'success',
+						action: { label: 'View', to: '/account/wishlist' },
+					},
+		)
 	}
 
 	const label = isSaved ? 'Remove from wishlist' : 'Add to wishlist'

@@ -1,5 +1,5 @@
-import { Check, Truck } from 'lucide-react'
-import { useState } from 'react'
+import { Truck } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { MAX_QUANTITY } from '../../cart/cartLines'
 import { FREE_SHIPPING_FROM } from '../../cart/pricing'
@@ -7,7 +7,9 @@ import { useCart } from '../../cart/useCart'
 import { formatMoney } from '../../utils/money'
 import { capitalize } from '../../utils/text'
 import { CATEGORY_TITLES } from '../../data/catalog'
+import { rememberViewedProduct } from '../../hooks/useRecentlyViewed'
 import WishlistButton from '../account/WishlistButton'
+import MiniBag from '../cart/MiniBag'
 import ProductReviews from '../reviews/ProductReviews'
 import RatingStars from '../reviews/RatingStars'
 import Alert from '../ui/Alert'
@@ -17,6 +19,7 @@ import OptionPicker from './OptionPicker'
 import Price from './Price'
 import style from './ProductDetails.module.css'
 import ProductGallery from './ProductGallery'
+import SizeGuide from './SizeGuide'
 import SizePicker from './SizePicker'
 
 const firstAvailableSize = (sizes) => (sizes.find((s) => s.stock > 0) ?? sizes[0]).label
@@ -26,16 +29,46 @@ const ProductDetails = ({ product }) => {
 	const [color, setColor] = useState(product.colors[0])
 	const [size, setSize] = useState(() => firstAvailableSize(product.sizes))
 	const [quantity, setQuantity] = useState(1)
-	const [isAdded, setIsAdded] = useState(false)
+	// the line just added; opens the mini bag
+	const [addedLine, setAddedLine] = useState(null)
+	const [showStickyBar, setShowStickyBar] = useState(false)
+	const purchaseRef = useRef(null)
 
 	const category = product.categories[0]
 	const sizeStock = product.sizes.find((s) => s.label === size)?.stock ?? 0
 	const isOneSize = product.sizes.length === 1
 
+	useEffect(() => {
+		rememberViewedProduct(product._id)
+	}, [product._id])
+
+	// On small screens a bar with "Add to bag" appears once the main button has scrolled
+	// above the viewport. A scroll listener is used instead of IntersectionObserver, which
+	// misses jumps past the button (fast flings, the "#reviews" link).
+	useEffect(() => {
+		const target = purchaseRef.current
+		if (!target) return
+		let frame = 0
+		const update = () => {
+			frame = 0
+			setShowStickyBar(target.getBoundingClientRect().bottom < 0)
+		}
+		const handleScroll = () => {
+			frame ||= requestAnimationFrame(update)
+		}
+		window.addEventListener('scroll', handleScroll, { passive: true })
+		return () => {
+			window.removeEventListener('scroll', handleScroll)
+			cancelAnimationFrame(frame)
+		}
+	}, [])
+
 	const handleAdd = () => {
-		addItem({ productId: product._id, color, size, quantity })
-		setIsAdded(true)
+		const line = { productId: product._id, color, size, quantity }
+		addItem(line)
+		setAddedLine(line)
 	}
+	const canAdd = product.inStock && sizeStock > 0
 
 	return (
 		<>
@@ -90,16 +123,21 @@ const ProductDetails = ({ product }) => {
 							onChange={setColor}
 						/>
 					)}
-					{!isOneSize && <SizePicker sizes={product.sizes} value={size} onChange={setSize} />}
+					{!isOneSize && (
+						<div className={style.sizes}>
+							<SizePicker sizes={product.sizes} value={size} onChange={setSize} />
+							<SizeGuide sizes={product.sizes.map((s) => s.label)} />
+						</div>
+					)}
 
 					{product.inStock ? (
-						<div className={style.purchase}>
+						<div className={style.purchase} ref={purchaseRef}>
 							<QuantityStepper
 								value={quantity}
 								onChange={setQuantity}
 								max={Math.min(MAX_QUANTITY, sizeStock || 1)}
 							/>
-							<Button fullWidth onClick={handleAdd} disabled={sizeStock === 0}>
+							<Button fullWidth onClick={handleAdd} disabled={!canAdd}>
 								Add to bag
 							</Button>
 							<WishlistButton productId={product._id} variant='button' />
@@ -108,21 +146,24 @@ const ProductDetails = ({ product }) => {
 						<Alert>This product is sold out.</Alert>
 					)}
 
-					{isAdded && (
-						<Alert tone='success' className={style.added}>
-							<Check size={16} aria-hidden /> Added to your bag.{' '}
-							<Link to='/cart' className='text-link'>
-								View bag
-							</Link>
-						</Alert>
-					)}
-
 					<p className={style.note}>
 						<Truck size={16} aria-hidden /> Free shipping on orders over{' '}
 						{formatMoney(FREE_SHIPPING_FROM)}
 					</p>
 				</div>
 			</article>
+			{canAdd && (
+				<div className={style.stickyBar} hidden={!showStickyBar}>
+					<div className={style.stickyInfo}>
+						<p className={style.stickyTitle}>{product.title}</p>
+						<Price product={product} />
+					</div>
+					<Button onClick={handleAdd}>Add to bag{isOneSize ? '' : ` · ${size}`}</Button>
+				</div>
+			)}
+
+			{addedLine && <MiniBag addedLine={addedLine} onClose={() => setAddedLine(null)} />}
+
 			{/* target of the rating link above */}
 			<div id='reviews'>
 				<ProductReviews product={product} />

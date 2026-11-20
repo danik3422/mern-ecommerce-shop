@@ -82,3 +82,21 @@
 		opacity: 1;
 	}
 }
+
+.image {
+	cursor: zoom-in;
+}
+
+.expand {
+	position: absolute;
+	top: var(--space-3);
+	right: var(--space-3);
+	display: grid;
+	place-items: center;
+	width: 2.5rem;
+	height: 2.5rem;
+	border: 0;
+	border-radius: 50%;
+	background: var(--color-surface);
+	box-shadow: 0 1px 6px rgb(0 0 0 / 0.1);
+}

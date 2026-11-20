@@ -1,11 +1,9 @@
-import { FREE_SHIPPING_FROM } from '../../cart/pricing'
 import { formatMoney } from '../../utils/money'
+import FreeShippingProgress from './FreeShippingProgress'
 import style from './OrderSummary.module.css'
 
 /** @param totals `{ subtotal, shipping, total }` from calculateTotals */
 const OrderSummary = ({ totals, children }) => {
-	const missingForFreeShipping = FREE_SHIPPING_FROM - totals.subtotal
-
 	return (
 		<aside className={style.summary} aria-labelledby='order-summary-title'>
 			<h2 id='order-summary-title' className={style.title}>
@@ -25,11 +23,7 @@ const OrderSummary = ({ totals, children }) => {
 					<dd>{formatMoney(totals.total)}</dd>
 				</div>
 			</dl>
-			{missingForFreeShipping > 0 && (
-				<p className={style.hint}>
-					Add {formatMoney(missingForFreeShipping)} more for free shipping.
-				</p>
-			)}
+			<FreeShippingProgress subtotal={totals.subtotal} />
 			{children}
 		</aside>
 	)

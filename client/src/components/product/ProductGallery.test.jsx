@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import ProductGallery from './ProductGallery'
 
@@ -34,9 +34,25 @@ describe('ProductGallery', () => {
 		expect(mainImage()).toHaveAttribute('src', '/b.jpg')
 	})
 
-	it('shows a single image without controls', () => {
+	it('shows a single image without navigation controls', () => {
 		render(<ProductGallery images={['/a.jpg']} title='Coat' />)
 		expect(screen.getByRole('img', { name: 'Coat' })).toBeInTheDocument()
-		expect(screen.queryByRole('button')).not.toBeInTheDocument()
+		expect(
+			screen.queryByRole('button', { name: /previous|next|show image/i }),
+		).not.toBeInTheDocument()
+	})
+
+	it('opens the full-screen viewer and switches images with the keyboard', () => {
+		render(<ProductGallery images={['/a.jpg', '/b.jpg']} title='Coat' />)
+		fireEvent.click(screen.getByRole('button', { name: 'Open images in full screen' }))
+
+		const dialog = screen.getByRole('dialog', { name: 'Coat — image 1 of 2' })
+		fireEvent.keyDown(within(dialog).getByRole('button', { name: 'Zoom in' }), {
+			key: 'ArrowRight',
+		})
+		expect(screen.getByRole('dialog', { name: 'Coat — image 2 of 2' })).toBeInTheDocument()
+
+		fireEvent.keyDown(document, { key: 'Escape' })
+		expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 	})
 })

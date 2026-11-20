@@ -5,6 +5,7 @@ import CategoryTiles from '../components/home/CategoryTiles'
 import Hero from '../components/home/Hero'
 import PromoBanner from '../components/home/PromoBanner'
 import Section from '../components/home/Section'
+import RecentlyViewed from '../components/product/RecentlyViewed'
 import ProductGrid from '../components/product/ProductGrid'
 import { SALE_CATEGORY } from '../data/catalog'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
@@ -30,6 +31,9 @@ const Home = () => {
 		<>
 			<Hero />
 			<PromoBanner />
+			<div className='container'>
+				<RecentlyViewed />
+			</div>
 			<Section title='Shop by category'>
 				<CategoryTiles />
 			</Section>

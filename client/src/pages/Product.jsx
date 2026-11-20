@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router'
 import { getErrorMessage } from '../api/client'
 import ProductDetails from '../components/product/ProductDetails'
+import RecentlyViewed from '../components/product/RecentlyViewed'
 import RelatedProducts from '../components/product/RelatedProducts'
 import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
@@ -38,6 +39,7 @@ const Product = () => {
 					{/* key resets the chosen options and gallery when another product is opened */}
 					<ProductDetails product={product} key={product._id} />
 					<RelatedProducts productId={product._id} />
+					<RecentlyViewed excludeId={product._id} />
 				</>
 			)}
 		</div>

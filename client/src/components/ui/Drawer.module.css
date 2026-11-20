@@ -14,17 +14,32 @@
 	position: absolute;
 	top: 0;
 	bottom: 0;
-	left: 0;
 	display: flex;
 	flex-direction: column;
 	width: min(24rem, 90vw);
 	background: var(--color-bg);
-	animation: slide-in 200ms ease;
+	outline: none;
 }
 
-@keyframes slide-in {
+.left {
+	left: 0;
+	animation: slide-from-left 200ms ease;
+}
+
+.right {
+	right: 0;
+	animation: slide-from-right 200ms ease;
+}
+
+@keyframes slide-from-left {
 	from {
 		transform: translateX(-100%);
+	}
+}
+
+@keyframes slide-from-right {
+	from {
+		transform: translateX(100%);
 	}
 }
 
@@ -57,7 +72,7 @@
 .body {
 	flex: 1;
 	overflow-y: auto;
-	padding-inline: var(--space-4);
+	padding: var(--space-4);
 }
 
 .footer {
