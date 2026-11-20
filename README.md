@@ -6,8 +6,11 @@ Clothing store: React client (Vite) and Express + MongoDB API in one npm workspa
 
 - **Catalog:** search, filters by brand, size, color, price, sale and stock (counts per option),
   sorting, sale prices with discounts, galleries, related products, ratings.
-- **Shopping:** stock per size (sold-out sizes are disabled, low stock is shown), a bag synced
-  with the account, checkout with saved addresses and Stripe payments.
+- **Shopping:** stock per size (sold-out sizes are disabled, low stock is shown), quick add
+  from product cards, a mini bag after adding, a bag synced with the account, checkout with
+  saved addresses and Stripe payments, back-in-stock email alerts for sold-out sizes.
+- **Finding things:** search suggestions with products and brands, recent searches, recently
+  viewed products, full-screen image zoom and a size guide.
 - **Account:** orders with status (pay or cancel pending ones), profile, address book, wishlist,
   reviews from verified buyers.
 - **Admin panel** (`/admin`): dashboard with revenue chart and low stock, products with image
@@ -76,6 +79,12 @@ server set `CLIENT_URL` (CORS and Stripe redirect URLs) and `TRUST_PROXY` behind
 **After pulling schema changes** run `npm run migrate`: it syncs database indexes with the
 models (for example, it removes indexes left by older versions).
 
+### Email (optional)
+
+Back-in-stock alerts are sent by email. Set `SMTP_URL` (for example
+`smtp://user:password@smtp.example.com:587`) and `MAIL_FROM` in `server/.env`; without them the
+emails are written to the server log, which is enough for development.
+
 ### Payments (Stripe, optional)
 
 Without Stripe keys everything works and orders stay "awaiting payment". To take test payments:
@@ -118,6 +127,7 @@ Errors always look like `{ message, details? }`; `details` lists invalid fields.
 | GET                         | `/products/facets`                                                   | public                           | filter options with counts for a category or search                                       |
 | GET                         | `/products/:idOrSlug`, `/:id/related`                                | public                           |                                                                                           |
 | POST / PATCH / DELETE       | `/products[/:id]`                                                    | admin                            |                                                                                           |
+| POST                        | `/products/:id/stock-alerts`                                         | public                           | `{ size, email? }` — email when a sold-out size is back; rate limited                     |
 | GET / POST / DELETE         | `/products/:id/reviews[/:reviewId]`                                  | public / buyer / author or admin | one review per buyer                                                                      |
 | GET / PUT / DELETE          | `/cart`                                                              | user                             | the signed-in user's bag                                                                  |
 | POST                        | `/orders`                                                            | user                             | reserves stock, returns `{ order, checkoutUrl }`                                          |

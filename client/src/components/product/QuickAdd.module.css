@@ -1,0 +1,116 @@
+/* Covers the card image (same 3:4 box) so the panel can sit at its bottom edge */
+.overlay {
+	position: absolute;
+	top: 0;
+	right: 0;
+	left: 0;
+	aspect-ratio: 3 / 4;
+	pointer-events: none;
+}
+
+.panel {
+	position: absolute;
+	right: var(--space-2);
+	bottom: var(--space-2);
+	left: var(--space-2);
+	padding: var(--space-2);
+	background: color-mix(in srgb, var(--color-surface) 94%, transparent);
+	box-shadow: 0 4px 16px rgb(0 0 0 / 0.1);
+	opacity: 0;
+	transform: translateY(6px);
+	visibility: hidden;
+	transition:
+		opacity var(--transition),
+		transform var(--transition),
+		visibility var(--transition);
+	pointer-events: auto;
+}
+
+/* touch screens: the bag button toggles the panel */
+.open .panel {
+	opacity: 1;
+	transform: none;
+	visibility: visible;
+}
+
+.open .toggle {
+	display: none;
+}
+
+.toggle {
+	position: absolute;
+	right: var(--space-2);
+	bottom: var(--space-2);
+	display: grid;
+	place-items: center;
+	width: 2.25rem;
+	height: 2.25rem;
+	border: 0;
+	border-radius: 50%;
+	background: var(--color-surface);
+	box-shadow: 0 1px 6px rgb(0 0 0 / 0.12);
+	pointer-events: auto;
+}
+
+.label {
+	margin-bottom: var(--space-1);
+	color: var(--color-text-muted);
+	font-size: var(--text-xs);
+	letter-spacing: var(--tracking-wide);
+	text-transform: uppercase;
+}
+
+.sizes {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-1);
+}
+
+.size {
+	min-width: 2.25rem;
+	height: 2rem;
+	padding-inline: var(--space-2);
+	border: 1px solid var(--color-border);
+	background: var(--color-surface);
+	font-size: var(--text-xs);
+}
+
+.size:hover:not(:disabled) {
+	border-color: var(--color-text);
+	background: var(--color-text);
+	color: var(--color-inverse);
+}
+
+.size:disabled {
+	color: var(--color-text-muted);
+	text-decoration: line-through;
+	cursor: not-allowed;
+}
+
+.addButton,
+.link {
+	display: grid;
+	place-items: center;
+	width: 100%;
+	height: 2.25rem;
+	border: 0;
+	background: var(--color-text);
+	color: var(--color-inverse);
+	font-size: var(--text-sm);
+	font-weight: var(--weight-medium);
+}
+
+/* Desktop: reveal on hover or keyboard focus anywhere in the card.
+   Kept last so it overrides the base .toggle styles above. */
+@media (hover: hover) {
+	:global(.quick-add-host):hover .panel,
+	.overlay:focus-within .panel {
+		opacity: 1;
+		transform: none;
+		visibility: visible;
+	}
+
+	.toggle {
+		display: none;
+	}
+}

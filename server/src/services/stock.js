@@ -1,5 +1,6 @@
 import { Product } from '../models/Product.js'
 import { conflict } from '../utils/HttpError.js'
+import { notifyRestocked } from './stockAlerts.js'
 
 /**
  * Takes `quantity` from the chosen size only if enough is left — a single atomic update,
@@ -13,9 +14,12 @@ const takeFromStock = async ({ productId, size, quantity }) => {
 	return result.modifiedCount === 1
 }
 
-/** Puts items back into stock (cancelled orders and failed reservations). */
-export const releaseStock = (items) =>
-	Promise.all(
+/**
+ * Puts items back into stock (cancelled orders and failed reservations)
+ * and emails customers waiting for those sizes.
+ */
+export const releaseStock = async (items) => {
+	await Promise.all(
 		items.map(({ productId, size, quantity }) =>
 			Product.updateOne(
 				{ _id: productId, 'sizes.label': size },
@@ -23,6 +27,8 @@ export const releaseStock = (items) =>
 			),
 		),
 	)
+	await notifyRestocked(items.map((item) => item.productId))
+}
 
 /**
  * Reserves stock for all items or for none of them.

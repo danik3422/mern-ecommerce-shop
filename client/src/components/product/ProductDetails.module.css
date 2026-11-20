@@ -148,3 +148,15 @@
 		display: flex;
 	}
 }
+
+.sizeLinks {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2) var(--space-5);
+}
+
+.soldOut {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+}

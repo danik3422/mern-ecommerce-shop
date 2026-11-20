@@ -2,10 +2,12 @@ import { Link } from 'react-router'
 import WishlistButton from '../account/WishlistButton'
 import RatingStars from '../reviews/RatingStars'
 import Price from './Price'
+import QuickAdd from './QuickAdd'
 import style from './ProductCard.module.css'
 
 const ProductCard = ({ product }) => (
-	<div className={style.card}>
+	// `quick-add-host` lets QuickAdd react to hovering anywhere on the card
+	<div className={`${style.card} quick-add-host`}>
 		<Link to={`/product/${product.slug}`} className={style.link}>
 			<div className={style.media}>
 				<img className={style.image} src={product.images[0]} alt='' loading='lazy' />
@@ -25,6 +27,7 @@ const ProductCard = ({ product }) => (
 				<RatingStars value={product.rating?.average ?? 0} count={product.rating?.count} size={12} />
 			</div>
 		</Link>
+		<QuickAdd product={product} />
 		<div className={style.wishlist}>
 			<WishlistButton productId={product._id} />
 		</div>

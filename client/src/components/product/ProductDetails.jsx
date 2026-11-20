@@ -15,6 +15,7 @@ import RatingStars from '../reviews/RatingStars'
 import Alert from '../ui/Alert'
 import Button from '../ui/Button'
 import QuantityStepper from '../ui/QuantityStepper'
+import NotifyMe from './NotifyMe'
 import OptionPicker from './OptionPicker'
 import Price from './Price'
 import style from './ProductDetails.module.css'
@@ -22,7 +23,8 @@ import ProductGallery from './ProductGallery'
 import SizeGuide from './SizeGuide'
 import SizePicker from './SizePicker'
 
-const firstAvailableSize = (sizes) => (sizes.find((s) => s.stock > 0) ?? sizes[0]).label
+// nothing is preselected when every size is sold out
+const firstAvailableSize = (sizes) => sizes.find((s) => s.stock > 0)?.label ?? null
 
 const ProductDetails = ({ product }) => {
 	const { addItem } = useCart()
@@ -126,7 +128,10 @@ const ProductDetails = ({ product }) => {
 					{!isOneSize && (
 						<div className={style.sizes}>
 							<SizePicker sizes={product.sizes} value={size} onChange={setSize} />
-							<SizeGuide sizes={product.sizes.map((s) => s.label)} />
+							<div className={style.sizeLinks}>
+								<SizeGuide sizes={product.sizes.map((s) => s.label)} />
+								{product.inStock && <NotifyMe product={product} />}
+							</div>
 						</div>
 					)}
 
@@ -143,7 +148,10 @@ const ProductDetails = ({ product }) => {
 							<WishlistButton productId={product._id} variant='button' />
 						</div>
 					) : (
-						<Alert>This product is sold out.</Alert>
+						<div className={style.soldOut}>
+							<Alert>This product is sold out.</Alert>
+							<NotifyMe product={product} variant='button' />
+						</div>
 					)}
 
 					<p className={style.note}>

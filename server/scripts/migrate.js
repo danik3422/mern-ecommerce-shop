@@ -14,6 +14,7 @@ import '../src/models/Cart.js'
 import '../src/models/Order.js'
 import '../src/models/Product.js'
 import '../src/models/Review.js'
+import '../src/models/StockAlert.js'
 import '../src/models/User.js'
 
 const main = async () => {

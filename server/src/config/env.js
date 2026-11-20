@@ -17,6 +17,9 @@ const envSchema = z.object({
 	// Stripe (optional): without a secret key orders are created unpaid ("pay later")
 	STRIPE_SECRET_KEY: z.string().optional(),
 	STRIPE_WEBHOOK_SECRET: z.string().optional(),
+	// Outgoing email (optional): smtp://user:pass@host:587. Without it emails are logged.
+	SMTP_URL: z.string().optional(),
+	MAIL_FROM: z.string().default('Clothe Shop <no-reply@example.com>'),
 })
 
 const parsed = envSchema.safeParse(process.env)

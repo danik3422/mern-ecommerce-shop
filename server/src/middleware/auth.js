@@ -24,6 +24,12 @@ export const requireAuth = async (req, _res, next) => {
 	next()
 }
 
+/** Like requireAuth, but lets anonymous requests through (req.user stays undefined). */
+export const optionalAuth = async (req, res, next) => {
+	if (!readBearerToken(req)) return next()
+	return requireAuth(req, res, next)
+}
+
 export const requireAdmin = [
 	requireAuth,
 	(req, _res, next) => {

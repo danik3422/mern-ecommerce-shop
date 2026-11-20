@@ -1,6 +1,7 @@
 import mongoose from 'mongoose'
 import { Product } from '../models/Product.js'
 import { toProductView } from '../services/productView.js'
+import { notifyRestocked } from '../services/stockAlerts.js'
 import { notFound } from '../utils/HttpError.js'
 
 const SORTS = {
@@ -178,6 +179,7 @@ export const updateProduct = async (req, res) => {
 		runValidators: true,
 	})
 	if (!product) throw notFound('Product')
+	if (req.valid.body.sizes || req.valid.body.active) await notifyRestocked([product._id])
 	res.json(toProductView(product))
 }
 

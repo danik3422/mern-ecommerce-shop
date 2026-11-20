@@ -29,3 +29,7 @@ export const productKeys = {
 	detail: (id) => ['products', 'detail', id],
 	related: (id, limit) => ['products', 'related', id, limit],
 }
+
+/** Asks to be emailed when a sold-out size is back. `email` may be omitted when signed in. */
+export const createStockAlert = (productId, { size, email }) =>
+	http.post(`/products/${productId}/stock-alerts`, { size, email }).then((r) => r.data)

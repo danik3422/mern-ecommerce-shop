@@ -10,7 +10,12 @@ const SizePicker = ({ sizes, value, onChange }) => {
 	return (
 		<fieldset className={style.fieldset}>
 			<legend className={style.legend}>
-				Size: <span className={style.selected}>{value ?? 'choose a size'}</span>
+				Size:{' '}
+				{value ? (
+					<span className={style.selected}>{value}</span>
+				) : (
+					<span className={style.placeholder}>choose a size</span>
+				)}
 			</legend>
 			<div className={style.options}>
 				{sizes.map((size) => {

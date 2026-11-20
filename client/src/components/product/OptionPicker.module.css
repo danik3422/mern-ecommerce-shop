@@ -91,3 +91,8 @@ input:focus-visible + .pill {
 	font-size: var(--text-sm);
 	color: var(--color-danger);
 }
+
+.placeholder {
+	font-weight: var(--weight-regular);
+	color: var(--color-text-muted);
+}
