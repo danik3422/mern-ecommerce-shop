@@ -1,5 +1,6 @@
 import Stripe from 'stripe'
 import { env } from '../config/env.js'
+import { SHOP } from '../config/shop.js'
 import { HttpError } from '../utils/HttpError.js'
 
 /**
@@ -9,7 +10,7 @@ import { HttpError } from '../utils/HttpError.js'
 
 // Stripe allows 30 minutes to 24 hours; unpaid orders release their stock when the session expires
 const SESSION_LIFETIME_SECONDS = 60 * 60
-const CURRENCY = 'usd'
+const CURRENCY = SHOP.currency.toLowerCase()
 
 let client
 
@@ -58,14 +59,32 @@ export const createCheckoutSession = async (order) => {
 			price_data: {
 				currency: CURRENCY,
 				unit_amount: toCents(order.shipping),
-				product_data: { name: 'Shipping' },
+				product_data: { name: order.shippingMethod?.label ?? 'Shipping' },
 			},
 		})
 	}
 
+	// Stripe line items cannot be negative, so a discount becomes a one-time coupon
+	const discounts =
+		order.discount > 0
+			? [
+					{
+						coupon: (
+							await stripe().coupons.create({
+								amount_off: toCents(order.discount),
+								currency: CURRENCY,
+								duration: 'once',
+								name: order.promoCode ? `Promo ${order.promoCode}` : 'Discount',
+							})
+						).id,
+					},
+				]
+			: undefined
+
 	const session = await stripe().checkout.sessions.create({
 		mode: 'payment',
 		line_items: lineItems,
+		discounts,
 		client_reference_id: orderId,
 		metadata: { orderId },
 		success_url: `${clientUrl}/checkout/success?order=${orderId}`,

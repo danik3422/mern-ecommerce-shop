@@ -1,15 +1,13 @@
-import { Truck } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { MAX_QUANTITY } from '../../cart/cartLines'
-import { FREE_SHIPPING_FROM } from '../../cart/pricing'
 import { useCart } from '../../cart/useCart'
-import { formatMoney } from '../../utils/money'
 import { findVariant, isVariantInStock, stockOf } from '../../utils/variants'
 import { capitalize } from '../../utils/text'
 import { CATEGORY_TITLES } from '../../data/catalog'
 import { rememberViewedProduct } from '../../hooks/useRecentlyViewed'
 import WishlistButton from '../account/WishlistButton'
+import FreeShippingNote from '../cart/FreeShippingNote'
 import MiniBag from '../cart/MiniBag'
 import ProductReviews from '../reviews/ProductReviews'
 import RatingStars from '../reviews/RatingStars'
@@ -176,8 +174,7 @@ const ProductDetails = ({ product }) => {
 					)}
 
 					<p className={style.note}>
-						<Truck size={16} aria-hidden /> Free shipping on orders over{' '}
-						{formatMoney(FREE_SHIPPING_FROM)}
+						<FreeShippingNote />
 					</p>
 				</div>
 			</article>

@@ -14,10 +14,11 @@ import SavedAddressPicker from './SavedAddressPicker'
 /**
  * Shipping address (saved or new) and the "Place order" button.
  * @param lines cart lines to order
+ * @param shippingMethod / promoCode chosen in the order summary
  * @param disabled e.g. when some items do not have enough stock
  * @param onOrderPlaced called with `{ order, checkoutUrl }`
  */
-const CheckoutForm = ({ lines, disabled, onOrderPlaced }) => {
+const CheckoutForm = ({ lines, shippingMethod, promoCode, disabled, onOrderPlaced }) => {
 	// the address book may be unavailable — the form then simply asks for a new address
 	const savedAddresses = useQuery({
 		queryKey: accountKeys.addresses,
@@ -36,7 +37,12 @@ const CheckoutForm = ({ lines, disabled, onOrderPlaced }) => {
 
 	const order = useMutation({
 		mutationFn: async (address) => {
-			const result = await createOrder({ items: toApiItems(lines), address })
+			const result = await createOrder({
+				items: toApiItems(lines),
+				address,
+				shippingMethod,
+				promoCode: promoCode || undefined,
+			})
 			if (usesNewAddress && saveAddress) {
 				// saving the address must not block a placed order
 				await createAddress(address).catch(() => {})

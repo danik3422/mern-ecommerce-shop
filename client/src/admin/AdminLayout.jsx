@@ -6,6 +6,7 @@ import {
 	MessageSquare,
 	Package,
 	ShoppingCart,
+	Tag,
 	Users,
 	X,
 } from 'lucide-react'
@@ -21,6 +22,7 @@ const NAV = [
 	{ to: '/admin/orders', label: 'Orders', icon: ShoppingCart },
 	{ to: '/admin/customers', label: 'Customers', icon: Users },
 	{ to: '/admin/reviews', label: 'Reviews', icon: MessageSquare },
+	{ to: '/admin/promo-codes', label: 'Promo codes', icon: Tag },
 ]
 
 /** Admin frame: sidebar on wide screens, top bar with a menu on small ones. */

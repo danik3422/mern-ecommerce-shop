@@ -8,6 +8,7 @@ import {
 	isPaymentsEnabled,
 } from '../services/payments.js'
 import { calculateTotals } from '../services/pricing.js'
+import { findUsablePromo, redeemPromo, releasePromo } from '../services/promoCodes.js'
 import { releaseStock, reserveStock } from '../services/stock.js'
 import { HttpError, conflict, notFound } from '../utils/HttpError.js'
 
@@ -25,17 +26,9 @@ const startCheckout = async (order) => {
 	return session.url
 }
 
-/**
- * POST /orders — prices come from the database, stock is reserved atomically,
- * and the saved cart is cleared. With Stripe configured the response contains
- * the URL of the payment page; otherwise the order stays pending ("pay later").
- */
-export const createOrder = async (req, res) => {
-	const { items, address } = req.valid.body
-	const resolved = await resolveLineItems(items, { requireStock: true })
-	await reserveStock(resolved)
-
-	const orderItems = resolved.map(({ product, variant, ...item }) => ({
+/** Order lines with a snapshot of the product as it is sold now. */
+export const toOrderItems = (resolved) =>
+	resolved.map(({ product, variant, ...item }) => ({
 		...item,
 		title: product.title,
 		brand: product.brand,
@@ -43,14 +36,30 @@ export const createOrder = async (req, res) => {
 		price: product.price,
 	}))
 
+/**
+ * POST /orders — prices come from the database, stock is reserved atomically,
+ * and the saved cart is cleared. With Stripe configured the response contains
+ * the URL of the payment page; otherwise the order stays pending ("pay later").
+ */
+export const createOrder = async (req, res) => {
+	const { items, address, shippingMethod, promoCode } = req.valid.body
+	const resolved = await resolveLineItems(items, { requireStock: true })
+	const orderItems = toOrderItems(resolved)
+	const promo = promoCode
+		? await findUsablePromo(promoCode, calculateTotals(orderItems).subtotal)
+		: undefined
+	const totals = calculateTotals(orderItems, { shippingMethod, promo })
+
+	await reserveStock(resolved)
 	let order
 	try {
-		order = await Order.create({
-			user: req.user.id,
-			items: orderItems,
-			...calculateTotals(orderItems),
-			address,
-		})
+		if (promo) await redeemPromo(promo)
+		try {
+			order = await Order.create({ user: req.user.id, items: orderItems, ...totals, address })
+		} catch (err) {
+			if (promo) await releasePromo(promo.code)
+			throw err
+		}
 	} catch (err) {
 		await releaseStock(resolved)
 		throw err

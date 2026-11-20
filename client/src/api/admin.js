@@ -45,6 +45,12 @@ export const fetchAdminReviews = (params, signal) =>
 export const deleteReview = (productId, reviewId) =>
 	http.delete(`/products/${productId}/reviews/${reviewId}`)
 
+export const fetchPromoCodes = (signal) => http.get('/admin/promo-codes', { signal }).then(data)
+export const createPromoCode = (promo) => http.post('/admin/promo-codes', promo).then(data)
+export const updatePromoCode = (id, changes) =>
+	http.patch(`/admin/promo-codes/${id}`, changes).then(data)
+export const deletePromoCode = (id) => http.delete(`/admin/promo-codes/${id}`)
+
 export const adminKeys = {
 	all: ['admin'],
 	stats: ['admin', 'stats'],
@@ -54,4 +60,5 @@ export const adminKeys = {
 	order: (id) => ['admin', 'order', id],
 	users: ['admin', 'users'],
 	reviews: (params) => ['admin', 'reviews', params],
+	promoCodes: ['admin', 'promo-codes'],
 }

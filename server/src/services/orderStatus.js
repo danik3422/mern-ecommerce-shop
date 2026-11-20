@@ -1,6 +1,7 @@
 import { Order } from '../models/Order.js'
 import { HttpError, notFound } from '../utils/HttpError.js'
 import { expireCheckoutSession } from './payments.js'
+import { releasePromo } from './promoCodes.js'
 import { releaseStock } from './stock.js'
 
 /** Allowed status changes; everything else is rejected with 409. */
@@ -36,6 +37,7 @@ export const transitionOrder = async (orderId, status, { from, filter = {}, set 
 
 	if (order && status === 'cancelled') {
 		await releaseStock(order.items)
+		if (order.promoCode) await releasePromo(order.promoCode)
 		await expireCheckoutSession(order.payment?.sessionId)
 	}
 	return order

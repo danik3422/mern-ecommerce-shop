@@ -1,6 +1,5 @@
 import { Link } from 'react-router'
 import { lineKey } from '../../cart/cartLines'
-import { calculateTotals } from '../../cart/pricing'
 import { useCartItems } from '../../cart/useCartItems'
 import { formatMoney } from '../../utils/money'
 import { capitalize } from '../../utils/text'
@@ -17,9 +16,7 @@ import style from './MiniBag.module.css'
 const MiniBag = ({ addedLine, onClose }) => {
 	const { items } = useCartItems()
 	const addedKey = addedLine && lineKey(addedLine)
-	const { subtotal } = calculateTotals(
-		items.map((item) => ({ price: item.product.price, quantity: item.quantity })),
-	)
+	const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
 
 	return (
 		<Drawer

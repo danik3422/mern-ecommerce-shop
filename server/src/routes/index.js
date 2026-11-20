@@ -4,6 +4,7 @@ import { accountRoutes } from './account.routes.js'
 import { adminRoutes } from './admin.routes.js'
 import { authRoutes } from './auth.routes.js'
 import { cartRoutes } from './cart.routes.js'
+import { checkoutRoutes } from './checkout.routes.js'
 import { orderRoutes } from './orders.routes.js'
 import { paymentRoutes } from './payments.routes.js'
 import { productRoutes } from './products.routes.js'
@@ -20,6 +21,7 @@ export const apiRoutes = ({ authRateLimit }) => {
 	router.use('/products/:productId/stock-alerts', stockAlertRoutes)
 	router.use('/products', productRoutes)
 	router.use('/cart', cartRoutes)
+	router.use(checkoutRoutes)
 	router.use('/orders', orderRoutes)
 	router.use('/payments', paymentRoutes)
 	router.use('/account', accountRoutes)

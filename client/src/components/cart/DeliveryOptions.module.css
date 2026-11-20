@@ -1,0 +1,44 @@
+.fieldset {
+	display: grid;
+	gap: var(--space-2);
+	border: 0;
+	padding: 0;
+}
+
+.legend {
+	margin-bottom: var(--space-2);
+	font-weight: var(--weight-medium);
+}
+
+.option {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	padding: var(--space-3);
+	border: 1px solid var(--color-border);
+	cursor: pointer;
+	font-size: var(--text-sm);
+}
+
+.option:has(input:checked) {
+	border-color: var(--color-text);
+}
+
+.text {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+}
+
+.label {
+	font-weight: var(--weight-medium);
+}
+
+.days {
+	color: var(--color-text-muted);
+	font-size: var(--text-xs);
+}
+
+.price {
+	font-variant-numeric: tabular-nums;
+}

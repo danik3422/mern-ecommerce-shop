@@ -1,12 +1,16 @@
 import { Truck } from 'lucide-react'
-import { FREE_SHIPPING_FROM } from '../../cart/pricing'
+import { useShopConfig } from '../../hooks/useShopConfig'
 import { formatMoney } from '../../utils/money'
 import style from './FreeShippingProgress.module.css'
 
-/** "Add $12.00 more for free shipping" with a progress bar. */
+/** "Add $12.00 more for free shipping" with a progress bar (threshold from the shop config). */
 const FreeShippingProgress = ({ subtotal }) => {
-	const missing = FREE_SHIPPING_FROM - subtotal
-	const percent = Math.min(100, Math.round((subtotal / FREE_SHIPPING_FROM) * 100))
+	const config = useShopConfig()
+	if (!config) return null
+
+	const threshold = config.freeShippingFrom
+	const missing = threshold - subtotal
+	const percent = Math.min(100, Math.round((subtotal / threshold) * 100))
 
 	return (
 		<div className={style.progress}>

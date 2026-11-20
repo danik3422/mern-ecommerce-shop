@@ -37,8 +37,13 @@ const orderSchema = new mongoose.Schema(
 		user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
 		items: { type: [orderItemSchema], required: true },
 		subtotal: { type: Number, required: true, min: 0 },
+		discount: { type: Number, min: 0, default: 0 },
+		promoCode: String,
 		shipping: { type: Number, required: true, min: 0 },
-		// subtotal + shipping — what the customer pays
+		shippingMethod: {
+			type: new mongoose.Schema({ id: String, label: String, price: Number }, { _id: false }),
+		},
+		// subtotal - discount + shipping — what the customer pays
 		amount: { type: Number, required: true, min: 0 },
 		address: { type: new mongoose.Schema(addressFields, { _id: false }), required: true },
 		status: { type: String, enum: ORDER_STATUSES, default: 'pending', index: true },

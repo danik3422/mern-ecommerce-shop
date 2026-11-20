@@ -1,7 +1,6 @@
 import { Link } from 'react-router'
 import { NAV_LINKS } from '../../data/catalog'
-import { FREE_SHIPPING_FROM } from '../../cart/pricing'
-import { formatMoney } from '../../utils/money'
+import FreeShippingNote from '../cart/FreeShippingNote'
 import { cx } from '../../utils/cx'
 import style from './Footer.module.css'
 
@@ -32,8 +31,7 @@ const Footer = () => (
 			<div className={style.brand}>
 				<p className={style.logo}>Clothe Shop</p>
 				<p className={style.text}>
-					Everyday clothing and accessories. Free shipping on orders over{' '}
-					{formatMoney(FREE_SHIPPING_FROM)}.
+					Everyday clothing and accessories. <FreeShippingNote icon={false} />
 				</p>
 			</div>
 			<LinkColumn title='Shop' links={NAV_LINKS} />

@@ -45,3 +45,16 @@
 		position: static;
 	}
 }
+
+.discount {
+	color: var(--color-success);
+}
+
+.muted {
+	color: var(--color-text-muted);
+	font-size: var(--text-sm);
+}
+
+.rows[aria-busy='true'] {
+	opacity: 0.6;
+}

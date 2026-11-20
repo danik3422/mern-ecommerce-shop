@@ -8,6 +8,7 @@ import OrderDetail from './pages/OrderDetail'
 import OrdersList from './pages/OrdersList'
 import { EditProduct, NewProduct } from './pages/ProductEdit'
 import ProductsList from './pages/ProductsList'
+import PromoCodes from './pages/PromoCodes'
 import Reviews from './pages/Reviews'
 
 /** /admin/* — admin panel with its own layout (the route is guarded in AppRoutes). */
@@ -22,6 +23,7 @@ const AdminApp = () => (
 			<Route path='orders/:id' element={<OrderDetail />} />
 			<Route path='customers' element={<Customers />} />
 			<Route path='reviews' element={<Reviews />} />
+			<Route path='promo-codes' element={<PromoCodes />} />
 			<Route
 				path='*'
 				element={
