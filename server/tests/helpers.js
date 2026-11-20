@@ -27,17 +27,25 @@ export const createUser = async ({ username = 'alice', isAdmin = false } = {}) =
 
 let productCounter = 0
 
-export const createProduct = (overrides = {}) =>
-	Product.create({
-		title: `Product ${++productCounter}`,
+/** Creates an active product with sizes S and M (5 in stock each) and colors black/white. */
+export const createProduct = (overrides = {}) => {
+	const n = ++productCounter
+	return Product.create({
+		title: `Product ${n}`,
+		slug: `product-${n}`,
+		brand: 'Brand',
 		description: 'A nice product',
-		img: 'https://example.com/product.png',
+		images: ['/images/products/product.jpg'],
 		categories: ['women'],
-		color: ['black', 'white'],
-		size: ['S', 'M'],
+		colors: ['black', 'white'],
+		sizes: [
+			{ label: 'S', stock: 5 },
+			{ label: 'M', stock: 5 },
+		],
 		price: 10,
 		...overrides,
 	})
+}
 
 export const validAddress = {
 	fullName: 'Alice Smith',

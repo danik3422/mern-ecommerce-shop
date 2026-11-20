@@ -1,18 +1,28 @@
 import { Link } from 'react-router'
-import { formatMoney } from '../../utils/money'
+import WishlistButton from '../account/WishlistButton'
+import Price from './Price'
 import style from './ProductCard.module.css'
 
 const ProductCard = ({ product }) => (
-	<Link to={`/product/${product._id}`} className={style.card}>
-		<div className={style.media}>
-			<img className={style.image} src={product.img} alt='' loading='lazy' />
-			{!product.inStock && <span className={style.tag}>Sold out</span>}
+	<div className={style.card}>
+		<Link to={`/product/${product.slug}`} className={style.link}>
+			<div className={style.media}>
+				<img className={style.image} src={product.images[0]} alt='' loading='lazy' />
+				{!product.inStock && <span className={style.tag}>Sold out</span>}
+				{product.inStock && product.onSale && (
+					<span className={`${style.tag} ${style.saleTag}`}>Sale</span>
+				)}
+			</div>
+			<div className={style.info}>
+				<p className={style.brand}>{product.brand}</p>
+				<h3 className={style.title}>{product.title}</h3>
+				<Price product={product} />
+			</div>
+		</Link>
+		<div className={style.wishlist}>
+			<WishlistButton productId={product._id} />
 		</div>
-		<div className={style.info}>
-			<h3 className={style.title}>{product.title}</h3>
-			<p className={style.price}>{formatMoney(product.price)}</p>
-		</div>
-	</Link>
+	</div>
 )
 
 export const ProductCardSkeleton = () => (

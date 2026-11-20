@@ -5,19 +5,19 @@ const titles = (res) => res.body.items.map((p) => p.title)
 
 describe('GET /api/products', () => {
 	beforeEach(async () => {
-		await createProduct({ title: 'Cheap tee', price: 5, categories: ['women'], color: ['white'] })
+		await createProduct({ title: 'Cheap tee', price: 5, categories: ['women'], colors: ['white'] })
 		await createProduct({
 			title: 'Coat',
 			price: 100,
 			categories: ['coats'],
-			color: ['black'],
-			size: ['L'],
+			colors: ['black'],
+			sizes: [{ label: 'L', stock: 1 }],
 		})
 		await createProduct({
 			title: 'Jeans',
 			price: 50,
 			categories: ['jeans', 'women'],
-			color: ['blue'],
+			colors: ['blue'],
 		})
 	})
 
@@ -62,18 +62,39 @@ describe('GET /api/products/:id', () => {
 		expect(res.body.title).toBe('Coat')
 	})
 
-	it('returns 400 for a malformed id and 404 for a missing product', async () => {
-		await api().get('/api/products/xyz').expect(400)
+	it('finds a product by slug', async () => {
+		await createProduct({ title: 'Coat', slug: 'warm-coat' })
+		const res = await api().get('/api/products/warm-coat').expect(200)
+		expect(res.body).toMatchObject({ title: 'Coat', inStock: true, onSale: false })
+	})
+
+	it('returns 404 for a missing or hidden product', async () => {
+		const hidden = await createProduct({ active: false })
+		await api().get('/api/products/no-such-slug').expect(404)
 		await api().get('/api/products/507f1f77bcf86cd799439011').expect(404)
+		await api().get(`/api/products/${hidden.id}`).expect(404)
+	})
+
+	it('computes stock and discount fields', async () => {
+		const product = await createProduct({
+			price: 75,
+			compareAtPrice: 100,
+			sizes: [{ label: 'M', stock: 0 }],
+		})
+		const res = await api().get(`/api/products/${product.id}`)
+		expect(res.body).toMatchObject({ inStock: false, onSale: true, discountPercent: 25 })
 	})
 })
 
 describe('product management', () => {
 	const newProduct = {
 		title: 'New coat',
+		slug: 'new-coat',
+		brand: 'Aster',
 		description: 'Warm',
-		img: 'https://example.com/coat.png',
+		images: ['https://example.com/coat.png'],
 		categories: ['Coats'],
+		sizes: [{ label: 'M', stock: 3 }],
 		price: 120,
 	}
 
@@ -111,7 +132,7 @@ describe('product management', () => {
 		await api()
 			.post('/api/products')
 			.set(auth)
-			.send({ ...newProduct, img: 'not a url' })
+			.send({ ...newProduct, images: ['not a url'] })
 			.expect(400)
 	})
 
@@ -121,7 +142,7 @@ describe('product management', () => {
 			api()
 				.post('/api/products')
 				.set(auth)
-				.send({ ...newProduct, img })
+				.send({ ...newProduct, slug: `local-${Date.now()}`, images: [img] })
 
 		await create('/images/products/coat.jpg').expect(201)
 		await create('/images/<script>.jpg').expect(400)

@@ -12,6 +12,11 @@ const envSchema = z.object({
 	AUTH_RATE_LIMIT: z.coerce.number().int().positive().default(10),
 	// Number of reverse proxies in front of the API (needed for correct client IPs)
 	TRUST_PROXY: z.coerce.number().int().min(0).default(0),
+	// Directory for images uploaded in the admin panel (served at /uploads)
+	UPLOAD_DIR: z.string().default('uploads'),
+	// Stripe (optional): without a secret key orders are created unpaid ("pay later")
+	STRIPE_SECRET_KEY: z.string().optional(),
+	STRIPE_WEBHOOK_SECRET: z.string().optional(),
 })
 
 const parsed = envSchema.safeParse(process.env)
@@ -28,4 +33,5 @@ export const env = Object.freeze({
 	CLIENT_ORIGINS: parsed.data.CLIENT_URL.split(',').map((origin) => origin.trim()),
 	isProduction: parsed.data.NODE_ENV === 'production',
 	isTest: parsed.data.NODE_ENV === 'test',
+	paymentsEnabled: Boolean(parsed.data.STRIPE_SECRET_KEY),
 })

@@ -17,3 +17,6 @@ coverage/
 
 # logs
 *.log
+
+# admin uploads
+server/uploads/

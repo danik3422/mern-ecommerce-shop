@@ -1,0 +1,28 @@
+.rating {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-1);
+	font-size: var(--text-xs);
+	color: var(--color-text-muted);
+}
+
+.stars {
+	display: inline-flex;
+	gap: 1px;
+}
+
+.filled {
+	fill: var(--color-text);
+	stroke: var(--color-text);
+}
+
+.half {
+	fill: var(--color-text);
+	stroke: var(--color-text);
+	opacity: 0.45;
+}
+
+.empty {
+	fill: none;
+	stroke: var(--color-text-muted);
+}

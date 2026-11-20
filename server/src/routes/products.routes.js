@@ -3,13 +3,18 @@ import * as products from '../controllers/products.controller.js'
 import { requireAdmin } from '../middleware/auth.js'
 import { validate } from '../middleware/validate.js'
 import { idParams } from '../validation/common.js'
-import { createProductBody, listProductsQuery, updateProductBody } from '../validation/product.js'
+import {
+	createProductBody,
+	listProductsQuery,
+	productRefParams,
+	updateProductBody,
+} from '../validation/product.js'
 
 export const productRoutes = Router()
 
 // public
 productRoutes.get('/', validate({ query: listProductsQuery }), products.listProducts)
-productRoutes.get('/:id', validate({ params: idParams }), products.getProduct)
+productRoutes.get('/:id', validate({ params: productRefParams }), products.getProduct)
 
 // admin
 productRoutes.post('/', requireAdmin, validate({ body: createProductBody }), products.createProduct)

@@ -1,24 +1,17 @@
 import { Product } from '../models/Product.js'
 import { badRequest, conflict } from '../utils/HttpError.js'
 
-/** Checks that a chosen option (color/size) is one the product actually offers. */
-const optionProblem = (offered, chosen, name) => {
-	if (!offered.length) return chosen ? `This product has no ${name} options` : null
-	if (!chosen) return `Please choose a ${name}`
-	return offered.includes(chosen) ? null : `${name} "${chosen}" is not available`
-}
-
 /**
  * Loads products for the given line items and validates the chosen options.
  *
- * @param items `[{ productId, quantity, color?, size? }]`, already validated by zod
- * @param options.requireInStock reject items that are out of stock (used for orders)
+ * @param items `[{ productId, quantity, size, color? }]`, already validated by zod
+ * @param options.requireStock reject items without enough stock in the chosen size (orders)
  * @returns the same items with the loaded `product` attached
- * @throws 400 for unknown products or invalid options, 409 for out-of-stock items
+ * @throws 400 for unknown/hidden products or invalid options, 409 for missing stock
  */
-export const resolveLineItems = async (items, { requireInStock = false } = {}) => {
+export const resolveLineItems = async (items, { requireStock = false } = {}) => {
 	const ids = [...new Set(items.map((item) => item.productId))]
-	const products = await Product.find({ _id: { $in: ids } }).lean()
+	const products = await Product.find({ _id: { $in: ids }, active: true }).lean()
 	const productsById = new Map(products.map((product) => [product._id.toString(), product]))
 
 	const invalid = []
@@ -33,14 +26,21 @@ export const resolveLineItems = async (items, { requireInStock = false } = {}) =
 			return null
 		}
 
-		const problems = [
-			optionProblem(product.color, item.color, 'color'),
-			optionProblem(product.size, item.size, 'size'),
-		].filter(Boolean)
-		invalid.push(...problems.map((message) => ({ path, message })))
+		const size = product.sizes.find((s) => s.label === item.size)
+		if (!size)
+			invalid.push({ path: `${path}.size`, message: `Size "${item.size}" is not available` })
 
-		if (requireInStock && !product.inStock) {
-			outOfStock.push({ path, message: `"${product.title}" is out of stock` })
+		if (product.colors.length && !product.colors.includes(item.color)) {
+			invalid.push({ path: `${path}.color`, message: 'Please choose an available color' })
+		}
+
+		if (requireStock && size && size.stock < item.quantity) {
+			outOfStock.push({
+				path,
+				message: size.stock
+					? `Only ${size.stock} left of "${product.title}" in size ${size.label}`
+					: `"${product.title}" is sold out in size ${size.label}`,
+			})
 		}
 		return { ...item, product }
 	})

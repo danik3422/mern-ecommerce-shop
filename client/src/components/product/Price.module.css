@@ -1,0 +1,33 @@
+.price {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: var(--space-2);
+	font-variant-numeric: tabular-nums;
+}
+
+.md {
+	font-size: var(--text-sm);
+}
+
+.lg {
+	font-size: var(--text-lg);
+}
+
+.sale {
+	color: var(--color-danger);
+	font-weight: var(--weight-medium);
+}
+
+.original {
+	color: var(--color-text-muted);
+	font-size: 0.85em;
+}
+
+.discount {
+	padding: 0 var(--space-1);
+	background: var(--color-danger);
+	color: var(--color-inverse);
+	font-size: 0.75em;
+	font-weight: var(--weight-semibold);
+}

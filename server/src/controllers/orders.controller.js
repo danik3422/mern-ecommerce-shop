@@ -10,11 +10,13 @@ import { notFound } from '../utils/HttpError.js'
  */
 export const createOrder = async (req, res) => {
 	const { items, address } = req.valid.body
-	const resolved = await resolveLineItems(items, { requireInStock: true })
+	const resolved = await resolveLineItems(items, { requireStock: true })
 
 	const orderItems = resolved.map(({ product, ...item }) => ({
 		...item,
 		title: product.title,
+		brand: product.brand,
+		image: product.images[0],
 		price: product.price,
 	}))
 	const totals = calculateTotals(orderItems)

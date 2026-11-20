@@ -37,11 +37,24 @@ describe('POST /api/orders', () => {
 		expect(order.items[0].price).toBe(10)
 	})
 
-	it('rejects out-of-stock products with 409', async () => {
-		const product = await createProduct({ inStock: false })
+	it('rejects items without enough stock in the chosen size with 409', async () => {
+		const product = await createProduct({
+			sizes: [
+				{ label: 'S', stock: 0 },
+				{ label: 'M', stock: 1 },
+			],
+		})
 		const { auth } = await createUser()
-		const res = await api().post('/api/orders').set(auth).send(orderBody(product)).expect(409)
-		expect(res.body.details[0].message).toMatch(/out of stock/)
+
+		const soldOut = await api()
+			.post('/api/orders')
+			.set(auth)
+			.send(orderBody(product, { size: 'S', quantity: 1 }))
+			.expect(409)
+		expect(soldOut.body.details[0].message).toMatch(/sold out in size S/)
+
+		const notEnough = await api().post('/api/orders').set(auth).send(orderBody(product)).expect(409)
+		expect(notEnough.body.details[0].message).toMatch(/Only 1 left/)
 	})
 
 	it('rejects options the product does not offer', async () => {

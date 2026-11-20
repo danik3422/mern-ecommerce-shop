@@ -9,12 +9,12 @@ export default [
 	{
 		rules: {
 			'no-unused-vars': ['error', { argsIgnorePattern: '^_', ignoreRestSiblings: true }],
-			eqeqeq: ['error', 'always'],
+			eqeqeq: ['error', 'always', { null: 'ignore' }],
 			'prefer-const': 'error',
 		},
 	},
 	{
-		files: ['*.js', 'server/**/*.js'],
+		files: ['*.js', 'server/**/*.js', 'client/vite.config.js'],
 		languageOptions: { globals: globals.node },
 	},
 	{

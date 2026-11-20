@@ -39,9 +39,20 @@ export const AuthProvider = ({ children }) => {
 		[applySession],
 	)
 
+	/** Replaces the stored user after a profile change (the token stays the same). */
+	const updateUser = useCallback(
+		(user) =>
+			setSession((current) => {
+				const next = current && { ...current, user }
+				save(STORAGE_KEY, next)
+				return next
+			}),
+		[],
+	)
+
 	const value = useMemo(
-		() => ({ user: session?.user ?? null, login, register, logout }),
-		[session, login, register, logout],
+		() => ({ user: session?.user ?? null, login, register, logout, updateUser }),
+		[session, login, register, logout, updateUser],
 	)
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

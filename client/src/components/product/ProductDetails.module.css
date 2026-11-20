@@ -25,14 +25,13 @@
 	padding-top: var(--space-4);
 }
 
-.title {
-	margin-top: calc(var(--space-3) * -1);
-	font-size: var(--text-xl);
+.brand {
+	font-weight: var(--weight-semibold);
 }
 
-.price {
-	margin-top: calc(var(--space-4) * -1);
-	font-size: var(--text-lg);
+.title {
+	font-size: var(--text-xl);
+	font-weight: var(--weight-regular);
 }
 
 .description {

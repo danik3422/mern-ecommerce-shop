@@ -9,25 +9,29 @@ import style from './CartLine.module.css'
 /** @param item `{ key, quantity, color, size, product }` from useCartItems */
 const CartLine = ({ item, onQuantityChange }) => {
 	const { product } = item
-	const productUrl = `/product/${product._id}`
+	const productUrl = `/product/${product.slug}`
 	const options = [item.color && capitalize(item.color), item.size].filter(Boolean).join(' · ')
 
 	return (
 		<li className={style.line}>
 			<Link to={productUrl} className={style.media} tabIndex={-1} aria-hidden>
-				<img className={style.image} src={product.img} alt='' loading='lazy' />
+				<img className={style.image} src={product.images[0]} alt='' loading='lazy' />
 			</Link>
 
 			<div className={style.details}>
 				<div className={style.heading}>
 					<Link to={productUrl} className={style.title}>
-						{product.title}
+						<span className={style.brand}>{product.brand}</span> {product.title}
 					</Link>
 					<p className={style.price}>{formatMoney(product.price * item.quantity)}</p>
 				</div>
 				{options && <p className={style.options}>{options}</p>}
 				{item.quantity > 1 && <p className={style.options}>{formatMoney(product.price)} each</p>}
-				{!product.inStock && <p className={style.warning}>Sold out — remove it to check out</p>}
+				{!product.inStock && (
+					<p className={style.warning}>
+						Not enough stock in this size — reduce the quantity or remove it
+					</p>
+				)}
 
 				<div className={style.controls}>
 					<QuantityStepper

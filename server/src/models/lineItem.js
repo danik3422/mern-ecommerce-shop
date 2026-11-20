@@ -4,6 +4,6 @@ import mongoose from 'mongoose'
 export const lineItemFields = {
 	productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
 	quantity: { type: Number, required: true, min: 1 },
+	size: { type: String, required: true },
 	color: String,
-	size: String,
 }

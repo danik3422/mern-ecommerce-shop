@@ -71,3 +71,23 @@ input:focus-visible + .pill {
 	outline: 2px solid var(--color-focus);
 	outline-offset: 4px;
 }
+
+.disabled {
+	cursor: not-allowed;
+}
+
+.disabled .pill {
+	color: var(--color-text-muted);
+	background: repeating-linear-gradient(
+		-45deg,
+		var(--color-subtle) 0 4px,
+		var(--color-surface) 4px 8px
+	);
+	text-decoration: line-through;
+}
+
+.stockNote {
+	margin-top: var(--space-2);
+	font-size: var(--text-sm);
+	color: var(--color-danger);
+}

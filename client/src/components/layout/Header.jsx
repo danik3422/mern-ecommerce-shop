@@ -1,4 +1,4 @@
-import { LogOut, Menu, ShoppingBag, User, X } from 'lucide-react'
+import { Heart, LayoutDashboard, LogOut, Menu, ShoppingBag, User, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router'
 import { useAuth } from '../../auth/useAuth'
@@ -6,6 +6,7 @@ import { useCart } from '../../cart/useCart'
 import { NAV_LINKS } from '../../data/catalog'
 import { cx } from '../../utils/cx'
 import style from './Header.module.css'
+import SearchForm from './SearchForm'
 
 const Header = () => {
 	const { user, logout } = useAuth()
@@ -43,6 +44,9 @@ const Header = () => {
 					className={cx(style.nav, isMenuOpen && style.navOpen)}
 					aria-label='Main'
 				>
+					<div className={style.mobileSearch}>
+						<SearchForm />
+					</div>
 					<ul role='list' className={style.navList}>
 						{NAV_LINKS.map(({ to, label, end }) => (
 							<li key={to}>
@@ -55,16 +59,47 @@ const Header = () => {
 								</NavLink>
 							</li>
 						))}
+						{user && (
+							<li className={style.mobileOnly}>
+								<button type='button' className={style.navLink} onClick={logout}>
+									Sign out
+								</button>
+							</li>
+						)}
 					</ul>
 				</nav>
 
+				<div className={style.search}>
+					<SearchForm />
+				</div>
+
 				<div className={style.actions}>
+					{user?.isAdmin && (
+						<Link to='/admin' className={style.iconButton} aria-label='Admin panel' title='Admin'>
+							<LayoutDashboard size={20} aria-hidden />
+						</Link>
+					)}
 					{user ? (
 						<>
-							<span className={style.greeting}>Hi, {user.username}</span>
+							<Link
+								to='/account'
+								className={style.iconButton}
+								aria-label={`Account of ${user.username}`}
+								title='Account'
+							>
+								<User size={20} aria-hidden />
+							</Link>
+							<Link
+								to='/account/wishlist'
+								className={cx(style.iconButton, style.hideOnMobile)}
+								aria-label='Wishlist'
+								title='Wishlist'
+							>
+								<Heart size={20} aria-hidden />
+							</Link>
 							<button
 								type='button'
-								className={style.iconButton}
+								className={cx(style.iconButton, style.hideOnMobile)}
 								onClick={logout}
 								aria-label='Sign out'
 								title='Sign out'

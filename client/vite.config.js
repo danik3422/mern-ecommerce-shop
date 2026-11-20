@@ -1,12 +1,16 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
+// API_URL lets several dev stacks run side by side, e.g. API_URL=http://localhost:8101
+const apiUrl = process.env.API_URL ?? 'http://localhost:8000'
+
 export default defineConfig({
 	plugins: [react()],
 	server: {
 		port: 3000,
 		proxy: {
-			'/api': 'http://localhost:8000',
+			'/api': apiUrl,
+			'/uploads': apiUrl,
 		},
 	},
 	test: {

@@ -1,7 +1,18 @@
 .card {
+	position: relative;
+}
+
+.link,
+.card {
 	display: flex;
 	flex-direction: column;
 	gap: var(--space-3);
+}
+
+.wishlist {
+	position: absolute;
+	top: var(--space-2);
+	right: var(--space-2);
 }
 
 .media {
@@ -18,7 +29,7 @@
 	transition: transform 400ms ease;
 }
 
-.card:hover .image {
+.link:hover .image {
 	transform: scale(1.04);
 }
 
@@ -36,19 +47,24 @@
 
 .info {
 	display: flex;
-	justify-content: space-between;
-	gap: var(--space-3);
+	flex-direction: column;
+	gap: 2px;
 	font-size: var(--text-sm);
+}
+
+.brand {
+	font-weight: var(--weight-semibold);
 }
 
 .title {
 	font-size: inherit;
 	font-weight: var(--weight-regular);
+	color: var(--color-text-muted);
 }
 
-.price {
-	font-variant-numeric: tabular-nums;
-	white-space: nowrap;
+.saleTag {
+	background: var(--color-danger);
+	color: var(--color-inverse);
 }
 
 /* skeleton */

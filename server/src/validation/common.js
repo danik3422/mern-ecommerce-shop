@@ -19,8 +19,19 @@ export const username = z
 export const lineItem = z.strictObject({
 	productId: objectId,
 	quantity: z.int().min(1).max(99),
+	size: z.string().trim().min(1).max(20),
 	color: z.string().trim().max(30).optional(),
-	size: z.string().trim().max(10).optional(),
 })
 
 export const lineItems = z.array(lineItem).max(50)
+
+export const address = z.strictObject({
+	fullName: z.string().trim().min(1).max(200),
+	street: z.string().trim().min(1).max(200),
+	city: z.string().trim().min(1).max(200),
+	postalCode: z.string().trim().min(2).max(20),
+	country: z.string().trim().min(1).max(200),
+})
+
+// an absolute URL or a path served by this app, e.g. /images/products/tee.jpg or /uploads/abc.jpg
+export const imagePath = z.union([z.url(), z.string().regex(/^\/[\w\-./]+$/, 'Invalid image path')])

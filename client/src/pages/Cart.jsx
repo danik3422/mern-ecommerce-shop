@@ -56,7 +56,9 @@ const Cart = () => {
 	}
 
 	const totals = calculateTotals(toPricedItems(items))
-	const hasSoldOutItems = items.some((item) => !item.product.inStock)
+	const hasStockProblems = items.some(
+		(item) => (item.product.sizes.find((s) => s.label === item.size)?.stock ?? 0) < item.quantity,
+	)
 
 	return (
 		<div className='container'>
@@ -83,7 +85,7 @@ const Cart = () => {
 						{user ? (
 							<CheckoutForm
 								lines={lines}
-								disabled={hasSoldOutItems}
+								disabled={hasStockProblems}
 								onOrderPlaced={handleOrderPlaced}
 							/>
 						) : (

@@ -15,14 +15,23 @@ vi.mock('./api/products', async (importOriginal) => ({
 
 const coat = {
 	_id: 'p1',
+	slug: 'arrow-jacket',
 	title: 'Arrow Jacket',
+	brand: 'Aster',
 	description: 'Warm jacket',
-	img: 'https://example.com/coat.png',
+	images: ['https://example.com/coat.png'],
 	categories: ['coats'],
-	color: ['green'],
-	size: ['M', 'L'],
+	colors: ['green'],
+	sizes: [
+		{ label: 'M', stock: 0 },
+		{ label: 'L', stock: 2 },
+	],
 	price: 120,
+	compareAtPrice: 150,
 	inStock: true,
+	onSale: true,
+	discountPercent: 20,
+	rating: { average: 0, count: 0 },
 }
 
 const renderAt = (path) =>
@@ -57,7 +66,7 @@ describe('routes', () => {
 		['/', /quiet essentials/i],
 		['/products', /all products/i],
 		['/products/coats', /coats/i],
-		['/product/p1', /arrow jacket/i],
+		['/product/arrow-jacket', /arrow jacket/i],
 		['/cart', /your bag is empty/i],
 		['/login', /sign in/i],
 		['/register', /create an account/i],
@@ -72,15 +81,20 @@ describe('routes', () => {
 
 	it('shows products from the API in the catalog', async () => {
 		renderAt('/products')
-		expect(await screen.findByRole('link', { name: /arrow jacket/i })).toHaveAttribute(
-			'href',
-			'/product/p1',
-		)
+		const card = await screen.findByRole('link', { name: /arrow jacket/i })
+		expect(card).toHaveAttribute('href', '/product/arrow-jacket')
+		expect(card).toHaveTextContent('−20%')
 	})
 
-	it('adds the chosen options to the bag on the product page', async () => {
-		renderAt('/product/p1')
-		;(await screen.findByLabelText('L')).click()
+	it('adds the chosen options to the bag and skips sold-out sizes', async () => {
+		renderAt('/product/arrow-jacket')
+
+		const soldOut = await screen.findByRole('radio', { name: 'M, sold out' })
+		expect(soldOut).toBeDisabled()
+		// the first size with stock is preselected
+		expect(screen.getByRole('radio', { name: 'L' })).toBeChecked()
+		expect(screen.getByText('Only 2 left in this size')).toBeInTheDocument()
+
 		screen.getByRole('button', { name: 'Add to bag' }).click()
 
 		expect(await screen.findByText(/added to your bag/i)).toBeInTheDocument()
@@ -88,5 +102,10 @@ describe('routes', () => {
 			{ productId: 'p1', color: 'green', size: 'L', quantity: 1 },
 		])
 		expect(screen.getByRole('link', { name: 'Bag, 1 item' })).toBeInTheDocument()
+	})
+
+	it('sends guests from account pages to sign in', async () => {
+		renderAt('/account')
+		expect(await screen.findByRole('heading', { level: 1, name: 'Sign in' })).toBeInTheDocument()
 	})
 })

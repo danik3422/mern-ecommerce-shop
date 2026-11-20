@@ -49,3 +49,6 @@ const SWATCHES = {
 }
 
 export const swatchColor = (name) => SWATCHES[name] ?? name
+
+/** Must match LOW_STOCK_THRESHOLD in server/src/services/productView.js */
+export const LOW_STOCK_THRESHOLD = 3
