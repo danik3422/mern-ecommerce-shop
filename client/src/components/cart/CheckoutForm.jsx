@@ -7,6 +7,7 @@ import { EMPTY_ADDRESS, NEW_ADDRESS, defaultAddressId, toOrderAddress } from '..
 import { toApiItems } from '../../cart/cartLines'
 import Alert from '../ui/Alert'
 import Button from '../ui/Button'
+import TextField from '../ui/TextField'
 import AddressFields from './AddressFields'
 import style from './CheckoutForm.module.css'
 import SavedAddressPicker from './SavedAddressPicker'
@@ -16,15 +17,25 @@ import SavedAddressPicker from './SavedAddressPicker'
  * @param lines cart lines to order
  * @param shippingMethod / promoCode chosen in the order summary
  * @param disabled e.g. when some items do not have enough stock
- * @param onOrderPlaced called with `{ order, checkoutUrl }`
+ * @param guest checkout without an account: asks for an email, no address book
+ * @param onOrderPlaced called with `{ order, checkoutUrl, accessToken? }`
  */
-const CheckoutForm = ({ lines, shippingMethod, promoCode, disabled, onOrderPlaced }) => {
+const CheckoutForm = ({
+	lines,
+	shippingMethod,
+	promoCode,
+	guest = false,
+	disabled,
+	onOrderPlaced,
+}) => {
 	// the address book may be unavailable — the form then simply asks for a new address
 	const savedAddresses = useQuery({
 		queryKey: accountKeys.addresses,
 		queryFn: fetchAddresses,
 		retry: false,
+		enabled: !guest,
 	})
+	const [email, setEmail] = useState('')
 	const addresses = savedAddresses.data ?? []
 
 	const [chosenAddressId, setChosenAddressId] = useState(null)
@@ -42,8 +53,9 @@ const CheckoutForm = ({ lines, shippingMethod, promoCode, disabled, onOrderPlace
 				address,
 				shippingMethod,
 				promoCode: promoCode || undefined,
+				...(guest && { email: email.trim() }),
 			})
-			if (usesNewAddress && saveAddress) {
+			if (!guest && usesNewAddress && saveAddress) {
 				// saving the address must not block a placed order
 				await createAddress(address).catch(() => {})
 			}
@@ -53,7 +65,8 @@ const CheckoutForm = ({ lines, shippingMethod, promoCode, disabled, onOrderPlace
 	})
 	const fieldErrors = getFieldErrors(order.error)
 	const hasAddressErrors =
-		usesNewAddress && Object.keys(fieldErrors).some((path) => path.startsWith('address.'))
+		(usesNewAddress && Object.keys(fieldErrors).some((path) => path.startsWith('address.'))) ||
+		Boolean(fieldErrors.email)
 
 	const handleSubmit = (e) => {
 		e.preventDefault()
@@ -65,9 +78,21 @@ const CheckoutForm = ({ lines, shippingMethod, promoCode, disabled, onOrderPlace
 
 	return (
 		<form className={style.form} onSubmit={handleSubmit}>
+			{guest && (
+				<TextField
+					label='Email'
+					type='email'
+					autoComplete='email'
+					value={email}
+					onChange={(e) => setEmail(e.target.value)}
+					error={fieldErrors.email}
+					hint='We send your order confirmation and updates here'
+					required
+				/>
+			)}
 			<fieldset className={style.fieldset}>
 				<legend className={style.legend}>Shipping address</legend>
-				{savedAddresses.isPending && <p className={style.muted}>Loading your addresses…</p>}
+				{savedAddresses.isLoading && <p className={style.muted}>Loading your addresses…</p>}
 				{addresses.length > 0 && (
 					<SavedAddressPicker
 						addresses={addresses}
@@ -75,17 +100,19 @@ const CheckoutForm = ({ lines, shippingMethod, promoCode, disabled, onOrderPlace
 						onChange={setChosenAddressId}
 					/>
 				)}
-				{!savedAddresses.isPending && usesNewAddress && (
+				{!savedAddresses.isLoading && usesNewAddress && (
 					<div className={style.newAddress}>
 						<AddressFields value={newAddress} onChange={setNewAddress} errors={fieldErrors} />
-						<label className={style.checkbox}>
-							<input
-								type='checkbox'
-								checked={saveAddress}
-								onChange={(e) => setSaveAddress(e.target.checked)}
-							/>
-							Save to my addresses
-						</label>
+						{!guest && (
+							<label className={style.checkbox}>
+								<input
+									type='checkbox'
+									checked={saveAddress}
+									onChange={(e) => setSaveAddress(e.target.checked)}
+								/>
+								Save to my addresses
+							</label>
+						)}
 					</div>
 				)}
 			</fieldset>
@@ -98,7 +125,7 @@ const CheckoutForm = ({ lines, shippingMethod, promoCode, disabled, onOrderPlace
 			<Button
 				type='submit'
 				fullWidth
-				disabled={disabled || order.isPending || savedAddresses.isPending}
+				disabled={disabled || order.isPending || savedAddresses.isLoading}
 			>
 				{order.isPending ? 'Placing order…' : 'Place order'}
 			</Button>

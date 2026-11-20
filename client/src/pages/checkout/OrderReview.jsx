@@ -67,8 +67,14 @@ const OrderReview = ({ order }) => (
 					<dt>Subtotal</dt>
 					<dd>{formatMoney(order.subtotal)}</dd>
 				</div>
+				{order.discount > 0 && (
+					<div className={style.row}>
+						<dt>Discount{order.promoCode ? ` (${order.promoCode})` : ''}</dt>
+						<dd>−{formatMoney(order.discount)}</dd>
+					</div>
+				)}
 				<div className={style.row}>
-					<dt>Shipping</dt>
+					<dt>{order.shippingMethod?.label ?? 'Shipping'}</dt>
 					<dd>{order.shipping ? formatMoney(order.shipping) : 'Free'}</dd>
 				</div>
 				<div className={`${style.row} ${style.total}`}>

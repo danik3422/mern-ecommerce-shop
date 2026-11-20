@@ -36,9 +36,10 @@ const publicImageUrls = (image, clientUrl) => {
  * Creates a Checkout Session for a pending order.
  * @returns {Promise<{ id: string, url: string }>}
  */
-export const createCheckoutSession = async (order) => {
+export const createCheckoutSession = async (order, { accessToken } = {}) => {
 	const clientUrl = env.CLIENT_ORIGINS[0]
 	const orderId = order._id.toString()
+	const tokenParam = accessToken ? `&token=${encodeURIComponent(accessToken)}` : ''
 
 	const lineItems = order.items.map((item) => ({
 		quantity: item.quantity,
@@ -87,8 +88,9 @@ export const createCheckoutSession = async (order) => {
 		discounts,
 		client_reference_id: orderId,
 		metadata: { orderId },
-		success_url: `${clientUrl}/checkout/success?order=${orderId}`,
-		cancel_url: `${clientUrl}/checkout/cancel?order=${orderId}`,
+		// guests come back with their order token so the result page can load the order
+		success_url: `${clientUrl}/checkout/success?order=${orderId}${tokenParam}`,
+		cancel_url: `${clientUrl}/checkout/cancel?order=${orderId}${tokenParam}`,
 		expires_at: Math.floor(Date.now() / 1000) + SESSION_LIFETIME_SECONDS,
 	})
 

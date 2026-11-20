@@ -89,7 +89,13 @@ const OrdersList = () => {
 															<div className={table.muted}>{order.user.email}</div>
 														</>
 													) : (
-														<span className={table.muted}>Deleted account</span>
+														<>
+															{/* populate turns a deleted account into null; guests have no user */}
+															<span className={table.muted}>
+																{order.user === null ? 'Deleted account' : 'Guest'}
+															</span>
+															{order.email && <div className={table.muted}>{order.email}</div>}
+														</>
 													)}
 												</td>
 												<td>

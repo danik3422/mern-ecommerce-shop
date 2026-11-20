@@ -105,7 +105,10 @@ const Dashboard = () => {
 															{orderNumber(order._id)}
 														</Link>
 													</td>
-													<td>{order.user?.username ?? 'Deleted account'}</td>
+													<td>
+														{order.user?.username ??
+															(order.user === null ? 'Deleted account' : 'Guest')}
+													</td>
 													<td className={`${table.muted} ${table.nowrap}`}>
 														{formatDateTime(order.createdAt)}
 													</td>

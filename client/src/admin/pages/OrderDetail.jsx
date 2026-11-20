@@ -172,7 +172,19 @@ const OrderDetail = () => {
 										</a>
 									</p>
 								) : (
-									<p className={table.muted}>The account was deleted.</p>
+									<p>
+										<span className={table.muted}>
+											{data.user === null ? 'The account was deleted.' : 'Guest checkout'}
+										</span>
+										{data.email && (
+											<>
+												<br />
+												<a href={`mailto:${data.email}`} className='text-link'>
+													{data.email}
+												</a>
+											</>
+										)}
+									</p>
 								)}
 								<address className={style.address}>
 									{data.address.fullName}

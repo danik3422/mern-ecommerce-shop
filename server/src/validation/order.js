@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { SHIPPING_METHOD_IDS } from '../config/shop.js'
 import { ORDER_STATUSES } from '../models/Order.js'
-import { address, lineItems } from './common.js'
+import { address, email, lineItems } from './common.js'
 
 const checkoutOptions = {
 	shippingMethod: z.enum(SHIPPING_METHOD_IDS).default('standard'),
@@ -11,6 +11,8 @@ const checkoutOptions = {
 export const createOrderBody = z.strictObject({
 	items: lineItems.min(1, 'Order must contain at least one item'),
 	address,
+	// required for guests; signed-in customers use their account email
+	email: email.optional(),
 	...checkoutOptions,
 })
 

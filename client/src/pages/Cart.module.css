@@ -33,3 +33,9 @@
 		gap: var(--space-4);
 	}
 }
+
+.checkoutChoice {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+}

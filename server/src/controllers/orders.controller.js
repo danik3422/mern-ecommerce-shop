@@ -1,6 +1,9 @@
 import { Cart } from '../models/Cart.js'
 import { Order } from '../models/Order.js'
+import { User } from '../models/User.js'
 import { resolveLineItems } from '../services/lineItems.js'
+import { createOrderToken, findAccessibleOrder, readOrderToken } from '../services/orderAccess.js'
+import { sendOrderEmail } from '../services/orderEmails.js'
 import { transitionOrder, transitionOrderOrThrow } from '../services/orderStatus.js'
 import {
 	createCheckoutSession,
@@ -10,20 +13,32 @@ import {
 import { calculateTotals } from '../services/pricing.js'
 import { findUsablePromo, redeemPromo, releasePromo } from '../services/promoCodes.js'
 import { releaseStock, reserveStock } from '../services/stock.js'
-import { HttpError, conflict, notFound } from '../utils/HttpError.js'
+import { HttpError, badRequest, conflict } from '../utils/HttpError.js'
 
 const paymentUnavailable = () =>
 	new HttpError(502, 'The payment provider is not available right now. Please try again.')
 
-/** Customers only see their own orders; admins see all of them. */
-const ownerFilter = (user) => (user.isAdmin ? {} : { user: user.id })
-
 /** Opens a Stripe Checkout Session for the order and remembers it. @returns the payment page URL */
-const startCheckout = async (order) => {
-	const session = await createCheckoutSession(order)
+const startCheckout = async (order, accessToken) => {
+	const session = await createCheckoutSession(order, { accessToken })
 	order.payment = { provider: 'stripe', sessionId: session.id }
 	await order.save()
 	return session.url
+}
+
+/**
+ * Who the order belongs to: the signed-in customer, or a guest identified by email
+ * who gets a secret token for the order.
+ */
+const orderCustomer = async (req) => {
+	if (req.user) {
+		const user = await User.findById(req.user.id).lean()
+		return { user: req.user.id, email: user.email }
+	}
+	if (!req.valid.body.email) {
+		throw badRequest('Please enter your email', [{ path: 'email', message: 'Required' }])
+	}
+	return { email: req.valid.body.email, accessToken: createOrderToken() }
 }
 
 /** Order lines with a snapshot of the product as it is sold now. */
@@ -43,6 +58,7 @@ export const toOrderItems = (resolved) =>
  */
 export const createOrder = async (req, res) => {
 	const { items, address, shippingMethod, promoCode } = req.valid.body
+	const customer = await orderCustomer(req)
 	const resolved = await resolveLineItems(items, { requireStock: true })
 	const orderItems = toOrderItems(resolved)
 	const promo = promoCode
@@ -55,7 +71,7 @@ export const createOrder = async (req, res) => {
 	try {
 		if (promo) await redeemPromo(promo)
 		try {
-			order = await Order.create({ user: req.user.id, items: orderItems, ...totals, address })
+			order = await Order.create({ ...customer, items: orderItems, ...totals, address })
 		} catch (err) {
 			if (promo) await releasePromo(promo.code)
 			throw err
@@ -64,12 +80,13 @@ export const createOrder = async (req, res) => {
 		await releaseStock(resolved)
 		throw err
 	}
-	await Cart.deleteOne({ user: req.user.id })
+	if (req.user) await Cart.deleteOne({ user: req.user.id })
+	await sendOrderEmail(order, 'placed')
 
 	let checkoutUrl = null
 	if (isPaymentsEnabled()) {
 		try {
-			checkoutUrl = await startCheckout(order)
+			checkoutUrl = await startCheckout(order, customer.accessToken)
 		} catch (err) {
 			console.error('Could not create a checkout session:', err)
 			await transitionOrder(order._id, 'cancelled')
@@ -77,7 +94,9 @@ export const createOrder = async (req, res) => {
 		}
 	}
 
-	res.status(201).json({ order, checkoutUrl })
+	// the guest token is returned once; the order JSON never contains it
+	const { accessToken, ...publicOrder } = order.toObject()
+	res.status(201).json({ order: publicOrder, checkoutUrl, ...(accessToken && { accessToken }) })
 }
 
 export const listMyOrders = async (req, res) => {
@@ -85,35 +104,34 @@ export const listMyOrders = async (req, res) => {
 	res.json(orders)
 }
 
-/** GET /orders/:id — the owner or an admin; others get 404 so ids cannot be probed. */
+/** GET /orders/:id — the customer, an admin or a guest with the order token; others get 404. */
 export const getOrder = async (req, res) => {
-	const order = await Order.findOne({ _id: req.valid.params.id, ...ownerFilter(req.user) }).lean()
-	if (!order) throw notFound('Order')
-	res.json(order)
+	const order = await findAccessibleOrder(req, req.valid.params.id)
+	const { accessToken: _token, ...publicOrder } = order.toObject()
+	res.json(publicOrder)
 }
 
 /** POST /orders/:id/pay — a new payment page for a pending order (e.g. after cancelling payment). */
 export const payOrder = async (req, res) => {
 	if (!isPaymentsEnabled()) throw conflict('Online payment is not available')
 
-	const order = await Order.findOne({ _id: req.valid.params.id, user: req.user.id })
-	if (!order) throw notFound('Order')
+	const order = await findAccessibleOrder(req, req.valid.params.id)
 	if (order.status !== 'pending') throw conflict(`A ${order.status} order cannot be paid`)
 
 	await expireCheckoutSession(order.payment?.sessionId)
 	try {
-		res.json({ checkoutUrl: await startCheckout(order) })
+		res.json({ checkoutUrl: await startCheckout(order, readOrderToken(req)) })
 	} catch (err) {
 		console.error('Could not create a checkout session:', err)
 		throw paymentUnavailable()
 	}
 }
 
-/** POST /orders/:id/cancel — customers can cancel unpaid orders; stock is returned. */
+/** POST /orders/:id/cancel — customers and guests can cancel unpaid orders; stock is returned. */
 export const cancelMyOrder = async (req, res) => {
+	await findAccessibleOrder(req, req.valid.params.id)
 	const order = await transitionOrderOrThrow(req.valid.params.id, 'cancelled', {
 		from: ['pending'],
-		filter: { user: req.user.id },
 	})
 	res.json(order)
 }

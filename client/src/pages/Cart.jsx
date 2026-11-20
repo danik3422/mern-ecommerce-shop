@@ -33,6 +33,7 @@ const Cart = () => {
 	const navigate = useNavigate()
 	const [isRedirecting, setIsRedirecting] = useState(false)
 	const [shippingMethod, setShippingMethod] = useState('standard')
+	const [checkoutAsGuest, setCheckoutAsGuest] = useState(false)
 	const [promoCode, setPromoCode] = useState(null)
 	const [promoNotice, setPromoNotice] = useState(null)
 	const quote = useCheckoutQuote({ lines, shippingMethod, promoCode })
@@ -50,13 +51,15 @@ const Cart = () => {
 	}
 
 	// the server has reserved the stock and emptied the saved cart, so the local one goes too
-	const handleOrderPlaced = ({ order, checkoutUrl }) => {
+	const handleOrderPlaced = ({ order, checkoutUrl, accessToken }) => {
 		clear()
 		if (checkoutUrl) {
 			setIsRedirecting(true)
 			redirectToPayment(checkoutUrl)
 		} else {
-			navigate(`/checkout/success?order=${order._id}`)
+			// guests keep access to their order through its token
+			const token = accessToken ? `&token=${encodeURIComponent(accessToken)}` : ''
+			navigate(`/checkout/success?order=${order._id}${token}`)
 		}
 	}
 
@@ -122,26 +125,31 @@ const Cart = () => {
 						{quote.isError && !promoError && (
 							<Alert tone='error'>{getErrorMessage(quote.error)}</Alert>
 						)}
-						{user ? (
+						{user || checkoutAsGuest ? (
 							<CheckoutForm
 								lines={lines}
 								shippingMethod={shippingMethod}
 								promoCode={promoCode}
+								guest={!user}
 								disabled={hasStockProblems || !quote.data}
 								onOrderPlaced={handleOrderPlaced}
 							/>
 						) : (
-							<>
+							<div className={style.checkoutChoice}>
 								<Button as={Link} to='/login' state={{ from: '/cart' }} fullWidth>
 									Sign in to check out
+								</Button>
+								<Button variant='secondary' fullWidth onClick={() => setCheckoutAsGuest(true)}>
+									Check out as guest
 								</Button>
 								<p className={style.muted}>
 									New here?{' '}
 									<Link to='/register' state={{ from: '/cart' }} className='text-link'>
 										Create an account
-									</Link>
+									</Link>{' '}
+									to track orders and save addresses.
 								</p>
-							</>
+							</div>
 						)}
 					</OrderSummary>
 				)}

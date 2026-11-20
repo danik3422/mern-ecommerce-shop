@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as ordersApi from '../../api/orders'
@@ -145,5 +145,18 @@ describe('CheckoutResult', () => {
 		renderResult({ user: null })
 		expect(await heading('Sign in to see your order')).toBeInTheDocument()
 		expect(ordersApi.fetchOrder).not.toHaveBeenCalled()
+	})
+
+	it('opens and cancels a guest order with the token from the link', async () => {
+		vi.mocked(ordersApi.fetchOrder).mockResolvedValue(makeOrder())
+		vi.mocked(ordersApi.cancelOrder).mockResolvedValue(makeOrder({ status: 'cancelled' }))
+		renderResult({ result: 'cancel', path: '/?order=o1&token=secret', user: null })
+
+		await screen.findByRole('button', { name: /cancel order/i })
+		expect(ordersApi.fetchOrder).toHaveBeenCalledWith('o1', expect.anything(), 'secret')
+
+		vi.spyOn(window, 'confirm').mockReturnValue(true)
+		screen.getByRole('button', { name: /cancel order/i }).click()
+		await waitFor(() => expect(ordersApi.cancelOrder).toHaveBeenCalledWith('o1', 'secret'))
 	})
 })

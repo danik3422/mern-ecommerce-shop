@@ -81,6 +81,8 @@ const CheckoutResult = ({ result }) => {
 	const location = useLocation()
 	const [searchParams] = useSearchParams()
 	const orderId = searchParams.get('order')
+	// guests come back with their order token (from the bag, Stripe or an email link)
+	const token = searchParams.get('token') ?? undefined
 	const queryClient = useQueryClient()
 
 	// on the success page, keep reloading a pending order until the Stripe webhook marks it paid
@@ -91,17 +93,18 @@ const CheckoutResult = ({ result }) => {
 
 	const order = useQuery({
 		queryKey: orderKeys.detail(orderId),
-		queryFn: ({ signal }) => fetchOrder(orderId, signal),
-		enabled: Boolean(orderId && user),
+		queryFn: ({ signal }) => fetchOrder(orderId, signal, token),
+		// customers load their order with their session, guests with the token from the link
+		enabled: Boolean(orderId && (user || token)),
 		refetchInterval: (query) => (isPolling(query.state) ? POLL_INTERVAL_MS : false),
 	})
 
 	const pay = useMutation({
-		mutationFn: () => payOrder(orderId),
+		mutationFn: () => payOrder(orderId, token),
 		onSuccess: ({ checkoutUrl }) => redirectToPayment(checkoutUrl),
 	})
 	const cancel = useMutation({
-		mutationFn: () => cancelOrder(orderId),
+		mutationFn: () => cancelOrder(orderId, token),
 		onSuccess: (cancelled) => queryClient.setQueryData(orderKeys.detail(orderId), cancelled),
 	})
 
@@ -119,7 +122,7 @@ const CheckoutResult = ({ result }) => {
 		)
 	}
 
-	if (!user) {
+	if (!user && !token) {
 		return (
 			<EmptyState
 				title='Sign in to see your order'
@@ -183,10 +186,23 @@ const CheckoutResult = ({ result }) => {
 					</Button>
 				)}
 				{!canRetryPayment && shopLink}
-				<Button as={Link} to='/account' variant='ghost'>
-					My orders
-				</Button>
+				{user && (
+					<Button as={Link} to='/account' variant='ghost'>
+						My orders
+					</Button>
+				)}
 			</div>
+
+			{!user && (
+				<p className={style.guestNote}>
+					We sent the order details to <strong>{data.email}</strong>. The link in that email opens
+					this page again.{' '}
+					<Link to='/register' className='text-link'>
+						Create an account
+					</Link>{' '}
+					to follow your orders in one place.
+				</p>
+			)}
 
 			<OrderReview order={data} />
 		</div>

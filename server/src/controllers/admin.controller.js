@@ -178,7 +178,11 @@ export const listOrders = async (req, res) => {
 		const customers = await User.find({ $or: [{ username: pattern }, { email: pattern }] })
 			.select('_id')
 			.lean()
-		filter.$or = [{ user: { $in: customers.map((customer) => customer._id) } }]
+		filter.$or = [
+			{ user: { $in: customers.map((customer) => customer._id) } },
+			// guest orders are found by the email entered at checkout
+			{ email: pattern },
+		]
 		if (mongoose.isValidObjectId(q)) filter.$or.push({ _id: q })
 	}
 

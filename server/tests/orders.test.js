@@ -168,7 +168,7 @@ describe('customer order actions', () => {
 		await api().get(`/api/orders/${order._id}`).set(alice.auth).expect(200)
 		await api().get(`/api/orders/${order._id}`).set(admin.auth).expect(200)
 		await api().get(`/api/orders/${order._id}`).set(bob.auth).expect(404)
-		await api().get(`/api/orders/${order._id}`).expect(401)
+		await api().get(`/api/orders/${order._id}`).expect(404) // could be a guest without the token: do not reveal the order
 		await api().get('/api/orders/not-an-id').set(alice.auth).expect(400)
 	})
 

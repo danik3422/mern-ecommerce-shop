@@ -34,7 +34,12 @@ const paymentSchema = new mongoose.Schema(
 
 const orderSchema = new mongoose.Schema(
 	{
-		user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+		// empty for guest orders
+		user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
+		// where order emails go: the account email or the one a guest entered
+		email: { type: String, required: true, lowercase: true, trim: true, index: true },
+		// lets a guest open, pay or cancel the order (see services/orderAccess.js)
+		accessToken: { type: String, select: false },
 		items: { type: [orderItemSchema], required: true },
 		subtotal: { type: Number, required: true, min: 0 },
 		discount: { type: Number, min: 0, default: 0 },

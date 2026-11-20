@@ -24,6 +24,7 @@ const PNG = Buffer.from(
 const createOrder = (user, product, overrides = {}) =>
 	Order.create({
 		user: user._id,
+		email: 'customer@example.com',
 		items: [
 			{
 				productId: product._id,

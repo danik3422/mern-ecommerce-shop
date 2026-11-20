@@ -7,6 +7,7 @@ import { api, createProduct, createUser, validAddress } from './helpers.js'
 const createOrder = (userId, product, status = 'pending') =>
 	Order.create({
 		user: userId,
+		email: 'customer@example.com',
 		items: [
 			{
 				productId: product.id,

@@ -126,4 +126,21 @@ describe('CheckoutForm', () => {
 		await screen.findByRole('radio', { name: /office ave/i })
 		expect(screen.getByRole('button', { name: 'Place order' })).toBeDisabled()
 	})
+
+	it('asks guests for an email, skips the address book and sends the email with the order', async () => {
+		vi.mocked(accountApi.fetchAddresses).mockClear()
+		const { onOrderPlaced } = renderForm({ guest: true })
+
+		expect(screen.queryByLabelText('Save to my addresses')).not.toBeInTheDocument()
+		fireEvent.change(screen.getByLabelText('Email'), { target: { value: ' guest@example.com ' } })
+		typeAddress()
+		placeOrder()
+
+		await waitFor(() => expect(onOrderPlaced).toHaveBeenCalled())
+		expect(accountApi.fetchAddresses).not.toHaveBeenCalled()
+		expect(ordersApi.createOrder).toHaveBeenCalledWith(
+			expect.objectContaining({ email: 'guest@example.com' }),
+		)
+		expect(accountApi.createAddress).not.toHaveBeenCalled()
+	})
 })
