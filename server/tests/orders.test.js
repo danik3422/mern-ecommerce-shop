@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { Product } from '../src/models/Product.js'
 import { api, createProduct, createUser, validAddress, stockOf } from './helpers.js'
 import { price, roundMoney } from './pricingHelpers.js'
-import { SHOP } from '../src/config/shop.js'
+import { SHOP_DEFAULTS } from '../src/config/shop.js'
 
 const orderBody = (product, overrides = {}) => ({
 	items: [{ productId: product.id, quantity: 2, color: 'black', size: 'M', ...overrides }],
@@ -228,7 +228,7 @@ describe('order management', () => {
 
 	it('moves orders through allowed statuses only', async () => {
 		// two items reach the free-shipping threshold exactly
-		const product = await createProduct({ price: SHOP.freeShippingFrom / 2 })
+		const product = await createProduct({ price: SHOP_DEFAULTS.freeShippingFrom / 2 })
 		const customer = await createUser({ username: 'alice' })
 		const admin = await createUser({ username: 'admin', isAdmin: true })
 		const order = await placeOrder(customer.auth, orderBody(product))
@@ -247,7 +247,7 @@ describe('order management', () => {
 		await setStatus('teleported').expect(400)
 
 		const income = await api().get('/api/orders/income').set(admin.auth).expect(200)
-		expect(income.body[0].total).toBe(SHOP.freeShippingFrom)
+		expect(income.body[0].total).toBe(SHOP_DEFAULTS.freeShippingFrom)
 	})
 
 	it('returns stock exactly once when an admin cancels a paid order', async () => {

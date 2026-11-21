@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router'
 import { getErrorMessage } from '../api/client'
 import { useAuth } from '../auth/useAuth'
 import AuthCard from '../components/auth/AuthCard'
+import DemoLogin from '../components/auth/DemoLogin'
 import formStyle from '../components/auth/AuthForm.module.css'
 import Alert from '../components/ui/Alert'
 import Button from '../components/ui/Button'
@@ -48,6 +49,7 @@ const LogIn = () => {
 				</>
 			}
 		>
+			<DemoLogin redirectTo={location.state?.from ?? '/'} />
 			<form className={formStyle.form} onSubmit={handleSubmit}>
 				<TextField
 					label={t('auth.login')}

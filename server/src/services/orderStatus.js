@@ -50,7 +50,7 @@ export const transitionOrder = async (orderId, status, { from, filter = {}, set 
 	const allowedFrom = previousStatuses(status).filter((current) => !from || from.includes(current))
 	const order = await Order.findOneAndUpdate(
 		{ _id: orderId, ...filter, status: { $in: allowedFrom } },
-		{ $set: { status, ...set } },
+		{ $set: { status, ...set }, $push: { statusHistory: { status, at: new Date() } } },
 		{ returnDocument: 'after' },
 	)
 

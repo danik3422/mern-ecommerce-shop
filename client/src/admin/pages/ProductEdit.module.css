@@ -1,0 +1,5 @@
+.delete:hover:not(:disabled) {
+	border-color: var(--color-danger);
+	background: var(--color-danger);
+	color: var(--color-inverse);
+}

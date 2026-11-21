@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { money } from '../test/money'
@@ -24,7 +24,7 @@ const stats = {
  * AuthProvider restores the session once, when its module loads, so every test
  * stores a session first and then imports a fresh copy of the app.
  */
-const renderAdminAs = async (user) => {
+const renderAdminAs = async (user, path = '/admin') => {
 	localStorage.clear()
 	if (user) localStorage.setItem('session', JSON.stringify({ user, accessToken: 'token' }))
 
@@ -32,6 +32,11 @@ const renderAdminAs = async (user) => {
 	vi.doMock('../api/admin', async (importOriginal) => ({
 		...(await importOriginal()),
 		fetchAdminStats: vi.fn().mockResolvedValue(stats),
+		fetchMe: vi.fn().mockResolvedValue(user),
+		fetchAdminCounts: vi
+			.fn()
+			.mockResolvedValue({ ordersToShip: 2, ordersUnpaid: 0, openReturns: 1 }),
+		fetchAdminOrders: vi.fn().mockResolvedValue({ items: [], page: 1, pages: 0, total: 0 }),
 	}))
 	const { default: AppRoutes } = await import('../AppRoutes')
 	const { AuthProvider } = await import('../auth/AuthProvider')
@@ -43,7 +48,7 @@ const renderAdminAs = async (user) => {
 		>
 			<AuthProvider>
 				<CartProvider>
-					<MemoryRouter initialEntries={['/admin']}>
+					<MemoryRouter initialEntries={[path]}>
 						<AppRoutes />
 					</MemoryRouter>
 				</CartProvider>
@@ -69,13 +74,66 @@ describe('admin panel access', () => {
 	})
 
 	it('shows the dashboard to admins', async () => {
-		await renderAdminAs({ _id: 'a1', username: 'boss', isAdmin: true })
+		await renderAdminAs({
+			_id: 'a1',
+			username: 'boss',
+			isAdmin: true,
+			role: 'staff',
+			isOwner: true,
+			permissions: [],
+		})
 
 		expect(await screen.findByRole('heading', { level: 1, name: 'Dashboard' })).toBeInTheDocument()
 		expect(screen.getByRole('navigation', { name: 'Admin' })).toBeInTheDocument()
 		expect(await screen.findByText(money(1234.5))).toBeInTheDocument()
 		expect(screen.getByRole('img', { name: /revenue, last 30 days/i })).toBeInTheDocument()
 		expect(screen.getByRole('link', { name: 'Coat' })).toHaveAttribute('href', '/admin/products/p1')
-		expect(screen.getByText('Signed in as boss')).toBeInTheDocument()
+		expect(screen.getByText(/Signed in as boss/)).toBeInTheDocument()
+		// owners see every section, with counts of what is waiting
+		const nav = screen.getByRole('navigation', { name: 'Admin' })
+		expect(
+			within(nav)
+				.getAllByRole('link')
+				.map((link) => link.textContent),
+		).toEqual([
+			'Dashboard',
+			'Products',
+			expect.stringMatching(/^Orders2/),
+			expect.stringMatching(/^Returns1/),
+			'Customers',
+			'Reviews',
+			'Promo codes',
+			'Team',
+			'Activity',
+			'Settings',
+		])
+	})
+
+	const support = {
+		_id: 's1',
+		username: 'sam',
+		isAdmin: true,
+		role: 'staff',
+		isOwner: false,
+		permissions: ['orders', 'returns', 'customers', 'reviews'],
+	}
+
+	it('shows staff only the sections they may use', async () => {
+		await renderAdminAs(support)
+
+		// no dashboard permission: the first allowed section opens instead
+		expect(await screen.findByRole('heading', { level: 1, name: 'Orders' })).toBeInTheDocument()
+		const nav = screen.getByRole('navigation', { name: 'Admin' })
+		const labels = within(nav)
+			.getAllByRole('link')
+			.map((link) => link.textContent.replace(/\d.*$/, ''))
+		expect(labels).toEqual(['Orders', 'Returns', 'Customers', 'Reviews'])
+	})
+
+	it('explains a missing permission instead of showing the page', async () => {
+		await renderAdminAs(support, '/admin/settings')
+		expect(
+			await screen.findByRole('heading', { level: 1, name: "You don't have access" }),
+		).toBeInTheDocument()
 	})
 })

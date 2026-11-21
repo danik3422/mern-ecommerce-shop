@@ -80,7 +80,9 @@ export default {
 		openingPayment: 'Opening payment…',
 		cancelOrder: 'Cancel order',
 		cancelling: 'Cancelling…',
-		confirmCancel: 'Cancel this order? The reserved items will be released.',
+		confirmCancelTitle: 'Cancel this order?',
+		confirmCancel: 'Nothing will be charged and the reserved items go back on sale.',
+		cancelled: 'The order was cancelled',
 		myOrders: 'My orders',
 		guestNote:
 			'We sent the order details to {email}. The link in that email opens this page again.',

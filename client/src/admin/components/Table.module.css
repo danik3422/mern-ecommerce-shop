@@ -118,6 +118,20 @@
 	color: var(--color-danger);
 }
 
+.warning {
+	color: var(--color-warning);
+}
+
+/* rows that open a detail page when clicked */
+.clickable {
+	cursor: pointer;
+}
+
+.clickable:hover .rowLink {
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
 .searchButton {
 	width: var(--control-height);
 	padding-inline: 0;

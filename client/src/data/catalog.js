@@ -21,7 +21,7 @@ export const CATEGORIES = [
 /** Pseudo-category: /products/sale lists discounted products of all categories. */
 export const SALE_CATEGORY = 'sale'
 
-/** `labelKey` is a translation key (see i18n/messages). */
+/** `labelKey` is a translation key (see i18n/messages); `highlight` marks the link in the sale color. */
 export const NAV_LINKS = [
 	{ to: '/products/women', labelKey: 'nav.women' },
 	{ to: '/products/men', labelKey: 'nav.men' },
@@ -29,7 +29,7 @@ export const NAV_LINKS = [
 	{ to: '/products/coats', labelKey: 'nav.coats' },
 	{ to: '/products/jeans', labelKey: 'nav.jeans' },
 	{ to: '/products/accessories', labelKey: 'nav.accessories' },
-	{ to: `/products/${SALE_CATEGORY}`, labelKey: 'nav.sale' },
+	{ to: `/products/${SALE_CATEGORY}`, labelKey: 'nav.sale', highlight: true },
 ]
 
 /** Sort orders of the catalog; labels are translated as `sort.<value>`. */

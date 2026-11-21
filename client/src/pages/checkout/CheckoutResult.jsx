@@ -5,7 +5,6 @@ import { getErrorMessage } from '../../api/client'
 import { cancelOrder, fetchOrder, orderKeys, payOrder } from '../../api/orders'
 import { useAuth } from '../../auth/useAuth'
 import { redirectToPayment } from '../../cart/redirect'
-import Alert from '../../components/ui/Alert'
 import Button from '../../components/ui/Button'
 import EmptyState from '../../components/ui/EmptyState'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
@@ -14,6 +13,8 @@ import style from './CheckoutResult.module.css'
 import OrderReview from './OrderReview'
 import ReturnSection from '../../components/orders/ReturnSection'
 import { useI18n } from '../../i18n/useI18n'
+import { useConfirm } from '../../components/ui/confirm/useConfirm'
+import { useToast } from '../../components/ui/toast/useToast'
 
 // Stripe usually confirms within seconds; after ~16 s the page stops waiting
 const POLL_INTERVAL_MS = 2000
@@ -64,14 +65,34 @@ const CheckoutResult = ({ result }) => {
 		refetchInterval: (query) => (isPolling(query.state) ? POLL_INTERVAL_MS : false),
 	})
 
+	const toast = useToast()
+	const confirm = useConfirm()
+	const showError = (error) => toast.show({ tone: 'error', message: getErrorMessage(error) })
+
 	const pay = useMutation({
 		mutationFn: () => payOrder(orderId, token),
 		onSuccess: ({ checkoutUrl }) => redirectToPayment(checkoutUrl),
+		onError: showError,
 	})
 	const cancel = useMutation({
 		mutationFn: () => cancelOrder(orderId, token),
-		onSuccess: (cancelled) => queryClient.setQueryData(orderKeys.detail(orderId), cancelled),
+		onSuccess: (cancelled) => {
+			queryClient.setQueryData(orderKeys.detail(orderId), cancelled)
+			toast.show({ tone: 'success', message: t('checkout.cancelled') })
+		},
+		onError: showError,
 	})
+
+	const handleCancel = async () => {
+		const confirmed = await confirm({
+			title: t('checkout.confirmCancelTitle'),
+			message: t('checkout.confirmCancel'),
+			confirmLabel: t('checkout.cancelOrder'),
+			cancelLabel: t('orders.keepOrder'),
+			tone: 'danger',
+		})
+		if (confirmed) cancel.mutate()
+	}
 
 	const shopLink = (
 		<Button as={Link} to='/products' variant='secondary'>
@@ -124,7 +145,6 @@ const CheckoutResult = ({ result }) => {
 	const { icon: Icon, tone, state } = describe(data, { result, isPolling: waiting })
 	const canRetryPayment = isAwaitingOnlinePayment(data) && !waiting
 	const canCancel = data.status === 'pending' && (result === 'cancel' || canRetryPayment)
-	const actionError = pay.error ?? cancel.error
 
 	return (
 		<div className={cx('container', style.page)}>
@@ -133,8 +153,6 @@ const CheckoutResult = ({ result }) => {
 				<h1 className={style.title}>{t(`checkout.states.${state}.title`)}</h1>
 				<p className={style.text}>{t(`checkout.states.${state}.text`)}</p>
 			</div>
-
-			{actionError && <Alert tone='error'>{getErrorMessage(actionError)}</Alert>}
 
 			<div className={style.actions}>
 				{canRetryPayment && (
@@ -145,7 +163,7 @@ const CheckoutResult = ({ result }) => {
 				{canCancel && (
 					<Button
 						variant='secondary'
-						onClick={() => cancel.mutate()}
+						onClick={handleCancel}
 						disabled={pay.isPending || cancel.isPending}
 					>
 						{cancel.isPending ? t('checkout.cancelling') : t('checkout.cancelOrder')}

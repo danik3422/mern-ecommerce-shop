@@ -1,6 +1,12 @@
 import { http } from './client'
 
-/** @returns {Promise<{ currency, freeShippingFrom, shippingMethods: [{ id, label, price, freeShipping, days }] }>} */
+/**
+ * Public shop settings. `freeShippingFrom` is null when there is no free shipping;
+ * only enabled delivery methods are listed (`label` in English, `labels` per language).
+ * @returns {Promise<{ currency, freeShippingFrom, returnWindowDays, lowStockThreshold,
+ *   shippingMethods: [{ id, label, labels: { en, pl }, price, freeShipping, days }],
+ *   shopName, contact: { email, phone }, announcement: { en, pl } | null }>}
+ */
 export const fetchShopConfig = () => http.get('/shop/config').then((r) => r.data)
 
 /**

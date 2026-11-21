@@ -1,0 +1,49 @@
+.toolbar > :global(*) {
+	min-width: 9rem;
+}
+
+.clear {
+	align-self: flex-end;
+	min-width: auto !important;
+}
+
+.row {
+	cursor: pointer;
+}
+
+.row:hover .title {
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
+.selectedRow,
+.selectedRow:hover {
+	background: color-mix(in srgb, var(--color-focus) 6%, var(--color-surface)) !important;
+}
+
+.title {
+	font-weight: var(--weight-medium);
+}
+
+.checkCell {
+	width: 2.5rem;
+	padding-right: 0 !important;
+}
+
+.checkbox {
+	width: 1.05rem;
+	height: 1.05rem;
+	accent-color: var(--color-text);
+	cursor: pointer;
+	vertical-align: middle;
+}
+
+.actionsHead {
+	text-align: right !important;
+}
+
+.rowActions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 2px;
+}

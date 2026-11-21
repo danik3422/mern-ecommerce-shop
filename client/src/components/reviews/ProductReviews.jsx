@@ -11,6 +11,9 @@ import RatingStars from './RatingStars'
 import ReviewForm from './ReviewForm'
 import ReviewItem from './ReviewItem'
 import { useI18n } from '../../i18n/useI18n'
+import { useConfirm } from '../ui/confirm/useConfirm'
+import { useToast } from '../ui/toast/useToast'
+import { can } from '../../admin/permissions'
 
 const PAGE_SIZE = 5
 
@@ -70,13 +73,27 @@ const ProductReviews = ({ product }) => {
 		already_reviewed: t('reviews.alreadyReviewed'),
 	}[eligibility.data?.reason]
 
+	const toast = useToast()
+	const confirm = useConfirm()
 	const removal = useMutation({
 		mutationFn: (reviewId) => deleteReview(product._id, reviewId),
 		onSuccess: () => {
+			toast.show({ tone: 'success', message: t('reviews.deleted') })
 			queryClient.invalidateQueries({ queryKey: reviewKeys.all(product._id) })
 			queryClient.invalidateQueries({ queryKey: ['products'] })
 		},
+		onError: (error) => toast.show({ tone: 'error', message: getErrorMessage(error) }),
 	})
+
+	const handleDelete = async (reviewId) => {
+		const confirmed = await confirm({
+			title: t('reviews.confirmDeleteTitle'),
+			message: t('reviews.confirmDelete'),
+			confirmLabel: t('common.delete'),
+			tone: 'danger',
+		})
+		if (confirmed) removal.mutate(reviewId)
+	}
 
 	const data = reviews.data
 	const hasReviews = data?.total > 0
@@ -108,7 +125,6 @@ const ProductReviews = ({ product }) => {
 					{t('reviews.loadError', { error: getErrorMessage(reviews.error) })}
 				</Alert>
 			)}
-			{removal.isError && <Alert tone='error'>{getErrorMessage(removal.error)}</Alert>}
 
 			{data && !hasReviews && <p className={style.muted}>{t('reviews.empty')}</p>}
 
@@ -121,8 +137,9 @@ const ProductReviews = ({ product }) => {
 								<ReviewItem
 									key={review._id}
 									review={review}
-									canDelete={Boolean(user && (user.isAdmin || user._id === review.user))}
-									onDelete={() => removal.mutate(review._id)}
+									// the author, or staff allowed to moderate reviews
+									canDelete={user?._id === review.user || can(user, 'reviews')}
+									onDelete={() => handleDelete(review._id)}
 									isDeleting={removal.isPending}
 								/>
 							))}

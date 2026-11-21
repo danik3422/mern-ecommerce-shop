@@ -42,7 +42,7 @@ export default {
 	},
 	delivery: {
 		legend: 'Dostawa',
-		days: '{from}–{to} dni robocze',
+		days: '{from}–{to} dni roboczych',
 		standard: 'Dostawa standardowa',
 		locker: 'Paczkomat',
 		express: 'Dostawa ekspresowa',
@@ -85,7 +85,9 @@ export default {
 		openingPayment: 'Otwieranie płatności…',
 		cancelOrder: 'Anuluj zamówienie',
 		cancelling: 'Anulowanie…',
-		confirmCancel: 'Anulować to zamówienie? Zarezerwowane produkty zostaną zwolnione.',
+		confirmCancelTitle: 'Anulować to zamówienie?',
+		confirmCancel: 'Nic nie zostanie pobrane, a zarezerwowane produkty wrócą do sprzedaży.',
+		cancelled: 'Zamówienie zostało anulowane',
 		myOrders: 'Moje zamówienia',
 		guestNote:
 			'Szczegóły zamówienia wysłaliśmy na {email}. Link w tej wiadomości otwiera tę stronę.',

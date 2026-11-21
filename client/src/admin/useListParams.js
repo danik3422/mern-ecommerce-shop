@@ -3,7 +3,8 @@ import { useSearchParams } from 'react-router'
 /**
  * List filters and page kept in the URL (shareable, survive reloads).
  * @param defaults e.g. `{ q: '', status: '' }`
- * @returns `{ params, page, setParam, setPage }` — `params` has only non-empty values
+ * @returns `{ values, params, page, setParam, setParams, setPage }` — `params` has only
+ *   non-empty values
  */
 export const useListParams = (defaults) => {
 	const [searchParams, setSearchParams] = useSearchParams()
@@ -30,6 +31,8 @@ export const useListParams = (defaults) => {
 		page,
 		// changing a filter starts from the first page again
 		setParam: (name, value) => update({ [name]: value, page: null }),
+		/** Several filters at once, e.g. `{ status: '', q: '' }` to clear them. */
+		setParams: (changes) => update({ ...changes, page: null }),
 		setPage: (next) => update({ page: next > 1 ? String(next) : null }),
 	}
 }

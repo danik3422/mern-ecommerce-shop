@@ -11,6 +11,8 @@ import TextField from '../../components/ui/TextField'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import style from './ProfilePage.module.css'
 import { useI18n } from '../../i18n/useI18n'
+import { useConfirm } from '../../components/ui/confirm/useConfirm'
+import { useToast } from '../../components/ui/toast/useToast'
 
 /** Only the fields that changed are sent; email and password changes need the current password. */
 const buildChanges = (form, user) => {
@@ -40,11 +42,15 @@ const ProfilePage = () => {
 	const needsCurrentPassword = Boolean(changes.email || changes.newPassword)
 	const hasChanges = ['username', 'email', 'newPassword'].some((key) => key in changes)
 
+	const toast = useToast()
+	const confirm = useConfirm()
+
 	const profile = useMutation({
 		mutationFn: (changes) => updateProfile(changes),
 		onSuccess: (updatedUser) => {
 			updateUser(updatedUser)
 			setForm({ ...form, newPassword: '', currentPassword: '' })
+			toast.show({ tone: 'success', message: t('profile.updated') })
 		},
 	})
 	const removal = useMutation({
@@ -52,7 +58,9 @@ const ProfilePage = () => {
 		onSuccess: () => {
 			logout()
 			navigate('/', { replace: true })
+			toast.show({ message: t('profile.deleted') })
 		},
+		onError: (error) => toast.show({ tone: 'error', message: getErrorMessage(error) }),
 	})
 
 	const fieldErrors = getFieldErrors(profile.error)
@@ -71,10 +79,14 @@ const ProfilePage = () => {
 		profile.mutate(changes)
 	}
 
-	const handleDelete = () => {
-		if (window.confirm(t('profile.confirmDelete'))) {
-			removal.mutate()
-		}
+	const handleDelete = async () => {
+		const confirmed = await confirm({
+			title: t('profile.confirmDeleteTitle'),
+			message: t('profile.confirmDelete'),
+			confirmLabel: t('profile.deleteButton'),
+			tone: 'danger',
+		})
+		if (confirmed) removal.mutate()
 	}
 
 	const generalError = profile.isError && !Object.keys(fieldErrors).length && !currentPasswordError
@@ -131,7 +143,6 @@ const ProfilePage = () => {
 						/>
 					)}
 					{generalError && <Alert tone='error'>{getErrorMessage(profile.error)}</Alert>}
-					{profile.isSuccess && <Alert tone='success'>{t('profile.updated')}</Alert>}
 					<div className={shared.actions}>
 						<Button type='submit' disabled={!hasChanges || profile.isPending}>
 							{profile.isPending ? t('common.saving') : t('profile.save')}
@@ -145,7 +156,6 @@ const ProfilePage = () => {
 					{t('profile.deleteTitle')}
 				</h2>
 				<p className={shared.muted}>{t('profile.deleteText')}</p>
-				{removal.isError && <Alert tone='error'>{getErrorMessage(removal.error)}</Alert>}
 				<div>
 					<Button variant='secondary' size='sm' onClick={handleDelete} disabled={removal.isPending}>
 						{removal.isPending ? t('profile.deleting') : t('profile.deleteButton')}

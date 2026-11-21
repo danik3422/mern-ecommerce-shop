@@ -2,19 +2,32 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { adminKeys, decideReturn } from '../../api/admin'
 import { getErrorMessage } from '../../api/client'
+import { useAuth } from '../../auth/useAuth'
 import { returnReasonLabel } from '../../components/orders/returns'
-import Alert from '../../components/ui/Alert'
 import Button from '../../components/ui/Button'
 import TextField from '../../components/ui/TextField'
+import { useToast } from '../../components/ui/toast/useToast'
 import { formatMoney } from '../../utils/money'
 import { formatDateTime } from '../format'
+import { can } from '../permissions'
+import { useAdminConfirm } from '../useAdminConfirm'
 import StatusBadge from './StatusBadge'
 import table from './Table.module.css'
 import style from './ReturnPanel.module.css'
 
-/** Admin view of a return request with the next possible decisions. */
+const DECIDED = {
+	approved: 'Return approved — the customer was emailed',
+	rejected: 'Return rejected — the customer was emailed',
+	refunded: 'Return refunded and items put back in stock',
+}
+
+/** Admin view of a return request; decisions need the "returns" permission. */
 const ReturnPanel = ({ order }) => {
 	const queryClient = useQueryClient()
+	const { user } = useAuth()
+	const toast = useToast()
+	const confirm = useAdminConfirm()
+	const canDecide = can(user, 'returns')
 	const request = order.returnRequest
 	const [note, setNote] = useState(request.note ?? '')
 	const decide = useMutation({
@@ -25,20 +38,36 @@ const ReturnPanel = ({ order }) => {
 				...updated,
 			}))
 			queryClient.invalidateQueries({ queryKey: adminKeys.all })
+			toast.show({ tone: 'success', message: DECIDED[updated.returnRequest?.status] ?? 'Saved' })
 		},
+		onError: (error) =>
+			toast.show({
+				tone: 'error',
+				title: 'Could not update the return',
+				message: getErrorMessage(error),
+			}),
 	})
 
-	const confirmRefund = () => {
+	const confirmRefund = async () => {
 		const how = order.payment?.paymentIntentId
 			? 'through Stripe'
 			: 'manually (the order was not paid online)'
-		if (
-			window.confirm(
-				`Mark the parcel as received? The items go back into stock and ${formatMoney(request.refundAmount)} is refunded ${how}.`,
-			)
-		) {
-			decide.mutate('refunded')
-		}
+		const confirmed = await confirm({
+			title: 'Parcel received — refund?',
+			message: `The items go back into stock and ${formatMoney(request.refundAmount)} is refunded ${how}. This cannot be undone.`,
+			confirmLabel: 'Refund',
+		})
+		if (confirmed) decide.mutate('refunded')
+	}
+
+	const confirmReject = async () => {
+		const confirmed = await confirm({
+			title: 'Reject the return?',
+			message: 'The customer is emailed with your note, so explain why.',
+			confirmLabel: 'Reject return',
+			tone: 'danger',
+		})
+		if (confirmed) decide.mutate('rejected')
 	}
 
 	return (
@@ -75,7 +104,7 @@ const ReturnPanel = ({ order }) => {
 				))}
 			</ul>
 
-			{['requested', 'approved'].includes(request.status) && (
+			{canDecide && ['requested', 'approved'].includes(request.status) && (
 				<>
 					<TextField
 						label='Note to the customer'
@@ -96,7 +125,7 @@ const ReturnPanel = ({ order }) => {
 								<Button
 									size='sm'
 									variant='secondary'
-									onClick={() => decide.mutate('rejected')}
+									onClick={confirmReject}
 									disabled={decide.isPending}
 								>
 									Reject
@@ -111,7 +140,6 @@ const ReturnPanel = ({ order }) => {
 					</div>
 				</>
 			)}
-			{decide.isError && <Alert tone='error'>{getErrorMessage(decide.error)}</Alert>}
 		</section>
 	)
 }

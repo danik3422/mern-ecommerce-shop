@@ -1,7 +1,9 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { adminKeys, fetchAdminOrders } from '../../api/admin'
+import Button from '../../components/ui/Button'
 import Select from '../../components/ui/Select'
+import TextField from '../../components/ui/TextField'
 import { formatMoney } from '../../utils/money'
 import { capitalize } from '../../utils/text'
 import PageHeader from '../components/PageHeader'
@@ -30,12 +32,12 @@ const RETURN_OPTIONS = [
 
 const itemCount = (order) => order.items.reduce((sum, item) => sum + item.quantity, 0)
 
+const FILTERS = { q: '', status: '', returnStatus: '', from: '', to: '' }
+
 const OrdersList = () => {
-	const { values, params, setParam, setPage } = useListParams({
-		q: '',
-		status: '',
-		returnStatus: '',
-	})
+	const navigate = useNavigate()
+	const { values, params, setParam, setParams, setPage } = useListParams(FILTERS)
+	const hasFilters = Object.values(values).some(Boolean)
 	const query = { ...params, limit: PAGE_SIZE }
 
 	const orders = useQuery({
@@ -46,12 +48,15 @@ const OrdersList = () => {
 
 	return (
 		<>
-			<PageHeader title='Orders' description='Follow up payments and shipping.' />
+			<PageHeader
+				title='Orders'
+				description='Follow up payments, shipping and returns. Click an order to open it.'
+			/>
 
 			<div className={table.toolbar}>
 				<SearchBox
 					key={values.q}
-					label='Search by customer or order id'
+					label='Order number, email or name'
 					value={values.q}
 					onSearch={(q) => setParam('q', q)}
 				/>
@@ -67,6 +72,25 @@ const OrdersList = () => {
 					options={RETURN_OPTIONS}
 					onChange={(e) => setParam('returnStatus', e.target.value)}
 				/>
+				<TextField
+					label='From'
+					type='date'
+					value={values.from}
+					max={values.to || undefined}
+					onChange={(e) => setParam('from', e.target.value)}
+				/>
+				<TextField
+					label='To'
+					type='date'
+					value={values.to}
+					min={values.from || undefined}
+					onChange={(e) => setParam('to', e.target.value)}
+				/>
+				{hasFilters && (
+					<Button variant='ghost' onClick={() => setParams(FILTERS)}>
+						Clear filters
+					</Button>
+				)}
 			</div>
 
 			<QueryState query={orders} label='orders'>
@@ -91,7 +115,13 @@ const OrdersList = () => {
 									</thead>
 									<tbody>
 										{data.items.map((order) => (
-											<tr key={order._id}>
+											<tr
+												key={order._id}
+												className={table.clickable}
+												onClick={(e) => {
+													if (!e.target.closest('a')) navigate(`/admin/orders/${order._id}`)
+												}}
+											>
 												<td>
 													<Link to={`/admin/orders/${order._id}`} className={table.rowLink}>
 														{orderNumber(order._id)}
@@ -116,8 +146,11 @@ const OrdersList = () => {
 														</>
 													)}
 												</td>
-												<td>
-													<StatusBadge status={order.status} />
+												<td className={table.nowrap}>
+													<StatusBadge status={order.status} />{' '}
+													{order.returnRequest?.status && (
+														<StatusBadge status={order.returnRequest.status} />
+													)}
 												</td>
 												<td className={table.numeric}>{itemCount(order)}</td>
 												<td className={table.numeric}>{formatMoney(order.amount)}</td>

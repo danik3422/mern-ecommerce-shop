@@ -15,8 +15,6 @@ export const updateMeBody = z
 		path: ['currentPassword'],
 	})
 
-export const updateUserBody = z.strictObject({ isAdmin: z.boolean() })
-
 export const listUsersQuery = z.object({
 	limit: z.coerce.number().int().min(1).max(100).default(50),
 })

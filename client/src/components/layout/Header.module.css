@@ -1,36 +1,64 @@
+/* Sticky row: always exactly --header-height tall (other sticky elements offset by it) */
 .header {
 	position: sticky;
 	top: 0;
-	z-index: 10;
+	z-index: 20;
 	border-bottom: 1px solid var(--color-border);
-	background: color-mix(in srgb, var(--color-bg) 92%, transparent);
-	backdrop-filter: blur(8px);
+	background: color-mix(in srgb, var(--color-bg) 94%, transparent);
+	backdrop-filter: blur(10px);
+}
+
+/* a soft shadow fades in once the page scrolls (no JS; ignored by older browsers) */
+@supports (animation-timeline: scroll()) {
+	.header {
+		animation: header-lift linear both;
+		animation-timeline: scroll(root);
+		animation-range: 0 var(--space-9);
+	}
+
+	@keyframes header-lift {
+		to {
+			box-shadow: 0 6px 20px rgb(0 0 0 / 0.06);
+		}
+	}
 }
 
 .inner {
 	display: flex;
 	align-items: center;
-	gap: var(--space-5);
+	gap: var(--space-6);
 	height: var(--header-height);
 }
 
 .logo {
+	flex-shrink: 0;
 	font-size: var(--text-sm);
 	font-weight: var(--weight-semibold);
-	letter-spacing: 0.2em;
+	letter-spacing: 0.22em;
 	text-transform: uppercase;
 	white-space: nowrap;
 }
 
+/* ---- categories ---- */
+
+.nav {
+	align-self: stretch;
+}
+
 .navList {
 	display: flex;
-	gap: var(--space-5);
+	gap: clamp(var(--space-3), 1.4vw, var(--space-5));
+	height: 100%;
 }
 
 .navLink {
 	position: relative;
-	padding-block: var(--space-2);
+	display: flex;
+	align-items: center;
+	height: 100%;
 	font-size: var(--text-sm);
+	font-weight: var(--weight-medium);
+	white-space: nowrap;
 	color: var(--color-text-muted);
 	transition: color var(--transition);
 }
@@ -40,60 +68,107 @@
 	color: var(--color-text);
 }
 
-.active::after {
+.highlight,
+.highlight:hover {
+	color: var(--color-danger);
+}
+
+/* current category: a 2px bar sitting on the header's bottom border */
+.navLink::after {
 	content: '';
 	position: absolute;
 	right: 0;
-	bottom: 0;
+	bottom: -1px;
 	left: 0;
-	height: 1px;
+	height: 2px;
 	background: currentColor;
+	transform: scaleX(0);
+	transition: transform var(--transition);
 }
 
-.actions {
-	display: flex;
-	align-items: center;
-	gap: var(--space-1);
+.navLink:hover::after {
+	transform: scaleX(0.4);
 }
+
+.active::after,
+.active:hover::after {
+	transform: none;
+}
+
+.navLink:focus-visible {
+	outline-offset: -2px;
+}
+
+/* ---- search ---- */
 
 .search {
 	flex: 1;
+	min-width: 12rem;
 	max-width: 22rem;
 	margin-left: auto;
 }
 
-.mobileSearch,
-.mobileOnly {
-	display: none;
+.searchPanel {
+	position: absolute;
+	top: 100%;
+	right: 0;
+	left: 0;
+	padding-block: var(--space-3);
+	border-bottom: 1px solid var(--color-border);
+	background: var(--color-bg);
+	box-shadow: 0 12px 24px rgb(0 0 0 / 0.08);
 }
 
-button.navLink {
-	border: 0;
-	background: none;
-	padding-inline: 0;
-	text-align: left;
+.searchPanel input {
+	height: var(--control-height);
+	font-size: var(--text-md); /* 16px: iOS does not zoom into the field */
 }
 
-.iconButton {
-	position: relative;
-	display: grid;
-	place-items: center;
-	width: 2.5rem;
-	height: 2.5rem;
+/* ---- actions ---- */
+
+.actions {
+	display: flex;
+	flex-shrink: 0;
+	align-items: center;
+	gap: var(--space-1);
+}
+
+.action {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 2px;
+	min-width: 3.5rem;
+	height: 3rem;
+	padding: 0 var(--space-1);
 	border: 0;
-	border-radius: 50%;
+	border-radius: var(--radius);
 	background: transparent;
 	transition: background-color var(--transition);
 }
 
-.iconButton:hover {
+.action:hover {
 	background: var(--color-subtle);
+}
+
+.actionIcon {
+	position: relative;
+	display: grid;
+	place-items: center;
+}
+
+.actionLabel {
+	font-size: 0.6875rem;
+	font-weight: var(--weight-medium);
+	line-height: 1;
+	white-space: nowrap;
 }
 
 .badge {
 	position: absolute;
-	top: 2px;
-	right: 0;
+	top: -6px;
+	right: -10px;
 	min-width: 1.125rem;
 	height: 1.125rem;
 	padding-inline: 4px;
@@ -104,26 +179,35 @@ button.navLink {
 	font-weight: var(--weight-semibold);
 	line-height: 1.125rem;
 	text-align: center;
+	font-variant-numeric: tabular-nums;
+}
+
+.searchButton {
+	display: none;
+}
+
+.iconButton {
+	display: grid;
+	place-items: center;
+	width: var(--control-height);
+	height: var(--control-height);
+	border: 0;
+	border-radius: 50%;
+	background: transparent;
+	transition: background-color var(--transition);
+}
+
+.iconButton:hover {
+	background: var(--color-subtle);
 }
 
 .menuButton {
 	display: none;
-	margin-left: calc(var(--space-2) * -1);
 }
 
-/* Mobile and tablet: navigation collapses into a dropdown panel
-   (below 64rem seven categories and the search field do not fit in one row) */
-@media (max-width: 64rem) {
-	.inner {
-		gap: var(--space-2);
-	}
-
-	.menuButton {
-		display: grid;
-	}
-
-	.search,
-	.hideOnMobile {
+/* Below 80rem the search field does not fit next to the categories: it becomes a button */
+@media (max-width: 80rem) {
+	.search {
 		display: none;
 	}
 
@@ -131,42 +215,62 @@ button.navLink {
 		margin-left: auto;
 	}
 
-	.mobileSearch {
-		display: block;
-		padding: var(--space-4) var(--gutter) 0;
+	.searchButton {
+		display: flex;
+	}
+}
+
+/* Below 72rem actions are icons only (names stay in aria-label and title) */
+@media (max-width: 72rem) {
+	.inner {
+		gap: var(--space-5);
 	}
 
-	.mobileOnly {
-		display: list-item;
-	}
-
-	.nav {
-		position: absolute;
-		top: 100%;
-		right: 0;
-		left: 0;
+	.actionLabel {
 		display: none;
-		border-bottom: 1px solid var(--color-border);
-		background: var(--color-bg);
 	}
 
-	.navOpen {
-		display: block;
+	.action {
+		width: var(--control-height);
+		min-width: 0;
+		height: var(--control-height);
+		padding: 0;
+		border-radius: 50%;
 	}
 
-	.navList {
-		flex-direction: column;
+	.badge {
+		top: -7px;
+		right: -9px;
+	}
+}
+
+/* Phones and tablets: categories move into the menu drawer */
+@media (max-width: 64rem) {
+	.inner {
 		gap: 0;
-		padding: var(--space-2) var(--gutter) var(--space-4);
 	}
 
-	.navLink {
-		display: block;
-		padding-block: var(--space-3);
-		font-size: var(--text-md);
-	}
-
-	.active::after {
+	.nav,
+	.hideOnMobile {
 		display: none;
+	}
+
+	.menuButton {
+		display: grid;
+		margin-left: -10px; /* align the icon, not its tap area, with the page edge */
+		margin-right: var(--space-1);
+	}
+
+	.actions {
+		gap: 0;
+		margin-right: -10px;
+	}
+}
+
+/* Smallest phones: a tighter logo keeps five tap targets in one row at 320px */
+@media (max-width: 24rem) {
+	.logo {
+		font-size: 0.8125rem;
+		letter-spacing: 0.14em;
 	}
 }

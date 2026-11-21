@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { SHOP } from '../src/config/shop.js'
-import { calculateTotals } from '../src/services/pricing.js'
-import { price, roundMoney } from './pricingHelpers.js'
+import { calculateTotals as calculate } from '../src/services/pricing.js'
+import { defaultSettings, price, roundMoney } from './pricingHelpers.js'
+
+const settings = defaultSettings()
+const calculateTotals = (items, options) => calculate(items, settings, options)
 
 const items = (unitPrice, quantity = 1) => [{ price: unitPrice, quantity }]
-const threshold = SHOP.freeShippingFrom
+const threshold = settings.freeShippingFrom
 const below = roundMoney(threshold - 10)
 
 describe('calculateTotals', () => {
@@ -50,6 +52,17 @@ describe('calculateTotals', () => {
 			calculateTotals(items(10), { shippingMethod: 'express', promo: { type: 'free_shipping' } })
 				.shipping,
 		).toBe(0)
+	})
+
+	it('never ships for free without a threshold and rejects disabled methods', () => {
+		const noFreeShipping = { ...settings, freeShippingFrom: null }
+		expect(calculate(items(10_000), noFreeShipping).shipping).toBe(price('standard'))
+
+		const lockerOff = defaultSettings()
+		lockerOff.shippingMethods[1].enabled = false
+		expect(() => calculate(items(10), lockerOff, { shippingMethod: 'locker' })).toThrow(
+			'not available',
+		)
 	})
 
 	it('avoids floating point artifacts', () => {

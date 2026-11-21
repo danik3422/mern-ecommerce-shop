@@ -26,8 +26,11 @@ const ReturnSection = ({ order, token, onChange }) => {
 
 	if (request) {
 		return (
-			<Alert tone={request.status === 'rejected' ? 'error' : 'info'} className={style.status}>
-				<RotateCcw size={16} aria-hidden />
+			<Alert
+				tone={request.status === 'rejected' ? 'error' : 'info'}
+				icon={RotateCcw}
+				className={style.status}
+			>
 				<span>
 					{t(`returns.status.${request.status}`)}{' '}
 					{request.status === 'refunded' &&

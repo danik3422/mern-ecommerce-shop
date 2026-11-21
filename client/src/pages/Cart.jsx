@@ -16,6 +16,7 @@ import Alert from '../components/ui/Alert'
 import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { useShopConfig } from '../hooks/useShopConfig'
 import style from './Cart.module.css'
 import { stockOf } from '../utils/variants'
 import { useI18n } from '../i18n/useI18n'
@@ -37,7 +38,12 @@ const Cart = () => {
 	const { items, isLoading, error } = useCartItems()
 	const navigate = useNavigate()
 	const [isRedirecting, setIsRedirecting] = useState(false)
-	const [shippingMethod, setShippingMethod] = useState('standard')
+	const [chosenMethod, setShippingMethod] = useState('standard')
+	// the shop may disable a delivery method: fall back to the first one offered
+	const methods = useShopConfig()?.shippingMethods
+	const shippingMethod = methods?.some((method) => method.id === chosenMethod)
+		? chosenMethod
+		: methods?.[0]?.id
 	const [checkoutAsGuest, setCheckoutAsGuest] = useState(false)
 	const [promoCode, setPromoCode] = useState(null)
 	const [promoNotice, setPromoNotice] = useState(null)

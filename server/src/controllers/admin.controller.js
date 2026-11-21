@@ -3,7 +3,10 @@ import { ORDER_STATUSES, Order } from '../models/Order.js'
 import { Product } from '../models/Product.js'
 import { Review } from '../models/Review.js'
 import { User } from '../models/User.js'
-import { LOW_STOCK_THRESHOLD, toProductView } from '../services/productView.js'
+import * as customers from '../services/adminCustomers.js'
+import * as products from '../services/adminProducts.js'
+import { toProductView } from '../services/productView.js'
+import { getShopSettings } from '../services/shopSettings.js'
 import { saveImage } from '../services/uploads.js'
 import { notFound } from '../utils/HttpError.js'
 
@@ -59,12 +62,13 @@ const revenuePerDay = async () => {
 }
 
 /** Colors and sizes of active products that are low or out of stock, lowest first. */
-const lowStockSizes = () =>
-	Product.aggregate([
+const lowStockSizes = async () => {
+	const { lowStockThreshold } = await getShopSettings()
+	return Product.aggregate([
 		{ $match: { active: true } },
 		{ $unwind: '$variants' },
 		{ $unwind: '$variants.sizes' },
-		{ $match: { 'variants.sizes.stock': { $lte: LOW_STOCK_THRESHOLD } } },
+		{ $match: { 'variants.sizes.stock': { $lte: lowStockThreshold } } },
 		{ $sort: { 'variants.sizes.stock': 1, title: 1 } },
 		{ $limit: 10 },
 		{
@@ -79,6 +83,7 @@ const lowStockSizes = () =>
 			},
 		},
 	])
+}
 
 /** Best sellers by quantity among orders that were not cancelled. */
 const topProducts = () =>
@@ -117,7 +122,7 @@ export const getStats = async (_req, res) => {
 			{ $group: { _id: null, total: { $sum: '$amount' } } },
 		]),
 		Order.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
-		User.countDocuments({ isAdmin: false }),
+		User.countDocuments({ role: 'customer' }),
 		Product.countDocuments(),
 		Product.countDocuments({ active: true }),
 		lowStockSizes(),
@@ -146,19 +151,24 @@ export const getStats = async (_req, res) => {
 	})
 }
 
-/** GET /admin/products — like the public list, but includes hidden products. */
+/** GET /admin/products — like the public list, but includes hidden products; more filters and sorts. */
 export const listProducts = async (req, res) => {
-	const { q, status, lowStock, page, limit } = req.valid.query
-	const filter = {}
-	if (q) {
-		const pattern = containsIgnoringCase(q)
-		filter.$or = [{ title: pattern }, { brand: pattern }, { slug: pattern }]
-	}
-	if (status) filter.active = status === 'active'
-	if (lowStock) filter['variants.sizes.stock'] = { $lte: LOW_STOCK_THRESHOLD }
+	res.json(await products.listAdminProducts(req.valid.query))
+}
 
-	const result = await paginate(Product, filter, { page, limit, sort: { createdAt: -1, _id: -1 } })
-	res.json({ ...result, items: result.items.map(toProductView) })
+/** GET /admin/products/filters — brands and categories for the filter dropdowns. */
+export const productFilters = async (_req, res) => {
+	res.json(await products.productFilterOptions())
+}
+
+/** POST /admin/products/:id/duplicate — a hidden copy to edit. */
+export const duplicateProduct = async (req, res) => {
+	res.status(201).json(await products.duplicateProduct(req.valid.params.id))
+}
+
+/** POST /admin/products/bulk — show, hide, delete or discount many products at once. */
+export const bulkProducts = async (req, res) => {
+	res.json(await products.bulkUpdateProducts(req.valid.body))
 }
 
 /** GET /admin/products/:id — also hidden products. */
@@ -168,12 +178,36 @@ export const getProduct = async (req, res) => {
 	res.json(toProductView(product))
 }
 
-/** GET /admin/orders — filter by status, search by order id or customer username/email. */
+/** Order ids ending with these hex digits, e.g. "#1A2B3C4D" as shown to customers. */
+const orderNumberMatch = (q) => {
+	const hex = q.replace(/^#/, '')
+	if (!/^[a-f\d]{6,24}$/i.test(hex)) return []
+	return [
+		{ $expr: { $regexMatch: { input: { $toString: '$_id' }, regex: `${hex}$`, options: 'i' } } },
+	]
+}
+
+/** Start of the day after `day` (YYYY-MM-DD), so "to" includes the whole day. */
+const dayAfter = (day) => {
+	const date = new Date(`${day}T00:00:00Z`)
+	date.setUTCDate(date.getUTCDate() + 1)
+	return date
+}
+
+/**
+ * GET /admin/orders — filter by status, return state and date range;
+ * search by order number, customer username/email, guest email or the name on the address.
+ */
 export const listOrders = async (req, res) => {
-	const { status, returnStatus, q, page, limit } = req.valid.query
+	const { status, returnStatus, q, from, to, page, limit } = req.valid.query
 	const filter = {}
 	if (status) filter.status = status
 	if (returnStatus) filter['returnRequest.status'] = returnStatus
+	if (from || to) {
+		filter.createdAt = {}
+		if (from) filter.createdAt.$gte = new Date(`${from}T00:00:00Z`)
+		if (to) filter.createdAt.$lt = dayAfter(to)
+	}
 	if (q) {
 		const pattern = containsIgnoringCase(q)
 		const customers = await User.find({ $or: [{ username: pattern }, { email: pattern }] })
@@ -183,6 +217,8 @@ export const listOrders = async (req, res) => {
 			{ user: { $in: customers.map((customer) => customer._id) } },
 			// guest orders are found by the email entered at checkout
 			{ email: pattern },
+			{ 'address.fullName': pattern },
+			...orderNumberMatch(q),
 		]
 		if (mongoose.isValidObjectId(q)) filter.$or.push({ _id: q })
 	}
@@ -197,11 +233,53 @@ export const listOrders = async (req, res) => {
 	)
 }
 
-/** GET /admin/orders/:id — with the customer's username and email. */
+/** GET /admin/orders/:id — with the customer's username and email and the internal note. */
 export const getOrder = async (req, res) => {
-	const order = await Order.findById(req.valid.params.id).populate('user', 'username email').lean()
+	const order = await Order.findById(req.valid.params.id)
+		.select('+adminNote')
+		.populate('user', 'username email')
+		.lean()
 	if (!order) throw notFound('Order')
 	res.json(order)
+}
+
+/** PATCH /admin/orders/:id/note — the internal note; an empty note removes it. */
+export const updateOrderNote = async (req, res) => {
+	const { adminNote } = req.valid.body
+	const order = await Order.findByIdAndUpdate(
+		req.valid.params.id,
+		adminNote ? { $set: { adminNote } } : { $unset: { adminNote: 1 } },
+		{ returnDocument: 'after' },
+	)
+		.select('+adminNote')
+		.lean()
+	if (!order) throw notFound('Order')
+	res.json({ adminNote: order.adminNote ?? '' })
+}
+
+/** GET /admin/counts — numbers for the sidebar: orders and returns waiting for the shop. */
+export const getCounts = async (_req, res) => {
+	const [toShip, unpaid, returns] = await Promise.all([
+		Order.countDocuments({ status: 'paid' }),
+		Order.countDocuments({ status: 'pending' }),
+		Order.countDocuments({ 'returnRequest.status': { $in: ['requested', 'approved'] } }),
+	])
+	res.json({ ordersToShip: toShip, ordersUnpaid: unpaid, openReturns: returns })
+}
+
+/** GET /admin/customers — accounts with order count and total spent. */
+export const listCustomers = async (req, res) => {
+	res.json(await customers.listCustomers(req.valid.query))
+}
+
+/** GET /admin/customers/:id — profile, addresses, orders, totals. */
+export const getCustomer = async (req, res) => {
+	res.json(await customers.getCustomer(req.valid.params.id))
+}
+
+/** PATCH /admin/customers/:id — `{ blocked }` */
+export const updateCustomer = async (req, res) => {
+	res.json(await customers.updateCustomer(req.valid.params.id, req.valid.body))
 }
 
 /** GET /admin/reviews — newest first, with the product they belong to. */

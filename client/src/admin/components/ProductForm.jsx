@@ -1,9 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getErrorMessage, getFieldErrors } from '../../api/client'
 import Alert from '../../components/ui/Alert'
 import Button from '../../components/ui/Button'
 import TextField from '../../components/ui/TextField'
-import { formToPayload, emptyProductForm } from '../productForm'
+import { formatMoney } from '../../utils/money'
+import { cx } from '../../utils/cx'
+import { discountPercent } from '../pricing'
+import { emptyProductForm, formToPayload, isFormChanged, validateProductForm } from '../productForm'
 import { slugify } from '../format'
 import table from './Table.module.css'
 import TagInput from './TagInput'
@@ -13,20 +16,44 @@ import style from './ProductForm.module.css'
 
 const CATEGORY_SUGGESTIONS = ['women', 'men', 'tshirts', 'shirts', 'coats', 'jeans', 'accessories']
 
+/** Asks before closing the tab while there are unsaved changes. */
+const useWarnBeforeLeaving = (active) => {
+	useEffect(() => {
+		if (!active) return
+		const warn = (e) => e.preventDefault()
+		window.addEventListener('beforeunload', warn)
+		return () => window.removeEventListener('beforeunload', warn)
+	}, [active])
+}
+
 /**
- * Create/edit form for a product.
+ * Create/edit form for a product, with a sticky bar that shows unsaved changes.
  * @param initialValues form values (see productForm.js); omit for a new product
- * @param onSubmit called with the request body
+ * @param onSubmit called with the request body; may return a promise — when it resolves,
+ *   the submitted values count as saved
  * @param mutation the TanStack mutation that saves (for pending and error state)
  */
 const ProductForm = ({ initialValues, onSubmit, mutation, submitLabel, extraActions }) => {
 	const isNew = !initialValues
 	const [form, setForm] = useState(() => initialValues ?? emptyProductForm())
+	// what is stored on the server; Discard goes back to it
+	const [saved, setSaved] = useState(form)
 	// a new product's slug follows its title until the slug is edited by hand
 	const [slugEdited, setSlugEdited] = useState(!isNew)
+	// checks run live once the user tried to save
+	const [checked, setChecked] = useState(false)
+	const formRef = useRef(null)
 
-	const errors = getFieldErrors(mutation.error)
-	const unmatchedError = mutation.isError && !Object.keys(errors).length
+	const localErrors = checked ? validateProductForm(form) : {}
+	const serverErrors = getFieldErrors(mutation.error)
+	const errors = { ...serverErrors, ...localErrors }
+	const hasLocalErrors = Object.keys(localErrors).length > 0
+	const unmatchedError = mutation.isError && !Object.keys(serverErrors).length
+	const isDirty = isNew || isFormChanged(form, saved)
+	useWarnBeforeLeaving(!isNew && isDirty)
+
+	const focusFirstError = () =>
+		requestAnimationFrame(() => formRef.current?.querySelector('[aria-invalid="true"]')?.focus())
 
 	/** Sets one field; `value` may be an updater function like in useState. */
 	const setField = (name, value) =>
@@ -44,10 +71,30 @@ const ProductForm = ({ initialValues, onSubmit, mutation, submitLabel, extraActi
 		}))
 	}
 
-	const handleSubmit = (e) => {
+	const handleSubmit = async (e) => {
 		e.preventDefault()
-		onSubmit(formToPayload(form, { isNew }))
+		setChecked(true)
+		if (Object.keys(validateProductForm(form)).length) {
+			focusFirstError()
+			return
+		}
+		const submitted = form
+		try {
+			await onSubmit(formToPayload(submitted, { isNew }))
+			setSaved(submitted)
+		} catch {
+			focusFirstError()
+		}
 	}
+
+	const discard = () => {
+		setForm(saved)
+		setChecked(false)
+		mutation.reset?.()
+	}
+
+	const previewImage = form.variants.find((variant) => variant.images.length)?.images[0]
+	const discount = discountPercent(form.price, form.compareAtPrice)
 
 	const text = (name) => ({
 		name,
@@ -57,7 +104,7 @@ const ProductForm = ({ initialValues, onSubmit, mutation, submitLabel, extraActi
 	})
 
 	return (
-		<form className={style.form} onSubmit={handleSubmit} noValidate>
+		<form ref={formRef} className={style.form} onSubmit={handleSubmit} noValidate>
 			<div className={style.columns}>
 				<section className={`${table.panel} ${style.section}`} aria-labelledby='details-title'>
 					<h2 id='details-title' className={style.sectionTitle}>
@@ -87,12 +134,39 @@ const ProductForm = ({ initialValues, onSubmit, mutation, submitLabel, extraActi
 				</section>
 
 				<div className={style.side}>
+					<section className={`${table.panel} ${style.preview}`} aria-label='Preview'>
+						{previewImage ? (
+							<img className={style.previewImage} src={previewImage} alt='' />
+						) : (
+							<div className={style.previewEmpty}>No photo yet</div>
+						)}
+						<div className={style.previewText}>
+							<p className={style.previewBrand}>{form.brand || 'Brand'}</p>
+							<p className={style.previewTitle}>{form.title || 'Product title'}</p>
+							<p>
+								{form.price !== '' && !Number.isNaN(Number(form.price))
+									? formatMoney(Number(form.price))
+									: '—'}
+								{discount > 0 && (
+									<>
+										{' '}
+										<s className={style.previewMuted}>
+											{formatMoney(Number(form.compareAtPrice))}
+										</s>{' '}
+										<span className={style.previewSale}>−{discount}%</span>
+									</>
+								)}
+							</p>
+							{!form.active && <p className={style.previewMuted}>Hidden from the shop</p>}
+						</div>
+					</section>
+
 					<section className={`${table.panel} ${style.section}`} aria-labelledby='pricing-title'>
 						<h2 id='pricing-title' className={style.sectionTitle}>
 							Pricing
 						</h2>
 						<TextField
-							label='Price ($)'
+							label='Price (PLN)'
 							type='number'
 							min='0'
 							step='0.01'
@@ -101,7 +175,7 @@ const ProductForm = ({ initialValues, onSubmit, mutation, submitLabel, extraActi
 							required
 						/>
 						<TextField
-							label='Compare-at price ($)'
+							label='Compare-at price (PLN)'
 							type='number'
 							min='0'
 							step='0.01'
@@ -141,22 +215,35 @@ const ProductForm = ({ initialValues, onSubmit, mutation, submitLabel, extraActi
 				</section>
 			</div>
 
-			<div className={style.footer}>
-				{mutation.isError && (
+			<div className={cx(style.footer, isDirty && !isNew && style.footerDirty)}>
+				<p className={style.saveState} aria-live='polite'>
+					{isNew ? (
+						'New product'
+					) : mutation.isPending ? (
+						'Saving…'
+					) : isDirty ? (
+						<>
+							<span className={style.dot} aria-hidden /> Unsaved changes
+						</>
+					) : (
+						'All changes saved'
+					)}
+				</p>
+				{(mutation.isError || hasLocalErrors) && (
 					<Alert tone='error' className={style.error}>
-						{unmatchedError
+						{unmatchedError && !hasLocalErrors
 							? getErrorMessage(mutation.error)
 							: 'Please fix the highlighted fields.'}
 					</Alert>
 				)}
-				{mutation.isSuccess && !mutation.isPending && (
-					<Alert tone='success' className={style.error}>
-						Saved.
-					</Alert>
-				)}
 				<div className={style.buttons}>
 					{extraActions}
-					<Button type='submit' disabled={mutation.isPending}>
+					{!isNew && (
+						<Button variant='secondary' onClick={discard} disabled={!isDirty || mutation.isPending}>
+							Discard
+						</Button>
+					)}
+					<Button type='submit' disabled={mutation.isPending || !isDirty}>
 						{mutation.isPending
 							? 'Saving…'
 							: (submitLabel ?? (isNew ? 'Create product' : 'Save changes'))}

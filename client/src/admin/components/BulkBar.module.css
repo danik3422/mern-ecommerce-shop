@@ -1,0 +1,59 @@
+.bar {
+	position: sticky;
+	top: var(--space-2);
+	z-index: 6;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-3);
+	margin-bottom: var(--space-3);
+	padding: var(--space-2) var(--space-3) var(--space-2) var(--space-4);
+	border: 1px solid var(--color-text);
+	background: var(--color-text);
+	color: var(--color-inverse);
+	box-shadow: 0 6px 20px rgb(20 20 20 / 0.15);
+}
+
+.count {
+	font-size: var(--text-sm);
+}
+
+.actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+}
+
+.actions button {
+	border-color: rgb(255 255 255 / 0.4);
+	color: var(--color-inverse);
+}
+
+.actions button:hover:not(:disabled) {
+	background: var(--color-inverse);
+	color: var(--color-text);
+}
+
+.actions .danger:hover:not(:disabled) {
+	border-color: var(--color-danger);
+	background: var(--color-danger);
+	color: var(--color-inverse);
+}
+
+.clear {
+	margin-left: auto;
+	color: var(--color-inverse);
+}
+
+.dialog {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-4);
+	font-size: var(--text-sm);
+}
+
+.dialogButtons {
+	display: flex;
+	justify-content: flex-end;
+	gap: var(--space-2);
+}

@@ -4,7 +4,9 @@ import { ORDER_STATUSES, RETURN_REASONS } from '../models/Order.js'
 import { address, email, lineItem, lineItems } from './common.js'
 
 const checkoutOptions = {
-	shippingMethod: z.enum(SHIPPING_METHOD_IDS).default('standard'),
+	// whether the method is enabled is checked when pricing (services/pricing.js);
+	// without one the first enabled method is used
+	shippingMethod: z.enum(SHIPPING_METHOD_IDS).optional(),
 	promoCode: z.string().trim().max(40).optional(),
 }
 

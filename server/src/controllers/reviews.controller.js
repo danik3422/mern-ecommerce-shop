@@ -1,6 +1,7 @@
 import { Product } from '../models/Product.js'
 import { Review } from '../models/Review.js'
 import { User } from '../models/User.js'
+import { hasPermission } from '../services/permissions.js'
 import { getRatingSummary, getReviewEligibility, syncProductRating } from '../services/reviews.js'
 import { conflict, forbidden, notFound } from '../utils/HttpError.js'
 
@@ -58,14 +59,14 @@ export const createReview = async (req, res) => {
 	res.status(201).json(review)
 }
 
-/** DELETE /products/:productId/reviews/:reviewId — the author or an admin */
+/** DELETE /products/:productId/reviews/:reviewId — the author or staff allowed to moderate reviews */
 export const deleteReview = async (req, res) => {
 	const { productId, reviewId } = req.valid.params
 	const review = await Review.findOne({ _id: reviewId, product: productId })
 	if (!review) throw notFound('Review')
 
 	const isAuthor = review.user.toString() === req.user.id
-	if (!isAuthor && !req.user.isAdmin) throw forbidden()
+	if (!isAuthor && !hasPermission(req.user, 'reviews')) throw forbidden()
 
 	await review.deleteOne()
 	await syncProductRating(productId)

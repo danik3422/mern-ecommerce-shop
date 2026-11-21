@@ -11,8 +11,9 @@ import {
 	expireCheckoutSession,
 	isPaymentsEnabled,
 } from '../services/payments.js'
-import { calculateTotals } from '../services/pricing.js'
+import { calculateTotals, subtotalOf } from '../services/pricing.js'
 import { findUsablePromo, redeemPromo, releasePromo } from '../services/promoCodes.js'
+import { getShopSettings } from '../services/shopSettings.js'
 import { releaseStock, reserveStock } from '../services/stock.js'
 import { HttpError, badRequest, conflict } from '../utils/HttpError.js'
 
@@ -62,10 +63,8 @@ export const createOrder = async (req, res) => {
 	const customer = await orderCustomer(req)
 	const resolved = await resolveLineItems(items, { requireStock: true })
 	const orderItems = toOrderItems(resolved)
-	const promo = promoCode
-		? await findUsablePromo(promoCode, calculateTotals(orderItems).subtotal)
-		: undefined
-	const totals = calculateTotals(orderItems, { shippingMethod, promo })
+	const promo = promoCode ? await findUsablePromo(promoCode, subtotalOf(orderItems)) : undefined
+	const totals = calculateTotals(orderItems, await getShopSettings(), { shippingMethod, promo })
 
 	await reserveStock(resolved)
 	let order

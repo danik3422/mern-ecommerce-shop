@@ -3,11 +3,14 @@ import { useShopConfig } from '../../hooks/useShopConfig'
 import { useI18n } from '../../i18n/useI18n'
 import style from './FreeShippingProgress.module.css'
 
-/** "Add $12.00 more for free shipping" with a progress bar (threshold from the shop config). */
+/**
+ * "Add $12.00 more for free shipping" with a progress bar (threshold from the shop config);
+ * nothing when the shop has no free shipping.
+ */
 const FreeShippingProgress = ({ subtotal }) => {
 	const config = useShopConfig()
 	const { t, formatMoney } = useI18n()
-	if (!config) return null
+	if (!config?.freeShippingFrom) return null
 
 	const threshold = config.freeShippingFrom
 	const missing = threshold - subtotal

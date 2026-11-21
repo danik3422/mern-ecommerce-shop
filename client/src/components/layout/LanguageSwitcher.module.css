@@ -1,14 +1,26 @@
 .switcher {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-3);
+}
+
+.control {
 	position: relative;
 	display: inline-flex;
 	align-items: center;
 }
 
-.icon {
+.icon,
+.chevron {
 	position: absolute;
 	left: var(--space-2);
 	color: var(--color-text-muted);
 	pointer-events: none;
+}
+
+.chevron {
+	right: var(--space-3);
+	left: auto;
 }
 
 .select {
@@ -25,4 +37,34 @@
 
 .select:hover {
 	background: var(--color-subtle);
+}
+
+/* native option lists keep dark text even when the select sits on a dark bar */
+.select option {
+	background: var(--color-surface);
+	color: var(--color-text);
+}
+
+/* field variant: a labelled, bordered 44px control */
+.field .label {
+	font-size: var(--text-sm);
+	color: var(--color-text-muted);
+}
+
+.field .icon {
+	left: var(--space-3);
+}
+
+.field .select {
+	min-width: 9rem;
+	height: var(--control-height);
+	padding: 0 calc(var(--space-3) * 2 + 16px);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	background: var(--color-surface);
+}
+
+.field .select:hover {
+	border-color: var(--color-text);
+	background: var(--color-surface);
 }

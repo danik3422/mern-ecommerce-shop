@@ -10,9 +10,11 @@ import { useSearchSuggestions } from './useSearchSuggestions'
 /**
  * Header search with suggestions (ARIA combobox): recent searches while empty,
  * matching brands and products while typing. ↑/↓ move, Enter opens, Esc closes.
- * @param onSearch called after navigating (e.g. to close the mobile menu)
+ * @param onSearch called after navigating (e.g. to close the search panel)
+ * @param onEscape called on Esc when no suggestions are open (e.g. to close the search panel)
+ * @param autoFocus focus the field on mount (the search panel opens straight into typing)
  */
-const SearchForm = ({ onSearch }) => {
+const SearchForm = ({ onSearch, onEscape, autoFocus = false }) => {
 	const navigate = useNavigate()
 	const { t, formatMoney } = useI18n()
 	const [searchParams] = useSearchParams()
@@ -21,7 +23,7 @@ const SearchForm = ({ onSearch }) => {
 	const [activeIndex, setActiveIndex] = useState(-1)
 	const [recent, setRecent] = useState(getRecentSearches)
 	const inputRef = useRef(null)
-	// the header renders two forms (desktop and mobile menu), so ids must be unique
+	// the header can render two forms (inline field and search panel), so ids must be unique
 	const id = useId()
 	const listboxId = `${id}-listbox`
 
@@ -117,6 +119,7 @@ const SearchForm = ({ onSearch }) => {
 			})
 		}
 		if (e.key === 'Escape') {
+			if (!showList) onEscape?.()
 			setIsOpen(false)
 			setActiveIndex(-1)
 		}
@@ -150,6 +153,7 @@ const SearchForm = ({ onSearch }) => {
 				onFocus={() => setIsOpen(true)}
 				onBlur={() => setIsOpen(false)}
 				onKeyDown={handleKeyDown}
+				autoFocus={autoFocus}
 				autoComplete='off'
 				role='combobox'
 				aria-autocomplete='list'

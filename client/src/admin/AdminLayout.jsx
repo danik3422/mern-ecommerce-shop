@@ -1,34 +1,35 @@
-import {
-	ExternalLink,
-	LayoutDashboard,
-	LogOut,
-	Menu,
-	MessageSquare,
-	Package,
-	ShoppingCart,
-	Tag,
-	Users,
-	X,
-} from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { ExternalLink, LogOut, Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
+import { adminKeys, fetchAdminCounts, fetchMe } from '../api/admin'
 import { useAuth } from '../auth/useAuth'
 import { cx } from '../utils/cx'
+import { allowedNav } from './navigation'
 import style from './AdminLayout.module.css'
 
-const NAV = [
-	{ to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
-	{ to: '/admin/products', label: 'Products', icon: Package },
-	{ to: '/admin/orders', label: 'Orders', icon: ShoppingCart },
-	{ to: '/admin/customers', label: 'Customers', icon: Users },
-	{ to: '/admin/reviews', label: 'Reviews', icon: MessageSquare },
-	{ to: '/admin/promo-codes', label: 'Promo codes', icon: Tag },
-]
+const COUNTS_REFRESH_MS = 60_000
 
 /** Admin frame: sidebar on wide screens, top bar with a menu on small ones. */
 const AdminLayout = () => {
-	const { user, logout } = useAuth()
+	const { user, logout, updateUser } = useAuth()
 	const { pathname } = useLocation()
+
+	// permissions may have changed since signing in: refresh the stored user once per visit
+	useQuery({
+		queryKey: adminKeys.me,
+		queryFn: async ({ signal }) => {
+			const me = await fetchMe(signal)
+			updateUser(me)
+			return me
+		},
+		staleTime: Infinity,
+	})
+	const counts = useQuery({
+		queryKey: adminKeys.counts,
+		queryFn: ({ signal }) => fetchAdminCounts(signal),
+		refetchInterval: COUNTS_REFRESH_MS,
+	}).data
 	const [isMenuOpen, setIsMenuOpen] = useState(false)
 	const [menuPath, setMenuPath] = useState(pathname)
 
@@ -64,18 +65,38 @@ const AdminLayout = () => {
 				<div id='admin-navigation' className={cx(style.navPanel, isMenuOpen && style.navPanelOpen)}>
 					<nav aria-label='Admin'>
 						<ul role='list' className={style.navList}>
-							{NAV.map(({ to, label, icon: Icon, end }) => (
-								<li key={to}>
-									<NavLink
-										to={to}
-										end={end}
-										className={({ isActive }) => cx(style.navLink, isActive && style.active)}
-									>
+							{allowedNav(user).map(({ to, label, icon: Icon, end, plain, count, countLabel }) => {
+								const number = count && counts?.[count]
+								const content = (
+									<>
 										<Icon size={18} aria-hidden />
 										{label}
-									</NavLink>
-								</li>
-							))}
+										{number > 0 && (
+											<span className={style.count} title={`${number} ${countLabel}`}>
+												{number}
+												<span className='visually-hidden'> {countLabel}</span>
+											</span>
+										)}
+									</>
+								)
+								return (
+									<li key={to}>
+										{plain ? (
+											<Link to={to} className={style.navLink}>
+												{content}
+											</Link>
+										) : (
+											<NavLink
+												to={to}
+												end={end}
+												className={({ isActive }) => cx(style.navLink, isActive && style.active)}
+											>
+												{content}
+											</NavLink>
+										)}
+									</li>
+								)
+							})}
 						</ul>
 					</nav>
 
@@ -88,7 +109,10 @@ const AdminLayout = () => {
 							<LogOut size={18} aria-hidden />
 							Sign out
 						</button>
-						<p className={style.user}>Signed in as {user.username}</p>
+						<p className={style.user}>
+							Signed in as {user.username}
+							{user.isOwner && ' (owner)'}
+						</p>
 					</div>
 				</div>
 			</header>

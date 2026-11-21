@@ -1,0 +1,86 @@
+.demo {
+	display: grid;
+	gap: var(--space-3);
+}
+
+.title {
+	font-size: var(--text-lg);
+}
+
+.text {
+	color: var(--color-text-muted);
+	font-size: var(--text-sm);
+	line-height: 1.5;
+}
+
+.accounts {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: var(--space-2);
+}
+
+.account {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--space-3);
+	padding: var(--space-3);
+	border: 1px solid var(--color-border);
+	border-radius: 10px;
+	background: var(--color-surface);
+	text-align: left;
+	transition:
+		border-color 120ms ease,
+		box-shadow 120ms ease;
+}
+
+.account:hover:not(:disabled) {
+	border-color: var(--color-border-strong);
+	box-shadow: 0 4px 14px rgb(0 0 0 / 0.06);
+}
+
+.account:disabled {
+	opacity: 0.6;
+}
+
+.icon {
+	flex-shrink: 0;
+	margin-top: 2px;
+}
+
+.accountText {
+	display: grid;
+	gap: 2px;
+}
+
+.accountTitle {
+	font-weight: var(--weight-semibold);
+}
+
+.accountHint {
+	color: var(--color-text-muted);
+	font-size: var(--text-xs);
+	line-height: 1.45;
+}
+
+.divider {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	margin-top: var(--space-2);
+	color: var(--color-text-muted);
+	font-size: var(--text-xs);
+}
+
+.divider::before,
+.divider::after {
+	content: '';
+	flex: 1;
+	height: 1px;
+	background: var(--color-border);
+}
+
+@media (max-width: 420px) {
+	.accounts {
+		grid-template-columns: 1fr;
+	}
+}

@@ -1,4 +1,4 @@
-import { ShoppingBag } from 'lucide-react'
+import { ShoppingBag, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { useCart } from '../../cart/useCart'
@@ -54,6 +54,16 @@ const QuickAdd = ({ product }) => {
 			</button>
 
 			<div className={style.panel}>
+				{isOpen && (
+					<button
+						type='button'
+						className={style.close}
+						onClick={() => setIsOpen(false)}
+						aria-label={t('card.closeQuickAdd')}
+					>
+						<X size={14} aria-hidden />
+					</button>
+				)}
 				{needsColorChoice ? (
 					<Link to={`/product/${product.slug}`} className={style.link}>
 						{t('card.chooseOptions')}

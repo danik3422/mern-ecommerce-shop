@@ -34,6 +34,16 @@ export const AuthProvider = ({ children }) => {
 		[applySession],
 	)
 
+	/** @param account 'customer' | 'admin' — shared demo accounts, see GET /shop/config `demo` */
+	const loginAsDemo = useCallback(
+		async (account) => {
+			const session = await authApi.loginAsDemo(account)
+			applySession(session)
+			return session
+		},
+		[applySession],
+	)
+
 	const register = useCallback(
 		async (payload) => applySession(await authApi.register(payload)),
 		[applySession],
@@ -51,8 +61,8 @@ export const AuthProvider = ({ children }) => {
 	)
 
 	const value = useMemo(
-		() => ({ user: session?.user ?? null, login, register, logout, updateUser }),
-		[session, login, register, logout, updateUser],
+		() => ({ user: session?.user ?? null, login, loginAsDemo, register, logout, updateUser }),
+		[session, login, loginAsDemo, register, logout, updateUser],
 	)
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

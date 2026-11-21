@@ -1,10 +1,7 @@
-/* Covers the card image (same 3:4 box) so the panel can sit at its bottom edge */
+/* Covers the card image so the panel can sit at its bottom edge */
 .overlay {
 	position: absolute;
-	top: 0;
-	right: 0;
-	left: 0;
-	aspect-ratio: 3 / 4;
+	inset: 0;
 	pointer-events: none;
 }
 
@@ -50,6 +47,35 @@
 	background: var(--color-surface);
 	box-shadow: 0 1px 6px rgb(0 0 0 / 0.12);
 	pointer-events: auto;
+}
+
+/* 36px circle with a 44px touch target */
+.toggle::after {
+	content: '';
+	position: absolute;
+	inset: -4px;
+}
+
+/* touch screens: closes the opened panel without adding; sits on its top-right corner */
+.close {
+	position: absolute;
+	top: -0.875rem;
+	right: -0.25rem;
+	display: grid;
+	place-items: center;
+	width: 1.75rem;
+	height: 1.75rem;
+	border: 0;
+	border-radius: 50%;
+	background: var(--color-surface);
+	box-shadow: 0 1px 6px rgb(0 0 0 / 0.15);
+	color: var(--color-text);
+}
+
+.close::after {
+	content: '';
+	position: absolute;
+	inset: -8px;
 }
 
 .label {
@@ -110,7 +136,13 @@
 		visibility: visible;
 	}
 
-	.toggle {
+	.toggle,
+	.close {
 		display: none;
+	}
+
+	/* leaves room for the photo progress segments below */
+	.panel {
+		bottom: var(--space-4);
 	}
 }

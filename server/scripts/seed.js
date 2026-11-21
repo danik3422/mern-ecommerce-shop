@@ -9,6 +9,7 @@ import { Product } from '../src/models/Product.js'
 import { Review } from '../src/models/Review.js'
 import { User } from '../src/models/User.js'
 import { hashPassword } from '../src/services/password.js'
+import { PERMISSION_NAMES } from '../src/services/permissions.js'
 
 const CLOTHING = ['XS', 'S', 'M', 'L', 'XL']
 const JEANS = ['28', '30', '32', '34', '36']
@@ -506,10 +507,17 @@ const seedReviews = async (insertedProducts) => {
 const seedAdmin = async (password) => {
 	await User.findOneAndUpdate(
 		{ username: 'admin' },
-		{ email: 'admin@example.com', passwordHash: await hashPassword(password), isAdmin: true },
+		{
+			email: 'admin@example.com',
+			passwordHash: await hashPassword(password),
+			role: 'staff',
+			isOwner: true,
+			permissions: PERMISSION_NAMES,
+			blocked: false,
+		},
 		{ upsert: true },
 	)
-	console.log('Admin user "admin" is ready')
+	console.log('Owner account "admin" is ready')
 }
 
 const main = async () => {

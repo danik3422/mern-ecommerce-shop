@@ -1,5 +1,6 @@
 import { useShopConfig } from '../../hooks/useShopConfig'
 import style from './DeliveryOptions.module.css'
+import { deliveryName } from '../../i18n/catalogText'
 import { useI18n } from '../../i18n/useI18n'
 
 /**
@@ -10,13 +11,14 @@ import { useI18n } from '../../i18n/useI18n'
  */
 const DeliveryOptions = ({ value, onChange, quotedShipping, discountedSubtotal }) => {
 	const config = useShopConfig()
-	const { t, formatMoney } = useI18n()
+	const { t, locale, formatMoney } = useI18n()
 	if (!config) return null
 
 	const priceOf = (method) => {
 		if (method.id === value && quotedShipping !== undefined) return quotedShipping
 		const free =
 			method.freeShipping &&
+			config.freeShippingFrom != null &&
 			discountedSubtotal !== undefined &&
 			discountedSubtotal >= config.freeShippingFrom
 		return free ? 0 : method.price
@@ -37,9 +39,7 @@ const DeliveryOptions = ({ value, onChange, quotedShipping, discountedSubtotal }
 							onChange={() => onChange(method.id)}
 						/>
 						<span className={style.text}>
-							<span className={style.label}>
-								{t(`delivery.${method.id}`, { defaultValue: method.label })}
-							</span>
+							<span className={style.label}>{deliveryName(t, locale, method)}</span>
 							<span className={style.days}>
 								{t('delivery.days', { from: method.days[0], to: method.days[1] })}
 							</span>

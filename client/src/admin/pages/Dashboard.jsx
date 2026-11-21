@@ -129,7 +129,7 @@ const Dashboard = () => {
 						<Panel
 							title='Low stock'
 							action={
-								<Link to='/admin/products?lowStock=true' className='text-link'>
+								<Link to='/admin/products?stock=low' className='text-link'>
 									View products
 								</Link>
 							}

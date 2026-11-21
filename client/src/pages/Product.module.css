@@ -1,16 +1,24 @@
 .page {
-	padding-block: var(--space-6);
+	padding-top: var(--space-3);
+	/* room for the sticky "Add to bag" bar on small screens */
+	padding-bottom: var(--space-9);
 }
 
+/* gallery-shaped placeholder, so the page does not jump when the product loads */
 .skeleton {
-	width: min(100%, 40rem);
-	aspect-ratio: 4 / 5;
+	aspect-ratio: 3 / 4;
+	margin-inline: calc(var(--gutter) * -1);
 	background: var(--color-subtle);
 }
 
-/* room for the sticky "Add to bag" bar on small screens */
-@media (max-width: 52rem) {
+@media (min-width: 56.25rem) {
 	.page {
-		padding-bottom: var(--space-9);
+		padding-block: var(--space-6);
+	}
+
+	.skeleton {
+		width: calc((100% - var(--space-7)) * 1.2 / 2.2);
+		margin-inline: 0;
+		margin-top: calc(var(--text-sm) * 1.5 + var(--space-5));
 	}
 }

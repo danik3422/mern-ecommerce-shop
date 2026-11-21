@@ -4,7 +4,10 @@
  * 1. Data: converts products of the old format (colors, sizes and images on the product)
  *    into variants. Stock of a size is split between the colors, the first color gets
  *    the remainder, so the total stays the same.
- * 2. Indexes:
+ * 2. Data: accounts get a role. Former admins (`isAdmin: true`) become staff owners with
+ *    every permission, everyone else a customer; the stored `isAdmin` flag is removed
+ *    (the API still sends `isAdmin` = "is staff" to the client).
+ * 3. Indexes:
  * Drops indexes that no schema defines any more (e.g. the unique `carts.userId_1` left
  * from the first schema version, which made every cart after the first one fail with 409)
  * and creates missing ones. Run it after deploying schema changes; it is safe to repeat.
@@ -14,6 +17,8 @@
 import mongoose from 'mongoose'
 import { connectDb, disconnectDb } from '../src/config/db.js'
 import { env } from '../src/config/env.js'
+import { PERMISSION_NAMES } from '../src/services/permissions.js'
+import '../src/models/ActivityLog.js'
 import '../src/models/Cart.js'
 import '../src/models/Order.js'
 import '../src/models/Product.js'
@@ -47,9 +52,28 @@ const migrateProductsToVariants = async () => {
 	console.log(`products: ${legacy.length} converted to variants`)
 }
 
+const migrateAdminsToStaff = async () => {
+	const users = mongoose.connection.collection('users')
+	const owners = await users.updateMany(
+		{ isAdmin: true },
+		{
+			$set: { role: 'staff', isOwner: true, permissions: PERMISSION_NAMES },
+			$unset: { isAdmin: '' },
+		},
+	)
+	const customers = await users.updateMany(
+		{ role: { $exists: false } },
+		{ $set: { role: 'customer' }, $unset: { isAdmin: '' } },
+	)
+	console.log(
+		`users: ${owners.modifiedCount} admins became owners, ${customers.modifiedCount} customers got a role`,
+	)
+}
+
 const main = async () => {
 	await connectDb(env.MONGO_URL)
 	await migrateProductsToVariants()
+	await migrateAdminsToStaff()
 
 	for (const model of Object.values(mongoose.models)) {
 		const dropped = await model.syncIndexes()

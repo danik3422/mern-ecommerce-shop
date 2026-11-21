@@ -9,14 +9,21 @@ export const api = () => request(app)
 
 export const DEFAULT_PASSWORD = 'password123'
 
-/** Registers a user through the API and returns its data with a ready auth header. */
-export const createUser = async ({ username = 'alice', isAdmin = false } = {}) => {
+/**
+ * Registers a user through the API and returns its data with a ready auth header.
+ * `isAdmin` makes it a staff owner (full access); `permissions` makes it staff with just those.
+ */
+export const createUser = async ({ username = 'alice', isAdmin = false, permissions } = {}) => {
 	const res = await api()
 		.post('/api/auth/register')
 		.send({ username, email: `${username}@example.com`, password: DEFAULT_PASSWORD })
 		.expect(201)
 
-	if (isAdmin) await User.updateOne({ _id: res.body.user._id }, { isAdmin: true })
+	if (isAdmin) {
+		await User.updateOne({ _id: res.body.user._id }, { role: 'staff', isOwner: true })
+	} else if (permissions) {
+		await User.updateOne({ _id: res.body.user._id }, { role: 'staff', permissions })
+	}
 
 	return {
 		user: res.body.user,

@@ -45,9 +45,13 @@
 	--container-width: 80rem;
 	--gutter: clamp(1rem, 4vw, 2.5rem);
 	--header-height: 4rem;
+	--announcement-height: 2rem; /* slim info bar above the header; scrolls away */
 	--radius: 2px;
 	--control-height: 2.75rem; /* 44px — comfortable touch target */
+	--shadow-overlay: 0 1px 8px rgb(0 0 0 / 0.1); /* round buttons floating over photos */
 
 	/* motion */
 	--transition: 150ms ease;
+	--card-fade-duration: 350ms; /* product card photo crossfade */
+	--card-zoom-duration: 600ms; /* product card photo zoom on hover */
 }

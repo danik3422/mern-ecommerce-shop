@@ -10,8 +10,12 @@ import { forbidden, notFound } from '../utils/HttpError.js'
  * - reviews: they carry a username snapshot and stay useful for other shoppers.
  */
 const deleteAccount = async (userId) => {
-	const user = await User.findByIdAndDelete(userId)
-	if (!user) throw notFound('User')
+	// staff accounts are removed under Team, where the last owner is protected
+	const user = await User.findOneAndDelete({ _id: userId, role: 'customer' })
+	if (!user) {
+		if (await User.exists({ _id: userId })) throw forbidden('Staff accounts are managed in Team')
+		throw notFound('User')
+	}
 	await Cart.deleteOne({ user: userId })
 }
 
@@ -42,22 +46,15 @@ export const deleteMe = async (req, res) => {
 }
 
 export const listUsers = async (req, res) => {
-	const users = await User.find().sort({ createdAt: -1 }).limit(req.valid.query.limit).lean()
+	const users = await User.find({ role: 'customer' })
+		.sort({ createdAt: -1 })
+		.limit(req.valid.query.limit)
+		.lean()
 	res.json(users)
 }
 
 export const getUser = async (req, res) => {
 	const user = await User.findById(req.valid.params.id)
-	if (!user) throw notFound('User')
-	res.json(user)
-}
-
-/** PATCH /users/:id — admins can grant or revoke admin rights */
-export const updateUser = async (req, res) => {
-	const user = await User.findByIdAndUpdate(req.valid.params.id, req.valid.body, {
-		returnDocument: 'after',
-		runValidators: true,
-	})
 	if (!user) throw notFound('User')
 	res.json(user)
 }

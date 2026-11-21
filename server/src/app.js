@@ -6,6 +6,7 @@ import path from 'node:path'
 import { env } from './config/env.js'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'
 import { apiRoutes } from './routes/index.js'
+import { settingsRoutes } from './routes/settings.routes.js'
 
 /** Builds the Express app without starting it, so tests can use it directly. */
 export const createApp = ({ authRateLimit = env.AUTH_RATE_LIMIT } = {}) => {
@@ -19,6 +20,8 @@ export const createApp = ({ authRateLimit = env.AUTH_RATE_LIMIT } = {}) => {
 	app.use(express.json({ limit: '100kb' }))
 	if (!env.isTest) app.use(morgan(env.isProduction ? 'combined' : 'dev'))
 
+	// before the other /api routes, so the /admin router does not handle it first
+	app.use('/api/admin/settings', settingsRoutes)
 	app.use('/api', apiRoutes({ authRateLimit }))
 	app.use('/uploads', express.static(path.resolve(env.UPLOAD_DIR), { maxAge: '7d' }))
 

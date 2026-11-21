@@ -1,11 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { MAX_QUANTITY } from '../../cart/cartLines'
 import { useCart } from '../../cart/useCart'
 import { findVariant, isVariantInStock, stockOf } from '../../utils/variants'
 import { rememberViewedProduct } from '../../hooks/useRecentlyViewed'
 import WishlistButton from '../account/WishlistButton'
-import FreeShippingNote from '../cart/FreeShippingNote'
 import MiniBag from '../cart/MiniBag'
 import ProductReviews from '../reviews/ProductReviews'
 import RatingStars from '../reviews/RatingStars'
@@ -17,6 +16,7 @@ import OptionPicker from './OptionPicker'
 import Price from './Price'
 import style from './ProductDetails.module.css'
 import ProductGallery from './ProductGallery'
+import DeliveryInfo from './DeliveryInfo'
 import SizeGuide from './SizeGuide'
 import SizePicker from './SizePicker'
 import { useI18n } from '../../i18n/useI18n'
@@ -40,6 +40,7 @@ const ProductDetails = ({ product }) => {
 	const [addedLine, setAddedLine] = useState(null)
 	const [showStickyBar, setShowStickyBar] = useState(false)
 	const purchaseRef = useRef(null)
+	const descriptionId = useId()
 
 	const category = product.categories[0]
 	const sizeStock = stockOf(variant, size)
@@ -115,7 +116,7 @@ const ProductDetails = ({ product }) => {
 				</div>
 
 				<div className={style.info}>
-					<div>
+					<div className={style.heading}>
 						<Link
 							to={`/products?brand=${encodeURIComponent(product.brand)}`}
 							className={style.brand}
@@ -123,16 +124,15 @@ const ProductDetails = ({ product }) => {
 							{product.brand}
 						</Link>
 						<h1 className={style.title}>{product.title}</h1>
+						<div className={style.priceRow}>
+							<Price product={product} size='lg' />
+							{product.rating?.count > 0 && (
+								<a href='#reviews' className={style.ratingLink}>
+									<RatingStars value={product.rating.average} count={product.rating.count} />
+								</a>
+							)}
+						</div>
 					</div>
-					<div className={style.priceRow}>
-						<Price product={product} size='lg' />
-						{product.rating?.count > 0 && (
-							<a href='#reviews' className={style.ratingLink}>
-								<RatingStars value={product.rating.average} count={product.rating.count} />
-							</a>
-						)}
-					</div>
-					<p className={style.description}>{product.description}</p>
 
 					{product.variants.length > 1 && (
 						<OptionPicker
@@ -179,9 +179,15 @@ const ProductDetails = ({ product }) => {
 					{variantInStock && allInBag && (
 						<Alert>{t('product.allInBag', { count: sizeStock })}</Alert>
 					)}
-					<p className={style.note}>
-						<FreeShippingNote />
-					</p>
+					<DeliveryInfo />
+					{product.description && (
+						<section className={style.details} aria-labelledby={descriptionId}>
+							<h2 id={descriptionId} className={style.detailsTitle}>
+								{t('product.description')}
+							</h2>
+							<p className={style.description}>{product.description}</p>
+						</section>
+					)}
 				</div>
 			</article>
 			{canAdd && (

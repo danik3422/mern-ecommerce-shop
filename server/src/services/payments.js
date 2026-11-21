@@ -1,6 +1,6 @@
 import Stripe from 'stripe'
 import { env } from '../config/env.js'
-import { SHOP } from '../config/shop.js'
+import { CURRENCY as SHOP_CURRENCY } from '../config/shop.js'
 import { HttpError } from '../utils/HttpError.js'
 
 /**
@@ -10,7 +10,7 @@ import { HttpError } from '../utils/HttpError.js'
 
 // Stripe allows 30 minutes to 24 hours; unpaid orders release their stock when the session expires
 const SESSION_LIFETIME_SECONDS = 60 * 60
-const CURRENCY = SHOP.currency.toLowerCase()
+const CURRENCY = SHOP_CURRENCY.toLowerCase()
 
 let client
 

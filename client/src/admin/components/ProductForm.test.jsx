@@ -58,7 +58,7 @@ describe('ProductForm', () => {
 		fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Tee' } })
 		fireEvent.change(screen.getByLabelText('Brand'), { target: { value: 'Northline' } })
 		fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Soft' } })
-		fireEvent.change(screen.getByLabelText('Price ($)'), { target: { value: '25' } })
+		fireEvent.change(screen.getByLabelText('Price (PLN)'), { target: { value: '25' } })
 		fireEvent.change(screen.getByLabelText('Color'), { target: { value: 'Indigo' } })
 		fireEvent.click(screen.getByRole('button', { name: 'Jeans 28–34' }))
 		fireEvent.change(screen.getByLabelText('Stock of size 30'), { target: { value: '4' } })
@@ -107,7 +107,7 @@ describe('ProductForm', () => {
 		expect(screen.getByLabelText('Title')).toHaveAttribute('aria-invalid', 'true')
 		expect(sizeRows()[1]).toHaveAttribute('aria-invalid', 'true')
 		expect(screen.getByText('Size labels must be unique')).toBeInTheDocument()
-		expect(screen.getByLabelText('Compare-at price ($)')).toHaveAccessibleDescription(
+		expect(screen.getByLabelText('Compare-at price (PLN)')).toHaveAccessibleDescription(
 			'Compare-at price must be higher than the price',
 		)
 		expect(screen.getByRole('alert')).toHaveTextContent('Please fix the highlighted fields.')

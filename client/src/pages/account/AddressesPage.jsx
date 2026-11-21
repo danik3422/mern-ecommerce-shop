@@ -17,6 +17,8 @@ import Button from '../../components/ui/Button'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import style from './AddressesPage.module.css'
 import { useI18n } from '../../i18n/useI18n'
+import { useConfirm } from '../../components/ui/confirm/useConfirm'
+import { useToast } from '../../components/ui/toast/useToast'
 
 const MAX_ADDRESSES = 10
 
@@ -37,31 +39,52 @@ const AddressesPage = () => {
 		return refresh()
 	}
 
+	const toast = useToast()
+	const confirm = useConfirm()
+	/** Refreshes the list and shows the result as a toast. */
+	const done = (message) => () => {
+		toast.show({ tone: 'success', message })
+		return refresh()
+	}
+	const showError = (error) => toast.show({ tone: 'error', message: getErrorMessage(error) })
+
 	const creation = useMutation({
 		mutationFn: (fields) => createAddress(fields),
-		onSuccess: closeAndRefresh,
+		onSuccess: () => {
+			toast.show({ tone: 'success', message: t('addresses.saved') })
+			return closeAndRefresh()
+		},
 	})
 	const update = useMutation({
 		mutationFn: (fields) => updateAddress(editing, fields),
-		onSuccess: closeAndRefresh,
+		onSuccess: () => {
+			toast.show({ tone: 'success', message: t('addresses.saved') })
+			return closeAndRefresh()
+		},
 	})
 	const makeDefault = useMutation({
 		mutationFn: (id) => updateAddress(id, { isDefault: true }),
-		onSuccess: refresh,
+		onSuccess: done(t('addresses.madeDefault')),
+		onError: showError,
 	})
-	const removal = useMutation({ mutationFn: (id) => deleteAddress(id), onSuccess: refresh })
+	const removal = useMutation({
+		mutationFn: (id) => deleteAddress(id),
+		onSuccess: done(t('addresses.deleted')),
+		onError: showError,
+	})
 
-	const handleDelete = (address) => {
-		if (
-			window.confirm(t('addresses.confirmDelete', { name: address.fullName, city: address.city }))
-		) {
-			removal.mutate(address._id)
-		}
+	const handleDelete = async (address) => {
+		const confirmed = await confirm({
+			title: t('addresses.confirmDeleteTitle'),
+			message: t('addresses.confirmDelete', { name: address.fullName, city: address.city }),
+			confirmLabel: t('common.delete'),
+			tone: 'danger',
+		})
+		if (confirmed) removal.mutate(address._id)
 	}
 
 	const list = addresses.data ?? []
 	const canAdd = list.length < MAX_ADDRESSES
-	const actionError = makeDefault.error ?? removal.error
 
 	return (
 		<section className={shared.section} aria-labelledby='addresses-title'>
@@ -82,7 +105,6 @@ const AddressesPage = () => {
 					{t('addresses.loadError', { error: getErrorMessage(addresses.error) })}
 				</Alert>
 			)}
-			{actionError && <Alert tone='error'>{getErrorMessage(actionError)}</Alert>}
 
 			{editing === 'new' && (
 				<div className={shared.card}>

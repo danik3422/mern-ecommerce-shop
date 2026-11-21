@@ -195,5 +195,7 @@ export const updateProduct = async (req, res) => {
 export const deleteProduct = async (req, res) => {
 	const product = await Product.findByIdAndDelete(req.valid.params.id)
 	if (!product) throw notFound('Product')
+	// for the activity log
+	res.locals.label = product.title
 	res.status(204).end()
 }

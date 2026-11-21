@@ -1,0 +1,87 @@
+.layout {
+	display: grid;
+	gap: var(--space-4);
+}
+
+.stats {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+	gap: var(--space-3);
+}
+
+.stat {
+	padding: var(--space-4);
+}
+
+.statLabel {
+	color: var(--color-text-muted);
+	font-size: var(--text-xs);
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+.statValue {
+	margin-top: var(--space-1);
+	font-size: var(--text-lg);
+	font-weight: var(--weight-semibold);
+	font-variant-numeric: tabular-nums;
+}
+
+.columns {
+	display: grid;
+	grid-template-columns: minmax(0, 1.7fr) minmax(16rem, 1fr);
+	gap: var(--space-4);
+	align-items: start;
+}
+
+.sectionTitle {
+	padding: var(--space-4) var(--space-4) var(--space-2);
+	font-size: var(--text-md);
+}
+
+.side {
+	display: grid;
+	gap: var(--space-4);
+}
+
+.card {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+	padding: var(--space-5);
+	font-size: var(--text-sm);
+}
+
+.cardTitle {
+	font-size: var(--text-md);
+}
+
+.facts {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: var(--space-2) var(--space-4);
+}
+
+.facts dt {
+	color: var(--color-text-muted);
+}
+
+.facts dd {
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.addresses {
+	display: grid;
+	gap: var(--space-3);
+}
+
+.address {
+	font-style: normal;
+}
+
+@media (max-width: 64rem) {
+	.columns {
+		grid-template-columns: 1fr;
+	}
+}

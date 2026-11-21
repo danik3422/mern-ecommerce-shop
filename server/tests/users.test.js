@@ -66,15 +66,19 @@ describe('/api/users/me', () => {
 })
 
 describe('user administration', () => {
-	it('lets admins list users and grant admin rights', async () => {
+	it('lets staff list and delete customers, but not promote them or delete staff', async () => {
 		const admin = await createUser({ username: 'admin', isAdmin: true })
-		const { user, auth } = await createUser({ username: 'alice' })
+		const support = await createUser({ username: 'support', permissions: ['customers'] })
+		const { user } = await createUser({ username: 'alice' })
 
-		expect((await api().get('/api/users').set(admin.auth)).body).toHaveLength(2)
+		// staff accounts are not customers
+		const list = await api().get('/api/users').set(admin.auth).expect(200)
+		expect(list.body.map((u) => u.username)).toEqual(['alice'])
 
-		await api().patch(`/api/users/${user._id}`).set(admin.auth).send({ isAdmin: true }).expect(200)
-		// rights are read from the database, so the existing token gets them immediately
-		await api().get('/api/users').set(auth).expect(200)
+		// promoting customers is gone: staff accounts are created under Team
+		await api().patch(`/api/users/${user._id}`).set(admin.auth).send({ isAdmin: true }).expect(404)
+		await api().delete(`/api/users/${support.user._id}`).set(admin.auth).expect(403)
+		await api().delete(`/api/users/${user._id}`).set(support.auth).expect(204)
 	})
 
 	it('forbids regular users', async () => {

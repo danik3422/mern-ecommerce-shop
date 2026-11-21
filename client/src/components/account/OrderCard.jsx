@@ -6,13 +6,14 @@ import { getErrorMessage } from '../../api/client'
 import { cancelOrder, payOrder } from '../../api/orders'
 import { cx } from '../../utils/cx'
 import ReturnSection from '../orders/ReturnSection'
-import Alert from '../ui/Alert'
 import Button from '../ui/Button'
 import shared from './Account.module.css'
 import style from './OrderCard.module.css'
 import OrderStatusBadge from './OrderStatusBadge'
 import { useI18n } from '../../i18n/useI18n'
 import { colorName } from '../../i18n/catalogText'
+import { useConfirm } from '../ui/confirm/useConfirm'
+import { useToast } from '../ui/toast/useToast'
 
 /** Short, human-friendly order number from the Mongo id. */
 const orderNumber = (order) => order._id.slice(-8).toUpperCase()
@@ -24,25 +25,39 @@ const OrderCard = ({ order }) => {
 	const [isOpen, setIsOpen] = useState(false)
 	const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0)
 
+	const toast = useToast()
+	const confirm = useConfirm()
+	const showError = (error) => toast.show({ tone: 'error', message: getErrorMessage(error) })
+	const number = orderNumber(order)
+
 	const payment = useMutation({
 		mutationFn: () => payOrder(order._id),
 		onSuccess: ({ checkoutUrl }) => {
 			if (checkoutUrl) window.location.assign(checkoutUrl)
+			else toast.show({ message: t('orders.noOnlinePayment') })
 		},
+		onError: showError,
 	})
 
 	const cancellation = useMutation({
 		mutationFn: () => cancelOrder(order._id),
-		onSuccess: () => queryClient.invalidateQueries({ queryKey: accountKeys.orders }),
+		onSuccess: () => {
+			toast.show({ tone: 'success', message: t('orders.cancelled', { number }) })
+			return queryClient.invalidateQueries({ queryKey: accountKeys.orders })
+		},
+		onError: showError,
 	})
 
-	const handleCancel = () => {
-		if (window.confirm(t('orders.confirmCancel', { number: orderNumber(order) }))) {
-			cancellation.mutate()
-		}
+	const handleCancel = async () => {
+		const confirmed = await confirm({
+			title: t('orders.confirmCancelTitle', { number }),
+			message: t('orders.confirmCancel'),
+			confirmLabel: t('checkout.cancelOrder'),
+			cancelLabel: t('orders.keepOrder'),
+			tone: 'danger',
+		})
+		if (confirmed) cancellation.mutate()
 	}
-
-	const error = payment.error ?? cancellation.error
 
 	return (
 		<li className={cx(shared.card, style.order)}>
@@ -90,10 +105,6 @@ const OrderCard = ({ order }) => {
 					</Button>
 				</div>
 			)}
-			{payment.isSuccess && !payment.data?.checkoutUrl && (
-				<Alert>{t('orders.noOnlinePayment')}</Alert>
-			)}
-			{error && <Alert tone='error'>{getErrorMessage(error)}</Alert>}
 			<ReturnSection
 				order={order}
 				onChange={() => queryClient.invalidateQueries({ queryKey: accountKeys.orders })}

@@ -9,9 +9,9 @@ import {
 	updatePromoCode,
 } from '../../api/admin'
 import { getErrorMessage } from '../../api/client'
-import Alert from '../../components/ui/Alert'
 import Button from '../../components/ui/Button'
 import Modal from '../../components/ui/Modal'
+import { useToast } from '../../components/ui/toast/useToast'
 import { formatMoney } from '../../utils/money'
 import PageHeader from '../components/PageHeader'
 import PromoCodeForm from '../components/PromoCodeForm'
@@ -19,6 +19,7 @@ import QueryState from '../components/QueryState'
 import table from '../components/Table.module.css'
 import { formatDate } from '../format'
 import { describeDiscount, promoStatus, promoToForm } from '../promoForm'
+import { useAdminConfirm } from '../useAdminConfirm'
 
 const validity = (promo) => {
 	if (!promo.startsAt && !promo.endsAt) return 'Always'
@@ -27,6 +28,8 @@ const validity = (promo) => {
 
 const PromoCodes = () => {
 	const queryClient = useQueryClient()
+	const toast = useToast()
+	const confirm = useAdminConfirm()
 	const promos = useQuery({
 		queryKey: adminKeys.promoCodes,
 		queryFn: ({ signal }) => fetchPromoCodes(signal),
@@ -38,22 +41,42 @@ const PromoCodes = () => {
 	const save = useMutation({
 		mutationFn: (body) =>
 			editing === 'new' ? createPromoCode(body) : updatePromoCode(editing._id, body),
-		onSuccess: () => {
+		onSuccess: (promo) => {
 			refresh()
+			toast.show({
+				tone: 'success',
+				message: editing === 'new' ? `Code ${promo.code} created` : `Code ${promo.code} saved`,
+			})
 			setEditing(null)
 		},
 	})
-	const remove = useMutation({ mutationFn: deletePromoCode, onSuccess: refresh })
+	const remove = useMutation({
+		mutationFn: (promo) => deletePromoCode(promo._id),
+		onSuccess: (_, promo) => {
+			refresh()
+			toast.show({ tone: 'success', message: `Code ${promo.code} deleted` })
+		},
+		onError: (error) =>
+			toast.show({
+				tone: 'error',
+				title: 'Could not delete the code',
+				message: getErrorMessage(error),
+			}),
+	})
 
 	const open = (promo) => {
 		save.reset()
 		setEditing(promo)
 	}
 
-	const handleDelete = (promo) => {
-		if (window.confirm(`Delete the code ${promo.code}? Orders that used it keep their discount.`)) {
-			remove.mutate(promo._id)
-		}
+	const handleDelete = async (promo) => {
+		const confirmed = await confirm({
+			title: `Delete code ${promo.code}?`,
+			message: 'Customers can no longer use it. Orders that used it keep their discount.',
+			confirmLabel: 'Delete code',
+			tone: 'danger',
+		})
+		if (confirmed) remove.mutate(promo)
 	}
 
 	return (
@@ -67,7 +90,6 @@ const PromoCodes = () => {
 					</Button>
 				}
 			/>
-			{remove.isError && <Alert tone='error'>{getErrorMessage(remove.error)}</Alert>}
 			<QueryState query={promos} label='promo codes'>
 				{(data) =>
 					data.length ? (

@@ -27,3 +27,14 @@
 .saved {
 	color: var(--color-danger);
 }
+
+/* 36px circle with a 44px touch target */
+.icon {
+	position: relative;
+}
+
+.icon::after {
+	content: '';
+	position: absolute;
+	inset: -4px;
+}

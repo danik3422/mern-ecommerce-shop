@@ -9,6 +9,7 @@ import TextField from '../ui/TextField'
 import style from './ProductReviews.module.css'
 import StarRatingInput from './StarRatingInput'
 import { useI18n } from '../../i18n/useI18n'
+import { useToast } from '../ui/toast/useToast'
 
 const EMPTY = { rating: 0, title: '', body: '' }
 
@@ -22,10 +23,12 @@ const ReviewForm = ({ productId, onDone }) => {
 	const [form, setForm] = useState(EMPTY)
 	const [ratingError, setRatingError] = useState('')
 
+	const toast = useToast()
 	const review = useMutation({
 		mutationFn: (data) => createReview(productId, data),
 		onSuccess: () => {
 			setForm(EMPTY)
+			toast.show({ tone: 'success', message: t('reviews.posted') })
 			// the product's rating changed as well
 			queryClient.invalidateQueries({ queryKey: reviewKeys.all(productId) })
 			queryClient.invalidateQueries({ queryKey: ['products'] })

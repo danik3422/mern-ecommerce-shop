@@ -1,19 +1,22 @@
-import { SHOP } from '../config/shop.js'
 import { Order } from '../models/Order.js'
 import { badRequest, conflict, notFound } from '../utils/HttpError.js'
 import { sendMail } from './mailer.js'
 import { orderNumber } from './orderEmails.js'
 import { refundOrderPayment } from './orderStatus.js'
 import { formatAmount, roundMoney } from './pricing.js'
+import { getShopSettings } from './shopSettings.js'
 import { releaseStock } from './stock.js'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const lineKey = (item) => `${item.productId}|${item.color ?? ''}|${item.size}`
 
-/** Last day a delivered order can be returned, or null when it was not delivered. */
-export const returnDeadline = (order) =>
+/**
+ * Last day a delivered order can be returned, or null when it was not delivered.
+ * @param returnWindowDays from the shop settings
+ */
+export const returnDeadline = (order, returnWindowDays) =>
 	order.deliveredAt
-		? new Date(new Date(order.deliveredAt).getTime() + SHOP.returnWindowDays * DAY_MS)
+		? new Date(new Date(order.deliveredAt).getTime() + returnWindowDays * DAY_MS)
 		: null
 
 /**
@@ -33,8 +36,9 @@ export const refundFor = (order, items) => {
 export const requestReturn = async (order, { items, reason, comment }, now = new Date()) => {
 	if (order.status !== 'delivered') throw conflict('Only delivered orders can be returned')
 	if (order.returnRequest) throw conflict('A return was already requested for this order')
-	if (now > returnDeadline(order)) {
-		throw conflict(`Returns are possible within ${SHOP.returnWindowDays} days of delivery`)
+	const { returnWindowDays } = await getShopSettings()
+	if (now > returnDeadline(order, returnWindowDays)) {
+		throw conflict(`Returns are possible within ${returnWindowDays} days of delivery`)
 	}
 
 	const ordered = new Map(order.items.map((item) => [lineKey(item), item]))

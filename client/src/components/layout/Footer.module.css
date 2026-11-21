@@ -1,41 +1,105 @@
 .footer {
 	margin-top: var(--space-9);
 	border-top: 1px solid var(--color-border);
+	background: var(--color-surface);
 	font-size: var(--text-sm);
 }
 
 .grid {
 	display: grid;
-	grid-template-columns: 2fr 1fr 1fr;
-	gap: var(--space-6);
-	padding-block: var(--space-7);
+	grid-template-columns: 1.3fr 1fr 1.7fr 1fr;
+	gap: var(--space-7) var(--space-6);
+	padding-block: var(--space-8) var(--space-7);
 }
 
 .logo {
-	margin-bottom: var(--space-3);
+	display: inline-block;
 	font-weight: var(--weight-semibold);
-	letter-spacing: 0.2em;
+	letter-spacing: 0.22em;
 	text-transform: uppercase;
 }
 
-.text {
-	max-width: 22rem;
+.about {
+	max-width: 20rem;
+	margin-top: var(--space-3);
 	color: var(--color-text-muted);
+}
+
+.language {
+	margin-top: var(--space-5);
+}
+
+.title {
+	font-size: var(--text-xs);
+	font-weight: var(--weight-semibold);
+	letter-spacing: var(--tracking-wide);
+	text-transform: uppercase;
+}
+
+.content {
+	margin-top: var(--space-4);
 }
 
 .links {
 	display: grid;
-	gap: var(--space-2);
-	margin-top: var(--space-3);
+	gap: var(--space-1);
 }
 
 .link {
+	display: inline-flex;
+	align-items: center;
+	min-height: 2rem;
+	padding: 0;
+	border: 0;
+	background: none;
+	font-size: inherit;
 	color: var(--color-text-muted);
+	text-align: left;
 	transition: color var(--transition);
 }
 
 .link:hover {
 	color: var(--color-text);
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
+.muted {
+	color: var(--color-text-muted);
+}
+
+/* help: delivery prices, returns, payment */
+.help {
+	display: grid;
+	gap: var(--space-5);
+}
+
+.subtitle {
+	margin-bottom: var(--space-2);
+	font-size: var(--text-sm);
+	font-weight: var(--weight-medium);
+}
+
+.methods {
+	display: grid;
+	gap: var(--space-1);
+}
+
+.method {
+	display: flex;
+	justify-content: space-between;
+	gap: var(--space-4);
+}
+
+.price {
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
+}
+
+.note {
+	margin-top: var(--space-2);
+	max-width: 30rem;
+	color: var(--color-text-muted);
 }
 
 .bottom {
@@ -45,12 +109,111 @@
 	font-size: var(--text-xs);
 }
 
-@media (max-width: 40rem) {
+.bottomInner {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3) var(--space-5);
+}
+
+/* author and links to the portfolio and the source code */
+.credits {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-2) var(--space-4);
+}
+
+.author {
+	color: var(--color-text);
+	font-weight: var(--weight-semibold);
+}
+
+.creditLink {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	min-height: 2rem;
+	color: var(--color-text);
+	text-decoration: underline;
+	text-decoration-color: var(--color-border);
+	text-underline-offset: 3px;
+}
+
+.creditLink:hover {
+	text-decoration-color: currentColor;
+}
+
+/* Tablets: about on its own row, three columns under it */
+@media (max-width: 64rem) {
 	.grid {
-		grid-template-columns: 1fr 1fr;
+		grid-template-columns: 1fr 1.6fr 1fr;
 	}
 
 	.brand {
 		grid-column: 1 / -1;
+	}
+}
+
+/* Phones: stacked accordions (rendered as <details> by Footer.jsx) */
+@media (max-width: 40rem) {
+	.grid {
+		grid-template-columns: 1fr;
+		gap: 0;
+		padding-block: var(--space-7) var(--space-5);
+	}
+
+	.brand {
+		margin-bottom: var(--space-6);
+	}
+
+	.accordion {
+		border-top: 1px solid var(--color-border);
+	}
+
+	.accordion:last-child {
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.summary {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		min-height: 3.25rem;
+		cursor: pointer;
+		list-style: none;
+	}
+
+	.summary::-webkit-details-marker {
+		display: none;
+	}
+
+	/* plus that turns into a minus */
+	.summary::after {
+		content: '';
+		width: 12px;
+		height: 12px;
+		background:
+			linear-gradient(currentColor, currentColor) center / 12px 1.5px no-repeat,
+			linear-gradient(currentColor, currentColor) center / 1.5px 12px no-repeat;
+		transition: transform var(--transition);
+	}
+
+	.accordion[open] .summary::after {
+		background: linear-gradient(currentColor, currentColor) center / 12px 1.5px no-repeat;
+	}
+
+	.accordion .content {
+		margin-top: 0;
+		padding-bottom: var(--space-5);
+	}
+
+	.link {
+		min-height: var(--control-height);
+	}
+
+	.links {
+		gap: 0;
 	}
 }

@@ -1,5 +1,6 @@
 import mongoose from 'mongoose'
 import { afterAll, beforeAll, beforeEach, inject } from 'vitest'
+import { clearShopSettingsCache } from '../src/services/shopSettings.js'
 
 // must be set before src/config/env.js is imported by the test files
 process.env.NODE_ENV = 'test'
@@ -16,6 +17,8 @@ beforeAll(async () => {
 beforeEach(async () => {
 	const collections = Object.values(mongoose.connection.collections)
 	await Promise.all(collections.map((collection) => collection.deleteMany({})))
+	// settings are cached in memory, so every test starts with the defaults again
+	clearShopSettingsCache()
 })
 
 afterAll(() => mongoose.disconnect())

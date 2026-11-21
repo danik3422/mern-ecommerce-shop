@@ -105,6 +105,18 @@ const orderSchema = new mongoose.Schema(
 		shippedAt: Date,
 		deliveredAt: Date,
 		returnRequest: returnRequestSchema,
+		// every status change from now on (older orders only have paidAt/shippedAt/deliveredAt)
+		statusHistory: {
+			type: [
+				new mongoose.Schema(
+					{ status: { type: String, enum: ORDER_STATUSES }, at: Date },
+					{ _id: false },
+				),
+			],
+			default: undefined,
+		},
+		// internal note for the shop staff; never sent to customers
+		adminNote: { type: String, trim: true, maxlength: 2000, select: false },
 	},
 	{ timestamps: true, versionKey: false },
 )

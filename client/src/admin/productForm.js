@@ -104,3 +104,43 @@ export const moveItem = (items, index, direction) => {
 	;[next[index], next[target]] = [next[target], next[index]]
 	return next
 }
+
+/**
+ * Checks the form before it is sent, with friendlier messages than the API's.
+ * Keys use the API's error paths, so the same fields light up.
+ * Images are left to the API: a product may be prepared before its photos exist.
+ */
+export const validateProductForm = (form) => {
+	const errors = {}
+	const required = { title: 'Enter a title', slug: 'Enter a URL slug', brand: 'Enter a brand' }
+	for (const [name, message] of Object.entries(required)) {
+		if (!form[name].trim()) errors[name] = message
+	}
+	if (form.slug.trim() && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(form.slug.trim())) {
+		errors.slug = 'Use lowercase letters, digits and dashes'
+	}
+	if (!form.description.trim()) errors.description = 'Enter a description'
+
+	const price = form.price === '' ? NaN : Number(form.price)
+	const compareAtPrice = form.compareAtPrice === '' ? null : Number(form.compareAtPrice)
+	if (!(price >= 0)) errors.price = 'Enter a price of 0 or more'
+	else if (compareAtPrice !== null && !(compareAtPrice > price)) {
+		errors.compareAtPrice = 'Compare-at price must be higher than the price'
+	}
+
+	form.variants.forEach((variant, index) => {
+		if (!variant.color.trim()) errors[`variants.${index}.color`] = 'Enter a color'
+		variant.sizes.forEach((size, sizeIndex) => {
+			if (!size.label.trim()) errors[`variants.${index}.sizes.${sizeIndex}.label`] = 'Enter a size'
+			if (size.stock !== '' && !(Number(size.stock) >= 0 && Number.isInteger(Number(size.stock)))) {
+				errors[`variants.${index}.sizes.${sizeIndex}.stock`] = 'Whole number, 0 or more'
+			}
+		})
+	})
+	return errors
+}
+
+/** True when the form would save something different from `saved`. */
+export const isFormChanged = (form, saved) =>
+	JSON.stringify(formToPayload(form, { isNew: false })) !==
+	JSON.stringify(formToPayload(saved, { isNew: false }))

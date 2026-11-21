@@ -1,62 +1,201 @@
 .viewer {
+	--drag: 0px;
+	--fade: 1;
 	position: relative;
 	display: grid;
-	place-items: center;
-	height: 100%;
-	background: var(--color-subtle);
+	grid-template-rows: minmax(0, 1fr) auto;
+	/* the viewport, not 100%: the full-size Modal sizes itself to its content */
+	height: 100vh;
+	height: 100dvh;
+	background: rgb(255 255 255 / var(--fade));
 }
 
-.stage {
-	width: 100%;
-	height: 100%;
-	padding: 0;
+/* --- photos --- */
+
+.track {
+	display: flex;
+	overflow-x: auto;
+	overflow-y: hidden;
+	overscroll-behavior: contain;
+	scroll-snap-type: x mandatory;
+	scrollbar-width: none;
+	transform: translateY(var(--drag));
+	transition: transform 200ms ease;
+}
+
+.track::-webkit-scrollbar {
+	display: none;
+}
+
+/* a zoomed photo is panned, not swiped away */
+.zoomed .track {
+	overflow-x: hidden;
+}
+
+.slide {
+	display: flex;
+	flex: 0 0 100%;
+	align-items: center;
+	justify-content: center;
+	min-width: 0;
+	padding: var(--space-8) var(--space-4) var(--space-3);
 	overflow: hidden;
-	border: 0;
-	background: none;
-	cursor: zoom-in;
+	scroll-snap-align: center;
+	scroll-snap-stop: always;
+	/* horizontal swipes scroll natively; vertical drags, taps and pinches are ours */
+	touch-action: pan-x;
 }
 
-.zoomed {
-	cursor: zoom-out;
+.zoomed .slide {
+	touch-action: none;
 }
 
 .image {
-	width: 100%;
-	height: 100%;
-	object-fit: contain;
-	transition: transform 250ms ease;
+	max-width: 100%;
+	max-height: 100%;
+	cursor: zoom-in;
+	user-select: none;
+	-webkit-touch-callout: none;
+	transition: transform 220ms ease-out;
+	will-change: transform;
 }
 
 .zoomed .image {
-	transform: scale(2.2);
+	cursor: zoom-out;
 }
 
-.arrow {
+.touching .image,
+.touching .track {
+	transition: none;
+}
+
+/* --- controls --- */
+
+.control {
 	position: absolute;
-	top: 50%;
+	z-index: 1;
 	display: grid;
 	place-items: center;
-	width: 3rem;
-	height: 3rem;
-	border: 0;
+	width: 2.75rem;
+	height: 2.75rem;
+	border: 1px solid var(--color-border);
 	border-radius: 50%;
 	background: var(--color-surface);
-	box-shadow: 0 2px 12px rgb(0 0 0 / 0.12);
-	transform: translateY(-50%);
+	color: var(--color-text);
+	transition:
+		border-color var(--transition),
+		opacity var(--transition);
 }
 
-.prev {
-	left: var(--space-4);
+.control:hover {
+	border-color: var(--color-text);
 }
 
-.next {
-	right: var(--space-4);
+/* next to Modal's close button in the top-right corner */
+.zoomButton {
+	top: var(--space-3);
+	right: calc(var(--space-3) + 2.5rem + var(--space-2));
 }
 
 .counter {
 	position: absolute;
-	bottom: var(--space-4);
-	padding: var(--space-1) var(--space-3);
-	background: var(--color-surface);
+	top: var(--space-3);
+	left: var(--space-4);
+	z-index: 1;
+	display: flex;
+	align-items: center;
+	height: 2.5rem;
 	font-size: var(--text-sm);
+	font-variant-numeric: tabular-nums;
+	letter-spacing: 0.04em;
+}
+
+.arrow {
+	top: calc(50% - 2.5rem);
+	width: 3rem;
+	height: 3rem;
+	display: none;
+}
+
+.prev {
+	left: var(--space-5);
+}
+
+.next {
+	right: var(--space-5);
+}
+
+@media (hover: hover) and (pointer: fine) {
+	.arrow {
+		display: grid;
+	}
+}
+
+.zoomed .arrow,
+.zoomed .thumbnails {
+	opacity: 0;
+	pointer-events: none;
+}
+
+.thumbnails {
+	display: flex;
+	justify-content: center;
+	gap: var(--space-2);
+	padding: var(--space-3) var(--space-4) var(--space-4);
+	overflow-x: auto;
+	scrollbar-width: none;
+	transition: opacity var(--transition);
+}
+
+.thumbnail {
+	position: relative;
+	display: block;
+	width: 3rem;
+	aspect-ratio: 3 / 4;
+	padding: 0;
+	border: 0;
+	background: var(--color-subtle);
+	opacity: 0.5;
+	transition: opacity var(--transition);
+}
+
+.thumbnail img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.thumbnail::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	box-shadow: inset 0 0 0 1px transparent;
+}
+
+.thumbnail:hover,
+.active {
+	opacity: 1;
+}
+
+.active::after {
+	box-shadow: inset 0 0 0 1.5px var(--color-text);
+}
+
+@media (max-width: 56.249rem) {
+	.slide {
+		padding-inline: 0;
+	}
+}
+
+@media (min-width: 56.25rem) {
+	.thumbnail {
+		width: 3.5rem;
+	}
+}
+
+/* while swiping down to close, the controls step aside */
+.viewer[style] .control,
+.viewer[style] .counter,
+.viewer[style] .thumbnails {
+	opacity: 0;
 }

@@ -74,17 +74,20 @@
 
 /* full-screen variant (image viewer) */
 .full {
+	/* stretch, not center: a centered grid item sizes to its content, not to the screen */
+	place-items: stretch;
 	padding: 0;
 }
 
 .full .dialog {
 	width: 100%;
-	height: 100%;
+	height: 100dvh;
 	max-height: none;
 }
 
 .full .body {
 	flex: 1;
+	min-height: 0;
 	padding: 0;
 	overflow: hidden;
 }

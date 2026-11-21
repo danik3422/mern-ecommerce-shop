@@ -3,13 +3,14 @@ import { Star } from 'lucide-react'
 import { Link } from 'react-router'
 import { adminKeys, deleteReview, fetchAdminReviews } from '../../api/admin'
 import { getErrorMessage } from '../../api/client'
-import Alert from '../../components/ui/Alert'
 import Button from '../../components/ui/Button'
+import { useToast } from '../../components/ui/toast/useToast'
 import PageHeader from '../components/PageHeader'
 import Pager from '../components/Pager'
 import QueryState from '../components/QueryState'
 import table from '../components/Table.module.css'
 import { formatDate } from '../format'
+import { useAdminConfirm } from '../useAdminConfirm'
 import { useListParams } from '../useListParams'
 import style from './Reviews.module.css'
 
@@ -17,6 +18,8 @@ const PAGE_SIZE = 20
 
 const Reviews = () => {
 	const queryClient = useQueryClient()
+	const toast = useToast()
+	const confirm = useAdminConfirm()
 	const { params, setPage } = useListParams({})
 	const query = { ...params, limit: PAGE_SIZE }
 
@@ -32,19 +35,28 @@ const Reviews = () => {
 				queryClient.invalidateQueries({ queryKey: adminKeys.all }),
 				queryClient.invalidateQueries({ queryKey: ['reviews'] }),
 				queryClient.invalidateQueries({ queryKey: ['products'] }),
-			]),
+			]).then(() => toast.show({ tone: 'success', message: 'Review deleted' })),
+		onError: (error) =>
+			toast.show({
+				tone: 'error',
+				title: 'Could not delete the review',
+				message: getErrorMessage(error),
+			}),
 	})
 
-	const handleDelete = (review) => {
-		if (window.confirm(`Delete the review by ${review.username}?`)) remove.mutate(review)
+	const handleDelete = async (review) => {
+		const confirmed = await confirm({
+			title: 'Delete review?',
+			message: `The review by ${review.username} disappears from the shop and the product rating is recalculated.`,
+			confirmLabel: 'Delete review',
+			tone: 'danger',
+		})
+		if (confirmed) remove.mutate(review)
 	}
 
 	return (
 		<>
 			<PageHeader title='Reviews' description='Newest customer reviews. Remove spam or abuse.' />
-			{remove.isError && (
-				<Alert tone='error'>Could not delete the review: {getErrorMessage(remove.error)}</Alert>
-			)}
 			<QueryState query={reviews} label='reviews'>
 				{(data) => (
 					<>
