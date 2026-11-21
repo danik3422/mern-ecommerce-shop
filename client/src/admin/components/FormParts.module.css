@@ -107,6 +107,25 @@
 	width: 7rem;
 }
 
+/* narrow phones: the size and stock inputs share the width instead of overflowing */
+@media (max-width: 30rem) {
+	.sizesTable {
+		width: 100%;
+		table-layout: fixed;
+	}
+
+	.sizesTable td:nth-child(1) input,
+	.sizesTable td:nth-child(2) input {
+		width: 100%;
+		min-width: 0;
+	}
+
+	.sizesTable th:last-child,
+	.sizesTable td:last-child {
+		width: 2.75rem;
+	}
+}
+
 /* images */
 .images {
 	display: grid;

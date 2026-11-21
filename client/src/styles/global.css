@@ -96,6 +96,12 @@ h3 {
 	clip: rect(0 0 0 0);
 	white-space: nowrap;
 	border: 0;
+	clip-path: inset(50%);
+}
+
+/* tables ignore width: 1px unless they are blocks (charts keep data tables for screen readers) */
+table.visually-hidden {
+	display: block;
 }
 
 .eyebrow {

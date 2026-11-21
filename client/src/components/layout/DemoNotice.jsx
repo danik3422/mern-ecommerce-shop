@@ -14,14 +14,14 @@ import style from './DemoNotice.module.css'
 const STORAGE_KEY = 'demoNoticeAccepted'
 const VERSION = 1
 
+/** Where visitors who decline are sent. */
+export const LEAVE_URL = 'https://www.google.com/'
+
 /**
- * Leaves the site. Browsers only let scripts close tabs that scripts opened,
- * so when closing is refused the page is replaced with an empty one.
+ * Leaves the site for Google search. `replace` keeps the shop out of the history,
+ * so "Back" does not bring the visitor straight back to the notice.
  */
-const leaveSite = () => {
-	window.close()
-	window.location.replace('about:blank')
-}
+const leaveSite = () => window.location.replace(LEAVE_URL)
 
 /**
  * Shown on the first visit: the site is a diploma project, not a real shop or brand.

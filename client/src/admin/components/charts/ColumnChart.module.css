@@ -1,4 +1,6 @@
 .chart {
+	/* positioned: the hidden unit labels stay inside the horizontal scroll */
+	position: relative;
 	display: grid;
 	grid-auto-columns: minmax(1.75rem, 1fr);
 	grid-auto-flow: column;

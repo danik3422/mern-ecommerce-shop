@@ -5,6 +5,8 @@
 }
 
 .scroll {
+	/* positioned, so screen-reader-only labels (position: absolute) stay inside the scroll area */
+	position: relative;
 	overflow-x: auto;
 }
 
@@ -135,4 +137,46 @@
 .searchButton {
 	width: var(--control-height);
 	padding-inline: 0;
+}
+
+/*
+ * Phones: a table keeps its columns and scrolls sideways inside its card instead of squeezing
+ * text into one-word columns or pushing numbers out of the box. The shadows at the edges show
+ * there is more to swipe to (they scroll with the content: `local` vs `scroll` attachment).
+ */
+@media (max-width: 47.99rem) {
+	.table {
+		/* positioned: screen-reader-only labels in cells must not widen the page */
+		position: relative;
+		display: block;
+		max-width: 100%;
+		overflow-x: auto;
+		overscroll-behavior-x: contain;
+		background:
+			linear-gradient(to right, var(--color-surface) 40%, transparent) left / 2rem 100% no-repeat
+				local,
+			linear-gradient(to left, var(--color-surface) 40%, transparent) right / 2rem 100% no-repeat
+				local,
+			radial-gradient(farthest-side at 0 50%, rgb(0 0 0 / 0.14), transparent) left / 0.75rem 100%
+				no-repeat scroll,
+			radial-gradient(farthest-side at 100% 50%, rgb(0 0 0 / 0.14), transparent) right / 0.75rem
+				100% no-repeat scroll,
+			var(--color-surface);
+	}
+
+	.table th,
+	.table td {
+		padding: var(--space-3);
+		white-space: nowrap;
+	}
+
+	/* long names may wrap, but never below a readable width */
+	.table td:has(> a, > strong, > div) {
+		min-width: 9rem;
+		white-space: normal;
+	}
+
+	.scroll {
+		max-width: 100%;
+	}
 }

@@ -1,4 +1,6 @@
 .card {
+	/* the value scales with the card's own width (cqi units) */
+	container-type: inline-size;
 	display: flex;
 	flex-direction: column;
 	gap: var(--space-1);
@@ -18,12 +20,11 @@
 
 .value {
 	margin-top: var(--space-1);
-	font-size: var(--text-xl);
+	/* amounts shrink to fit the card instead of being cut off with "…" */
+	font-size: clamp(1rem, 12.5cqi, var(--text-xl));
 	font-variant-numeric: tabular-nums;
 	line-height: 1.2;
 	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
 }
 
 .footer {
@@ -72,9 +73,5 @@
 @media (max-width: 30rem) {
 	.card {
 		padding: var(--space-3) var(--space-4);
-	}
-
-	.value {
-		font-size: var(--text-lg);
 	}
 }

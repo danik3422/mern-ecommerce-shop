@@ -123,9 +123,15 @@
 	color: var(--color-text-muted);
 }
 
+.stat {
+	/* the number scales with its column, so "PLN 104.00" fits on phones */
+	container-type: inline-size;
+	min-width: 0;
+}
+
 .stat dd {
 	margin-top: 2px;
-	font-size: var(--text-lg);
+	font-size: clamp(0.875rem, 14cqi, var(--text-lg));
 	font-variant-numeric: tabular-nums;
 	white-space: nowrap;
 }
