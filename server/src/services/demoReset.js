@@ -1,6 +1,9 @@
+import { AppState } from '../models/AppState.js'
 import { resetDemoData } from '../seed/demo.js'
 
 const CHECK_EVERY_MS = 60_000
+const STATE_ID = 'demoReset'
+const DAY_MS = 24 * 60 * 60 * 1000
 
 /** "2026-11-21" and the hour (0–23) of `date` in `timeZone`. */
 export const localDayAndHour = (date, timeZone) => {
@@ -20,32 +23,54 @@ export const localDayAndHour = (date, timeZone) => {
 }
 
 /**
- * Whether the nightly reset is due: it is the reset hour (or later the same day, e.g. after
- * the server was asleep) and it has not run on this local day yet.
+ * The "reset night" a moment belongs to: the local day from the reset hour on, the previous
+ * day before it. 02:00 and 03:00 on the 21st (reset hour 3) belong to the 20th and the 21st.
  */
-export const isResetDue = ({ now, lastRunDay, hour, timeZone }) => {
-	const local = localDayAndHour(now, timeZone)
-	return local.hour >= hour && local.day !== lastRunDay
+export const resetNightOf = (date, { hour, timeZone }) => {
+	const local = localDayAndHour(date, timeZone)
+	return local.hour >= hour
+		? local.day
+		: localDayAndHour(new Date(date.getTime() - DAY_MS), timeZone).day
 }
 
 /**
- * Resets the demo shop every night at `hour` in `timeZone` (checked once a minute).
- * The first check marks today as done when the server starts after the reset hour,
- * so a restart during the day does not wipe what visitors are doing.
+ * Whether a reset is due: the last one happened before the most recent reset time.
+ * Works for hosts that sleep: a server woken up at 10:00 still resets once that day.
+ */
+export const isResetDue = ({ now, lastResetAt, hour, timeZone }) =>
+	!lastResetAt ||
+	resetNightOf(new Date(lastResetAt), { hour, timeZone }) !== resetNightOf(now, { hour, timeZone })
+
+/** Resets the demo data and remembers when, in the database (survives restarts). */
+export const runDemoReset = async (reset = resetDemoData) => {
+	const result = await reset()
+	await AppState.updateOne(
+		{ _id: STATE_ID },
+		{ value: { lastResetAt: new Date(), ...result } },
+		{ upsert: true },
+	)
+	return result
+}
+
+/**
+ * Resets the demo shop every night at `hour` in `timeZone`: checked right away and then once
+ * a minute, against the last reset time stored in the database.
  * @returns a function that stops the schedule
  */
 export const scheduleDemoReset = ({ hour, timeZone, reset = resetDemoData, log = console }) => {
-	const startedAt = localDayAndHour(new Date(), timeZone)
-	let lastRunDay = startedAt.hour >= hour ? startedAt.day : null
 	let running = false
 
 	const check = async () => {
-		const now = new Date()
-		if (running || !isResetDue({ now, lastRunDay, hour, timeZone })) return
+		if (running) return
 		running = true
-		lastRunDay = localDayAndHour(now, timeZone).day
 		try {
-			const result = await reset()
+			const state = await AppState.findById(STATE_ID).lean()
+			if (
+				!isResetDue({ now: new Date(), lastResetAt: state?.value?.lastResetAt, hour, timeZone })
+			) {
+				return
+			}
+			const result = await runDemoReset(reset)
 			log.info?.(
 				`Demo data reset: ${result.products} products, ${result.orders} orders, ` +
 					`${result.removedAccounts} visitor accounts removed`,
@@ -57,6 +82,7 @@ export const scheduleDemoReset = ({ hour, timeZone, reset = resetDemoData, log =
 		}
 	}
 
+	check()
 	const timer = setInterval(check, CHECK_EVERY_MS)
 	timer.unref()
 	return () => clearInterval(timer)

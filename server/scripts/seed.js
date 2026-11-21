@@ -9,7 +9,7 @@
 import { connectDb, disconnectDb } from '../src/config/db.js'
 import { env } from '../src/config/env.js'
 import { seedCatalog, seedOwner, seedReviews } from '../src/seed/catalog.js'
-import { resetDemoData } from '../src/seed/demo.js'
+import { runDemoReset } from '../src/services/demoReset.js'
 
 const main = async () => {
 	if (env.isProduction && !process.argv.includes('--force')) {
@@ -19,7 +19,7 @@ const main = async () => {
 	await connectDb(env.MONGO_URL)
 
 	if (process.argv.includes('--demo') || env.DEMO_MODE) {
-		const result = await resetDemoData()
+		const result = await runDemoReset()
 		console.log(
 			`Demo shop ready: ${result.products} products, ${result.orders} orders, demo accounts "demo" and "demo-admin"`,
 		)
