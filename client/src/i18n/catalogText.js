@@ -13,3 +13,12 @@ export const categoryTitle = (t, slug) =>
  */
 export const deliveryName = (t, locale, method) =>
 	method.labels?.[locale] || t(`delivery.${method.id}`, { defaultValue: method.label })
+
+/**
+ * A text the shop edits in both languages (e.g. a product description `{ en, pl }`) in the
+ * current language, falling back to English. Plain strings (older data) are English.
+ */
+export const localizedText = (value, locale) => {
+	if (!value || typeof value === 'string') return value ?? ''
+	return value[locale] || value.en || ''
+}

@@ -1,6 +1,8 @@
 import { createApp } from './app.js'
 import { connectDb, disconnectDb } from './config/db.js'
 import { env } from './config/env.js'
+import { User } from './models/User.js'
+import { seedOwner } from './seed/catalog.js'
 import { scheduleDemoReset } from './services/demoReset.js'
 
 const SHUTDOWN_TIMEOUT_MS = 10_000
@@ -8,6 +10,12 @@ const SHUTDOWN_TIMEOUT_MS = 10_000
 const start = async () => {
 	await connectDb(env.MONGO_URL)
 	console.log('Connected to MongoDB')
+
+	// hosting without a shell: the owner account "admin" is created on the first start
+	if (process.env.SEED_ADMIN_PASSWORD && !(await User.exists({ isOwner: true }))) {
+		await seedOwner(process.env.SEED_ADMIN_PASSWORD)
+		console.log('Owner account "admin" created')
+	}
 
 	if (env.DEMO_MODE) {
 		// resets right away when the data was never reset or the last nightly reset was missed

@@ -161,6 +161,80 @@
 	gap: var(--space-2);
 }
 
+/* fit questions in the form */
+.fitFields {
+	display: grid;
+	gap: var(--space-4);
+}
+
+.fitQuestion {
+	display: grid;
+	gap: var(--space-2);
+	border: 0;
+	padding: 0;
+}
+
+.optional {
+	font-weight: var(--weight-regular);
+	color: var(--color-text-muted);
+}
+
+.fitOptions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+}
+
+.fitOption {
+	cursor: pointer;
+}
+
+.fitPill {
+	display: inline-grid;
+	place-items: center;
+	height: 2.5rem;
+	padding-inline: var(--space-4);
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	background: var(--color-surface);
+	font-size: var(--text-sm);
+	transition: border-color var(--transition);
+}
+
+.fitOption:hover .fitPill {
+	border-color: var(--color-text-muted);
+}
+
+input:checked + .fitPill {
+	border-color: var(--color-text);
+	background: var(--color-text);
+	color: var(--color-inverse);
+}
+
+input:focus-visible + .fitPill {
+	outline: 2px solid var(--color-focus);
+	outline-offset: 3px;
+}
+
+.sizeSelect {
+	max-width: 12rem;
+}
+
+/* "Size bought: M · Runs small" on a review */
+.reviewFit {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+	font-size: var(--text-xs);
+}
+
+.reviewFit span {
+	padding: 2px var(--space-2);
+	border: 1px solid var(--color-border);
+	border-radius: 999px;
+	color: var(--color-text-muted);
+}
+
 @media (max-width: 52rem) {
 	.layout {
 		grid-template-columns: 1fr;

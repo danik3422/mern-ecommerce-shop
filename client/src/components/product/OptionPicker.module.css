@@ -96,3 +96,39 @@ input:focus-visible + .pill {
 	font-weight: var(--weight-regular);
 	color: var(--color-text-muted);
 }
+
+/* the size reviewers suggest: a dashed outline and a dot, never as strong as the selection */
+.suggested .pill {
+	position: relative;
+	border-style: dashed;
+	border-color: var(--color-text);
+}
+
+.suggested .pill::after {
+	content: '';
+	position: absolute;
+	top: -4px;
+	right: -4px;
+	width: 8px;
+	height: 8px;
+	border: 2px solid var(--color-bg);
+	border-radius: 50%;
+	background: var(--color-success);
+}
+
+.suggestion {
+	margin-top: var(--space-2);
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--color-text);
+	font-size: var(--text-sm);
+	text-decoration: underline;
+	text-decoration-color: var(--color-border);
+	text-underline-offset: 3px;
+	cursor: pointer;
+}
+
+.suggestion:hover {
+	text-decoration-color: currentColor;
+}

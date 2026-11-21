@@ -57,7 +57,7 @@ describe('ProductForm', () => {
 		const { onSubmit } = renderForm()
 		fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Tee' } })
 		fireEvent.change(screen.getByLabelText('Brand'), { target: { value: 'Northline' } })
-		fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Soft' } })
+		fireEvent.change(screen.getByLabelText('Description (English)'), { target: { value: 'Soft' } })
 		fireEvent.change(screen.getByLabelText('Price (PLN)'), { target: { value: '25' } })
 		fireEvent.change(screen.getByLabelText('Color'), { target: { value: 'Indigo' } })
 		fireEvent.click(screen.getByRole('button', { name: 'Jeans 28–34' }))
@@ -74,6 +74,7 @@ describe('ProductForm', () => {
 				title: 'Tee',
 				slug: 'tee',
 				brand: 'Northline',
+				description: { en: 'Soft', pl: '' },
 				price: 25,
 				categories: ['women'],
 				variants: [
@@ -130,7 +131,7 @@ describe('ProductForm', () => {
 				title: 'Coat',
 				slug: 'coat',
 				brand: 'Aster',
-				description: 'Warm',
+				description: { en: 'Warm', pl: '' },
 				price: '10',
 				compareAtPrice: '',
 				categories: [],
@@ -177,5 +178,80 @@ describe('ProductForm', () => {
 		expect(screen.getAllByLabelText('Color')).toHaveLength(1)
 		// the last color cannot be removed
 		expect(screen.queryByRole('button', { name: /Remove color/ })).not.toBeInTheDocument()
+	})
+
+	describe('description in English and Polish', () => {
+		const coat = {
+			title: 'Coat',
+			slug: 'coat',
+			brand: 'Aster',
+			description: { en: 'Warm wool coat.', pl: '' },
+			price: '10',
+			compareAtPrice: '',
+			categories: [],
+			variants: [{ key: 'v1', color: 'black', images: [], sizes: [{ label: 'M', stock: '1' }] }],
+			active: true,
+		}
+
+		it('edits each language in its own tab and flags the missing Polish text', () => {
+			const { onSubmit } = renderForm({ initialValues: coat })
+			const english = screen.getByRole('tab', { name: /English/ })
+			const polish = screen.getByRole('tab', { name: /Polish/ })
+			expect(english).toHaveAttribute('aria-selected', 'true')
+			expect(polish).toHaveAccessibleName('Polish, missing translation')
+			expect(screen.getByRole('note')).toHaveTextContent('Missing Polish translation')
+			expect(screen.getByLabelText('Description (English)')).toHaveValue('Warm wool coat.')
+
+			fireEvent.click(polish)
+			expect(polish).toHaveAttribute('aria-selected', 'true')
+			fireEvent.change(screen.getByLabelText('Description (Polish)'), {
+				target: { value: 'Ciepły wełniany płaszcz.' },
+			})
+			expect(polish).toHaveAccessibleName('Polish')
+			expect(screen.queryByRole('note')).not.toBeInTheDocument()
+
+			// switching back keeps what was typed in each language
+			fireEvent.click(english)
+			expect(screen.getByLabelText('Description (English)')).toHaveValue('Warm wool coat.')
+
+			fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+			expect(onSubmit.mock.calls[0][0].description).toEqual({
+				en: 'Warm wool coat.',
+				pl: 'Ciepły wełniany płaszcz.',
+			})
+		})
+
+		it('shows the preview in the language of the open tab, falling back to English', () => {
+			renderForm({ initialValues: coat })
+			const preview = screen.getByRole('region', { name: 'Preview' })
+			expect(within(preview).getByText('Warm wool coat.')).toBeInTheDocument()
+
+			fireEvent.click(within(preview).getByRole('button', { name: 'PL' }))
+			expect(screen.getByRole('tab', { name: /Polish/ })).toHaveAttribute('aria-selected', 'true')
+			expect(within(preview).getByText(/no Polish translation yet/)).toBeInTheDocument()
+
+			fireEvent.change(screen.getByLabelText('Description (Polish)'), {
+				target: { value: 'Ciepły płaszcz.' },
+			})
+			expect(within(preview).getByText('Ciepły płaszcz.')).toBeInTheDocument()
+			expect(within(preview).queryByText(/no Polish translation yet/)).not.toBeInTheDocument()
+		})
+
+		it('opens the English tab when the English description is missing on save', () => {
+			const { onSubmit } = renderForm({
+				initialValues: { ...coat, description: { en: '', pl: 'Tylko po polsku' } },
+			})
+			fireEvent.click(screen.getByRole('tab', { name: /Polish/ }))
+			fireEvent.change(screen.getByLabelText('Description (Polish)'), {
+				target: { value: 'Tylko po polsku!' },
+			})
+			fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+
+			expect(onSubmit).not.toHaveBeenCalled()
+			expect(screen.getByRole('tab', { name: /English/ })).toHaveAttribute('aria-selected', 'true')
+			expect(screen.getByLabelText('Description (English)')).toHaveAccessibleDescription(
+				'Enter the English description',
+			)
+		})
 	})
 })

@@ -26,6 +26,12 @@ const ReviewItem = ({ review, canDelete, onDelete, isDeleting }) => {
 				</span>
 				{review.title && <h3 className={style.reviewTitle}>{review.title}</h3>}
 			</div>
+			{(review.sizeBought || review.fit) && (
+				<p className={style.reviewFit}>
+					{review.sizeBought && <span>{t('reviews.boughtSize', { size: review.sizeBought })}</span>}
+					{review.fit && <span>{t(`reviews.fitShort.${review.fit}`)}</span>}
+				</p>
+			)}
 			<p className={style.reviewBody}>{review.body}</p>
 			<p className={style.reviewMeta}>
 				{review.username} · <time dateTime={review.createdAt}>{formatDate(review.createdAt)}</time>

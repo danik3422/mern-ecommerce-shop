@@ -8,6 +8,7 @@ vi.hoisted(() => {
 const { Order } = await import('../src/models/Order.js')
 const { Product } = await import('../src/models/Product.js')
 const { PromoCode } = await import('../src/models/PromoCode.js')
+const { Session } = await import('../src/models/Session.js')
 const { User } = await import('../src/models/User.js')
 const { DEMO_ACCOUNTS, resetDemoData } = await import('../src/seed/demo.js')
 const { api, createUser } = await import('./helpers.js')
@@ -87,6 +88,23 @@ describe('POST /api/auth/demo', () => {
 		expect(blocked.body.message).toMatch(/demo/i)
 		await api().delete('/api/users/me').set(bearer(res)).expect(403)
 		expect(await User.exists({ username: 'demo' })).toBeTruthy()
+	})
+
+	it('gives every visitor an own session they cannot use to sign out others', async () => {
+		await resetDemoData()
+		const first = await demoLogin('customer').expect(200)
+		const second = await demoLogin('customer').expect(200)
+
+		// visitors see only their own device, not each other's
+		const { body: sessions } = await api().get('/api/auth/sessions').set(bearer(second))
+		expect(sessions).toEqual([expect.objectContaining({ current: true })])
+		await api().post('/api/auth/sessions/revoke-others').set(bearer(second)).expect(403)
+		const others = await Session.find({ _id: { $ne: sessions[0].id } }).lean()
+		await api().delete(`/api/auth/sessions/${others[0]._id}`).set(bearer(second)).expect(403)
+		await api().get('/api/orders/mine').set(bearer(first)).expect(200)
+		// signing out this device is fine
+		await api().delete(`/api/auth/sessions/${sessions[0].id}`).set(bearer(second)).expect(204)
+		await api().get('/api/orders/mine').set(bearer(second)).expect(401)
 	})
 
 	it('validates the account name and tells when demo data is missing', async () => {

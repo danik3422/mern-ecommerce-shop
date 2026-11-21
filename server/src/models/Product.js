@@ -1,4 +1,5 @@
 import mongoose from 'mongoose'
+import { toLocalizedText } from '../utils/localized.js'
 
 /** Every variant has at least one size; one-size items use the label "One size". */
 const sizeSchema = new mongoose.Schema(
@@ -25,13 +26,27 @@ const variantSchema = new mongoose.Schema(
 	{ _id: false },
 )
 
+/** Text edited in English and Polish; Polish is optional and falls back to English. */
+const localizedTextSchema = new mongoose.Schema(
+	{
+		en: { type: String, required: true, trim: true },
+		pl: { type: String, trim: true, default: '' },
+	},
+	{ _id: false },
+)
+
 const productSchema = new mongoose.Schema(
 	{
 		title: { type: String, required: true, trim: true },
 		// URL-friendly unique name, e.g. "classic-jeans"
 		slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
 		brand: { type: String, required: true, trim: true, index: true },
-		description: { type: String, required: true },
+		// { en, pl }; a plain string (the older format) is taken as the English text
+		description: {
+			type: localizedTextSchema,
+			required: true,
+			set: (value) => (typeof value === 'string' ? toLocalizedText(value) : value),
+		},
 		categories: { type: [String], index: true },
 		variants: {
 			type: [variantSchema],
@@ -50,6 +65,11 @@ const productSchema = new mongoose.Schema(
 	},
 	{ timestamps: true, versionKey: false },
 )
+
+// documents saved before the migration (scripts/migrate.js) still have a string description
+productSchema.pre('init', (raw) => {
+	if (typeof raw.description === 'string') raw.description = toLocalizedText(raw.description)
+})
 
 productSchema.index({ 'variants.color': 1 })
 productSchema.index({ 'variants.sizes.label': 1 })

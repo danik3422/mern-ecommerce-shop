@@ -1,7 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Ban, Mail, Trash2, Unlock } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { adminKeys, deleteUser, fetchCustomer, updateCustomer } from '../../api/admin'
+import {
+	adminKeys,
+	deleteUser,
+	fetchCustomer,
+	revokeCustomerSessions,
+	updateCustomer,
+} from '../../api/admin'
 import { getErrorMessage } from '../../api/client'
 import Button from '../../components/ui/Button'
 import { useToast } from '../../components/ui/toast/useToast'
@@ -107,6 +113,60 @@ const CustomerActions = ({ customer }) => {
 	)
 }
 
+/**
+ * Number of signed-in devices with "Sign out everywhere", e.g. when an account looks
+ * compromised. The customer loses access on their next request.
+ */
+const ActiveSessions = ({ customer }) => {
+	const queryClient = useQueryClient()
+	const toast = useToast()
+	const confirm = useAdminConfirm()
+	const count = customer.activeSessions ?? 0
+
+	const signOut = useMutation({
+		mutationFn: () => revokeCustomerSessions(customer._id),
+		onSuccess: async ({ revoked }) => {
+			await queryClient.invalidateQueries({ queryKey: adminKeys.customer(customer._id) })
+			toast.show({
+				tone: 'success',
+				message: `${customer.username} was signed out on ${revoked} ${revoked === 1 ? 'device' : 'devices'}`,
+			})
+		},
+		onError: (error) =>
+			toast.show({ tone: 'error', title: 'Could not sign out', message: getErrorMessage(error) }),
+	})
+
+	const handleSignOut = async () => {
+		const confirmed = await confirm({
+			title: `Sign ${customer.username} out everywhere?`,
+			message:
+				'All their devices are signed out right away. They can sign in again with their password.',
+			confirmLabel: 'Sign out everywhere',
+			tone: 'danger',
+		})
+		if (confirmed) signOut.mutate()
+	}
+
+	return (
+		<>
+			{count} {count === 1 ? 'device' : 'devices'}
+			{count > 0 && (
+				<>
+					{' · '}
+					<button
+						type='button'
+						className={`text-link ${style.linkButton}`}
+						onClick={handleSignOut}
+						disabled={signOut.isPending}
+					>
+						Sign out everywhere
+					</button>
+				</>
+			)}
+		</>
+	)
+}
+
 /** /admin/customers/:id — profile, totals, addresses and orders of one shopper. */
 const CustomerDetail = () => {
 	const { id } = useParams()
@@ -206,6 +266,10 @@ const CustomerDetail = () => {
 										<dd>{formatDateTime(data.createdAt)}</dd>
 										<dt>Last sign-in</dt>
 										<dd>{formatDateTime(data.lastLoginAt)}</dd>
+										<dt>Signed in on</dt>
+										<dd>
+											<ActiveSessions customer={data} />
+										</dd>
 										<dt>Wishlist</dt>
 										<dd>
 											{data.wishlistCount} {data.wishlistCount === 1 ? 'product' : 'products'}

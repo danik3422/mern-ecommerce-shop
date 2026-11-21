@@ -2,6 +2,7 @@ import { User } from '../models/User.js'
 import { conflict, forbidden, notFound } from '../utils/HttpError.js'
 import { hashPassword } from './password.js'
 import { PERMISSION_NAMES, hasPermission } from './permissions.js'
+import { revokeUserSessions } from './sessions.js'
 
 /**
  * Staff accounts, managed by staff with the "team" permission.
@@ -112,6 +113,8 @@ export const updateStaff = async (id, changes, actor) => {
 	if (target.isOwner) target.permissions = PERMISSION_NAMES
 	else if (changes.permissions) target.permissions = changes.permissions
 	await target.save()
+	// a deactivated account is signed out on all devices at once
+	if (changes.blocked) await revokeUserSessions(target._id, 'blocked')
 	return toStaff(target)
 }
 
@@ -121,6 +124,8 @@ export const resetStaffPassword = async (id, password, actor) => {
 	ensureCanManage(actor, target)
 	target.passwordHash = await hashPassword(password)
 	await target.save()
+	// the reset is often because the account may be compromised: end all its sessions
+	await revokeUserSessions(target._id, 'password')
 	return toStaff(target)
 }
 
@@ -130,5 +135,6 @@ export const deleteStaff = async (id, actor) => {
 	ensureCanManage(actor, target)
 	await ensureAnotherOwner(target)
 	await target.deleteOne()
+	await revokeUserSessions(target._id, 'removed')
 	return toStaff(target)
 }

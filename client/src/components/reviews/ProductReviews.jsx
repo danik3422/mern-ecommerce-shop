@@ -17,6 +17,13 @@ import { can } from '../../admin/permissions'
 
 const PAGE_SIZE = 5
 
+/** Every size of the product once, in the order of its colors' size lists. */
+const sizeLabels = (product) => [
+	...new Set(
+		(product.variants ?? []).flatMap((variant) => variant.sizes.map((size) => size.label)),
+	),
+]
+
 const RatingSummary = ({ summary }) => {
 	const { t } = useI18n()
 	return (
@@ -117,7 +124,13 @@ const ProductReviews = ({ product }) => {
 			</div>
 
 			{reviewNote && <p className={style.muted}>{reviewNote}</p>}
-			{isWriting && <ReviewForm productId={product._id} onDone={() => setIsWriting(false)} />}
+			{isWriting && (
+				<ReviewForm
+					productId={product._id}
+					sizes={sizeLabels(product)}
+					onDone={() => setIsWriting(false)}
+				/>
+			)}
 
 			{reviews.isPending && <p className={style.muted}>{t('reviews.loading')}</p>}
 			{reviews.isError && (

@@ -127,6 +127,34 @@ describe('ProductList', () => {
 		expect(currentUrl()).toBe('/products?q=coat')
 	})
 
+	it('shows results for a corrected query with a link to search exactly what was typed', async () => {
+		vi.mocked(productsApi.fetchProducts).mockImplementation(async (query) => ({
+			items: query.exact ? [] : [product],
+			page: 1,
+			pages: query.exact ? 0 : 1,
+			total: query.exact ? 0 : 1,
+			search: { query: query.q, correctedQuery: query.exact ? null : 'jacket' },
+		}))
+		renderAt('/products?q=jaket')
+
+		expect(
+			await screen.findByRole('heading', { level: 1, name: 'Results for “jacket”' }),
+		).toBeVisible()
+		expect(screen.getByText(/Showing results for “jacket”/)).toBeInTheDocument()
+		// a search is sorted by relevance by default
+		expect(lastApiQuery()).toMatchObject({ q: 'jaket', sort: 'relevance' })
+		expect(screen.getByLabelText('Sort by')).toHaveValue('relevance')
+
+		fireEvent.click(screen.getByRole('link', { name: 'Search instead for “jaket”' }))
+		expect(currentUrl()).toBe('/products?q=jaket&exact=true')
+		expect(
+			await screen.findByRole('heading', { level: 1, name: 'Results for “jaket”' }),
+		).toBeVisible()
+		expect(lastApiQuery()).toMatchObject({ q: 'jaket', exact: 'true' })
+		expect(screen.queryByText(/Showing results for/)).not.toBeInTheDocument()
+		expect(await screen.findByText('No products found for “jaket”.')).toBeInTheDocument()
+	})
+
 	it('changes the sort order', async () => {
 		renderAt('/products')
 		fireEvent.change(await screen.findByLabelText('Sort by'), { target: { value: 'rating' } })

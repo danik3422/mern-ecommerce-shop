@@ -1,0 +1,213 @@
+.figure {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+	min-width: 0;
+}
+
+.legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2) var(--space-5);
+	font-size: var(--text-xs);
+	color: var(--color-text-muted);
+}
+
+.legend li {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+}
+
+.swatch {
+	width: 1.25rem;
+	border-top: 2px solid var(--color-text);
+}
+
+.swatchPrevious {
+	border-top: 2px dashed #b5afa6;
+}
+
+.frame {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	grid-template-rows: 15rem auto;
+	column-gap: var(--space-3);
+}
+
+.yAxis {
+	position: relative;
+	min-width: 3rem;
+	font-size: var(--text-xs);
+	color: var(--color-text-muted);
+	font-variant-numeric: tabular-nums;
+	text-align: right;
+}
+
+.yAxis span {
+	position: absolute;
+	right: 0;
+	transform: translateY(-50%);
+	white-space: nowrap;
+}
+
+.plot {
+	position: relative;
+	cursor: crosshair;
+	touch-action: pan-y;
+}
+
+.plot:focus-visible {
+	outline: 2px solid var(--color-focus);
+	outline-offset: 4px;
+}
+
+.svg {
+	display: block;
+	width: 100%;
+	height: 100%;
+	overflow: visible;
+}
+
+.svg * {
+	vector-effect: non-scaling-stroke;
+}
+
+.grid {
+	stroke: var(--color-border);
+	stroke-dasharray: 2 4;
+}
+
+.baseline {
+	stroke: var(--color-border);
+}
+
+.area {
+	fill: var(--color-text);
+	opacity: 0.06;
+}
+
+.line {
+	fill: none;
+	stroke: var(--color-text);
+	stroke-width: 2;
+	stroke-linejoin: round;
+	stroke-linecap: round;
+}
+
+.previous {
+	fill: none;
+	stroke: #b5afa6;
+	stroke-width: 1.5;
+	stroke-dasharray: 5 4;
+	stroke-linejoin: round;
+}
+
+.crosshair {
+	stroke: var(--color-text-muted);
+	stroke-width: 1;
+}
+
+.dot {
+	position: absolute;
+	width: 0.625rem;
+	height: 0.625rem;
+	border: 2px solid var(--color-surface);
+	border-radius: 50%;
+	background: var(--color-text);
+	transform: translate(-50%, -50%);
+	pointer-events: none;
+}
+
+.dotPrevious {
+	background: #b5afa6;
+}
+
+.tooltip {
+	position: absolute;
+	top: 0;
+	z-index: 1;
+	min-width: 9rem;
+	padding: var(--space-2) var(--space-3);
+	border: 1px solid var(--color-border);
+	background: var(--color-surface);
+	box-shadow: 0 4px 16px rgb(0 0 0 / 0.08);
+	font-size: var(--text-xs);
+	transform: translateX(var(--space-3));
+	pointer-events: none;
+	white-space: nowrap;
+}
+
+.tooltipLeft {
+	transform: translateX(calc(-100% - var(--space-3)));
+}
+
+.tooltipDate {
+	color: var(--color-text-muted);
+}
+
+.tooltipValue {
+	display: flex;
+	align-items: baseline;
+	gap: var(--space-2);
+	margin-top: 2px;
+	font-size: var(--text-sm);
+	font-weight: var(--weight-semibold);
+	font-variant-numeric: tabular-nums;
+}
+
+.tooltipChange {
+	font-size: var(--text-xs);
+	font-weight: var(--weight-medium);
+	color: var(--color-text-muted);
+}
+
+.tooltipPrevious {
+	margin-top: 2px;
+	color: var(--color-text-muted);
+	font-variant-numeric: tabular-nums;
+}
+
+.empty {
+	position: absolute;
+	inset: 0;
+	display: grid;
+	place-items: center;
+	font-size: var(--text-sm);
+	color: var(--color-text-muted);
+	pointer-events: none;
+}
+
+.xAxis {
+	grid-column: 2;
+	position: relative;
+	height: 1.75rem;
+	font-size: var(--text-xs);
+	color: var(--color-text-muted);
+}
+
+.xAxis span {
+	position: absolute;
+	top: var(--space-2);
+	transform: translateX(-50%);
+	white-space: nowrap;
+}
+
+.xAxis .first {
+	transform: none;
+}
+
+.xAxis .last {
+	transform: translateX(-100%);
+}
+
+@media (max-width: 48rem) {
+	.frame {
+		grid-template-rows: 11rem auto;
+	}
+
+	/* fewer labels fit on a phone: keep the first, middle and last */
+	.xAxis span:not(.first, .last, :nth-child(3)) {
+		display: none;
+	}
+}

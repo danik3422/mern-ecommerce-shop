@@ -1,5 +1,6 @@
 import mongoose from 'mongoose'
 import { PERMISSION_NAMES } from '../services/permissions.js'
+import { LOCALES } from '../utils/localized.js'
 import { addressFields } from './address.js'
 
 const savedAddressSchema = new mongoose.Schema(
@@ -21,6 +22,8 @@ const userSchema = new mongoose.Schema(
 		// blocked (deactivated) accounts cannot sign in, and their existing sessions stop working
 		blocked: { type: Boolean, default: false },
 		lastLoginAt: Date,
+		// language the customer uses the shop in; emails are sent in it
+		locale: { type: String, enum: LOCALES, default: 'en' },
 		// shared demo accounts (seed/demo.js): no password, email or account changes
 		isDemo: { type: Boolean, default: undefined },
 		addresses: { type: [savedAddressSchema], default: [] },

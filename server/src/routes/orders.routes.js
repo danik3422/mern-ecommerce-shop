@@ -23,13 +23,20 @@ orderRoutes.patch(
 		kind: 'order',
 		id: req.valid.params.id,
 		label: `#${req.valid.params.id.slice(-8).toUpperCase()}`,
-		details: req.valid.body.status,
+		details: [
+			req.valid.body.status,
+			req.valid.body.tracking &&
+				`${req.valid.body.tracking.carrier} ${req.valid.body.tracking.number}`,
+		]
+			.filter(Boolean)
+			.join(', '),
 	})),
 	orders.updateOrderStatus,
 )
 
 // the customer, a guest with the X-Order-Token header, or staff with the "orders" permission
 orderRoutes.get('/:id', optionalAuth, validate({ params: idParams }), orders.getOrder)
+orderRoutes.get('/:id/invoice', optionalAuth, validate({ params: idParams }), orders.getInvoice)
 orderRoutes.post('/:id/pay', optionalAuth, validate({ params: idParams }), orders.payOrder)
 orderRoutes.post('/:id/cancel', optionalAuth, validate({ params: idParams }), orders.cancelMyOrder)
 orderRoutes.post(

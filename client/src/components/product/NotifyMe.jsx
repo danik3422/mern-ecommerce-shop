@@ -20,13 +20,16 @@ import { colorName } from '../../i18n/catalogText'
  * @param appearance 'link' (under the size picker) | 'button' (the color is sold out)
  */
 const NotifyMe = ({ product, variant, appearance = 'link' }) => {
-	const { t } = useI18n()
+	const { t, locale } = useI18n()
 	const { user } = useAuth()
 	const soldOutSizes = variant.sizes.filter((s) => s.stock === 0).map((s) => s.label)
 	const [isOpen, setIsOpen] = useState(false)
 	const [size, setSize] = useState(soldOutSizes[0])
 	const [email, setEmail] = useState(user?.email ?? '')
-	const alert = useMutation({ mutationFn: (body) => createStockAlert(product._id, body) })
+	// the email comes in the language the visitor is using now
+	const alert = useMutation({
+		mutationFn: (body) => createStockAlert(product._id, { ...body, locale }),
+	})
 
 	if (!soldOutSizes.length) return null
 

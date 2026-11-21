@@ -6,11 +6,18 @@ import TextField from '../../components/ui/TextField'
 import { formatMoney } from '../../utils/money'
 import { cx } from '../../utils/cx'
 import { discountPercent } from '../pricing'
-import { emptyProductForm, formToPayload, isFormChanged, validateProductForm } from '../productForm'
+import {
+	DESCRIPTION_LANGUAGES,
+	emptyProductForm,
+	formToPayload,
+	isFormChanged,
+	isMissingPolish,
+	validateProductForm,
+} from '../productForm'
 import { slugify } from '../format'
 import table from './Table.module.css'
+import DescriptionField from './DescriptionField'
 import TagInput from './TagInput'
-import TextArea from './TextArea'
 import VariantsEditor from './VariantsEditor'
 import style from './ProductForm.module.css'
 
@@ -42,6 +49,8 @@ const ProductForm = ({ initialValues, onSubmit, mutation, submitLabel, extraActi
 	const [slugEdited, setSlugEdited] = useState(!isNew)
 	// checks run live once the user tried to save
 	const [checked, setChecked] = useState(false)
+	// language of the description tab and of the preview
+	const [language, setLanguage] = useState('en')
 	const formRef = useRef(null)
 
 	const localErrors = checked ? validateProductForm(form) : {}
@@ -74,7 +83,15 @@ const ProductForm = ({ initialValues, onSubmit, mutation, submitLabel, extraActi
 	const handleSubmit = async (e) => {
 		e.preventDefault()
 		setChecked(true)
-		if (Object.keys(validateProductForm(form)).length) {
+		const formErrors = validateProductForm(form)
+		if (Object.keys(formErrors).length) {
+			// the invalid description may be in the other language's tab
+			const invalidLanguage = DESCRIPTION_LANGUAGES.find(
+				({ code }) => formErrors[`description.${code}`],
+			)
+			if (invalidLanguage && !formErrors[`description.${language}`]) {
+				setLanguage(invalidLanguage.code)
+			}
 			focusFirstError()
 			return
 		}
@@ -94,6 +111,9 @@ const ProductForm = ({ initialValues, onSubmit, mutation, submitLabel, extraActi
 	}
 
 	const previewImage = form.variants.find((variant) => variant.images.length)?.images[0]
+	// what shoppers see in the preview language: Polish falls back to English
+	const previewDescription = form.description[language].trim() || form.description.en.trim()
+	const previewFallback = language === 'pl' && isMissingPolish(form) && previewDescription
 	const discount = discountPercent(form.price, form.compareAtPrice)
 
 	const text = (name) => ({
@@ -122,7 +142,13 @@ const ProductForm = ({ initialValues, onSubmit, mutation, submitLabel, extraActi
 						required
 					/>
 					<TextField label='Brand' {...text('brand')} required />
-					<TextArea label='Description' {...text('description')} required />
+					<DescriptionField
+						value={form.description}
+						onChange={(value) => setField('description', value)}
+						language={language}
+						onLanguageChange={setLanguage}
+						errors={errors}
+					/>
 					<TagInput
 						label='Categories'
 						hint='Press Enter to add. The first category is used for breadcrumbs.'
@@ -158,6 +184,28 @@ const ProductForm = ({ initialValues, onSubmit, mutation, submitLabel, extraActi
 								)}
 							</p>
 							{!form.active && <p className={style.previewMuted}>Hidden from the shop</p>}
+						</div>
+						<div className={style.previewDescription}>
+							<div className={style.previewLanguage} role='group' aria-label='Preview language'>
+								{DESCRIPTION_LANGUAGES.map(({ code }) => (
+									<button
+										key={code}
+										type='button'
+										aria-pressed={language === code}
+										onClick={() => setLanguage(code)}
+									>
+										{code.toUpperCase()}
+									</button>
+								))}
+							</div>
+							<p lang={previewFallback ? 'en' : language}>
+								{previewDescription || (
+									<span className={style.previewMuted}>No description yet</span>
+								)}
+							</p>
+							{previewFallback && (
+								<p className={style.previewMuted}>Shown in English: no Polish translation yet.</p>
+							)}
 						</div>
 					</section>
 

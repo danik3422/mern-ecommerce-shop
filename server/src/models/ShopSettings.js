@@ -13,6 +13,21 @@ const translatedText = (defaults) =>
 		{ _id: false },
 	)
 
+/** The seller on invoices (see services/invoices.js). */
+const companySchema = new mongoose.Schema(
+	{
+		name: { type: String, trim: true, default: '' },
+		street: { type: String, trim: true, default: '' },
+		postalCode: { type: String, trim: true, default: '' },
+		city: { type: String, trim: true, default: '' },
+		// Polish tax id, 10 digits without dashes
+		nip: { type: String, trim: true, default: '' },
+		// optional, shown on invoices: digits only (26 for a Polish account)
+		bankAccount: { type: String, trim: true, default: '' },
+	},
+	{ _id: false },
+)
+
 const shippingMethodSchema = new mongoose.Schema(
 	{
 		id: { type: String, enum: SHIPPING_METHOD_IDS, required: true },
@@ -42,6 +57,7 @@ const shopSettingsSchema = new mongoose.Schema(
 			type: translatedText(SHOP_DEFAULTS.announcement),
 			default: () => ({ ...SHOP_DEFAULTS.announcement }),
 		},
+		company: { type: companySchema, default: () => ({ ...SHOP_DEFAULTS.company }) },
 		// null = no free shipping
 		freeShippingFrom: { type: Number, min: 0, default: SHOP_DEFAULTS.freeShippingFrom },
 		returnWindowDays: { type: Number, min: 1, default: SHOP_DEFAULTS.returnWindowDays },

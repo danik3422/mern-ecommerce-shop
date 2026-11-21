@@ -10,6 +10,13 @@
 	font-size: var(--text-xl);
 }
 
+/* "Showing results for “jacket”. Search instead for “jaket”" */
+.correction {
+	margin-top: var(--space-2);
+	font-size: var(--text-sm);
+	color: var(--color-text-muted);
+}
+
 .count {
 	flex-shrink: 0;
 	font-size: var(--text-sm);

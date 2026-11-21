@@ -29,7 +29,7 @@ const CheckoutForm = ({
 	disabled,
 	onOrderPlaced,
 }) => {
-	const { t } = useI18n()
+	const { t, locale } = useI18n()
 	// the address book may be unavailable — the form then simply asks for a new address
 	const savedAddresses = useQuery({
 		queryKey: accountKeys.addresses,
@@ -56,6 +56,8 @@ const CheckoutForm = ({
 				shippingMethod,
 				promoCode: promoCode || undefined,
 				...(guest && { email: email.trim() }),
+				// order emails are sent in the language the order was placed in
+				locale,
 			})
 			if (!guest && usesNewAddress && saveAddress) {
 				// saving the address must not block a placed order

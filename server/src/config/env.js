@@ -5,9 +5,20 @@ const envSchema = z.object({
 	PORT: z.coerce.number().int().positive().default(8000),
 	MONGO_URL: z.string().min(1, 'MONGO_URL is required'),
 	JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters long'),
-	JWT_EXPIRES_IN: z.string().default('3d'),
+	// Lifetime of the access token (JWT sent as `Authorization: Bearer`), e.g. 15m.
+	// Kept short: it cannot be revoked before it expires, only its session can (see auth.js).
+	ACCESS_TOKEN_TTL: z.string().default('15m'),
+	// A session (refresh token) ends after this many days without being used
+	SESSION_TTL_DAYS: z.coerce.number().int().min(1).max(365).default(30),
+	// Refresh-token cookie. SameSite=None is needed only when the shop and the API are on
+	// different sites; it requires Secure. Secure defaults to on in production (HTTPS only).
+	COOKIE_SAMESITE: z.enum(['lax', 'strict', 'none']).default('lax'),
+	COOKIE_SECURE: z.enum(['true', 'false', '1', '0', 'auto']).default('auto'),
+	// e.g. .example.com to share the cookie between shop.example.com and api.example.com
+	COOKIE_DOMAIN: z.string().optional(),
 	// Comma-separated list of origins allowed by CORS
-	CLIENT_URL: z.string().default('http://localhost:3000'),
+	// on Render the service's own public URL is used when CLIENT_URL is not set
+	CLIENT_URL: z.string().default(process.env.RENDER_EXTERNAL_URL ?? 'http://localhost:3000'),
 	// Max failed login/register attempts per IP per 15 minutes
 	AUTH_RATE_LIMIT: z.coerce.number().int().positive().default(10),
 	// Number of reverse proxies in front of the API (needed for correct client IPs)
@@ -20,6 +31,8 @@ const envSchema = z.object({
 	// Outgoing email (optional): smtp://user:pass@host:587. Without it emails are logged.
 	SMTP_URL: z.string().optional(),
 	MAIL_FROM: z.string().default('Clothe Shop <no-reply@example.com>'),
+	// Built storefront served by the API in production (see app.js), relative to server/
+	CLIENT_DIST: z.string().default('../client/dist'),
 	// Public demo: one-click demo accounts and a nightly reset of all shop data
 	DEMO_MODE: z
 		.enum(['true', 'false', '1', '0'])
@@ -30,7 +43,15 @@ const envSchema = z.object({
 	DEMO_TIMEZONE: z.string().default('Europe/Warsaw'),
 })
 
-const parsed = envSchema.safeParse(process.env)
+const parsed = envSchema
+	.refine(
+		(data) =>
+			data.COOKIE_SAMESITE !== 'none' ||
+			['true', '1'].includes(data.COOKIE_SECURE) ||
+			(data.COOKIE_SECURE === 'auto' && data.NODE_ENV === 'production'),
+		{ path: ['COOKIE_SECURE'], message: 'COOKIE_SAMESITE=none requires a Secure cookie' },
+	)
+	.safeParse(process.env)
 
 if (!parsed.success) {
 	const problems = parsed.error.issues.map((i) => `  - ${i.path.join('.')}: ${i.message}`)
@@ -43,6 +64,10 @@ export const env = Object.freeze({
 	...parsed.data,
 	CLIENT_ORIGINS: parsed.data.CLIENT_URL.split(',').map((origin) => origin.trim()),
 	isProduction: parsed.data.NODE_ENV === 'production',
+	cookieSecure:
+		parsed.data.COOKIE_SECURE === 'auto'
+			? parsed.data.NODE_ENV === 'production'
+			: ['true', '1'].includes(parsed.data.COOKIE_SECURE),
 	isTest: parsed.data.NODE_ENV === 'test',
 	paymentsEnabled: Boolean(parsed.data.STRIPE_SECRET_KEY),
 })

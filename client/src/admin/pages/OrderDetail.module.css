@@ -69,6 +69,33 @@
 	color: var(--color-text-muted);
 }
 
+.error {
+	color: var(--color-danger);
+}
+
+.buttons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+}
+
+.alignStart {
+	align-self: flex-start;
+}
+
+/* tracking inputs shown when the order is being marked as shipped */
+.parcelFields {
+	display: grid;
+	gap: var(--space-3);
+	padding: var(--space-3);
+	border: 1px solid var(--color-border);
+}
+
+.parcelLegend {
+	padding-inline: var(--space-1);
+	font-weight: var(--weight-medium);
+}
+
 .address {
 	font-style: normal;
 	color: var(--color-text-muted);

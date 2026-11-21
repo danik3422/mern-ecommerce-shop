@@ -29,8 +29,16 @@ export const createUser = async ({ username = 'alice', isAdmin = false, permissi
 		user: res.body.user,
 		token: res.body.accessToken,
 		auth: { Authorization: `Bearer ${res.body.accessToken}` },
+		cookie: refreshCookieOf(res),
 	}
 }
+
+/** The shop's own origin (CLIENT_URL default): required by /auth/refresh and /auth/logout. */
+export const ORIGIN = 'http://localhost:3000'
+
+/** `refreshToken=…` from a response's Set-Cookie header, ready for a Cookie header. */
+export const refreshCookieOf = (res) =>
+	res.headers['set-cookie']?.find((c) => c.startsWith('refreshToken='))?.split(';')[0]
 
 let productCounter = 0
 

@@ -27,7 +27,7 @@ const FIELDS = [
 ]
 
 const Register = () => {
-	const { t } = useI18n()
+	const { t, locale } = useI18n()
 	useDocumentTitle(t('auth.registerTitle'))
 	const { register } = useAuth()
 	const navigate = useNavigate()
@@ -52,7 +52,8 @@ const Register = () => {
 		setIsSubmitting(true)
 		try {
 			const { username, email, password } = form
-			await register({ username, email, password })
+			// emails are sent in the language the customer signed up in
+			await register({ username, email, password, locale })
 			navigate(location.state?.from ?? '/', { replace: true })
 		} catch (err) {
 			setError(err)

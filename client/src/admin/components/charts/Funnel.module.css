@@ -1,0 +1,79 @@
+.funnel {
+	display: grid;
+	padding: 0;
+	list-style: none;
+}
+
+.step {
+	display: grid;
+	gap: 6px;
+}
+
+.conversion {
+	padding-block: var(--space-2);
+	padding-left: var(--space-2);
+	font-size: var(--text-xs);
+	color: var(--color-text-muted);
+	font-variant-numeric: tabular-nums;
+}
+
+.text {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: var(--space-3);
+	font-size: var(--text-sm);
+}
+
+.label {
+	display: grid;
+	font-weight: var(--weight-medium);
+}
+
+.hint {
+	font-size: var(--text-xs);
+	font-weight: var(--weight-regular);
+	color: var(--color-text-muted);
+}
+
+.count {
+	display: flex;
+	align-items: baseline;
+	gap: var(--space-2);
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+.ofFirst {
+	min-width: 3.25rem;
+	font-size: var(--text-xs);
+	color: var(--color-text-muted);
+	text-align: right;
+}
+
+.track {
+	display: block;
+	height: 1.25rem;
+	border-radius: var(--radius);
+	background: var(--color-subtle);
+	overflow: hidden;
+}
+
+.bar {
+	display: block;
+	height: 100%;
+	min-width: 2px;
+	background: var(--color-text);
+}
+
+.step:nth-child(2) .bar {
+	opacity: 0.8;
+}
+
+.step:nth-child(3) .bar {
+	opacity: 0.65;
+}
+
+.step:nth-child(n + 4) .bar {
+	opacity: 0.5;
+}

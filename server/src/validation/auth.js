@@ -1,7 +1,13 @@
 import { z } from 'zod'
-import { email, password, username } from './common.js'
+import { email, locale, password, username } from './common.js'
 
-export const registerBody = z.strictObject({ username, email, password })
+export const registerBody = z.strictObject({
+	username,
+	email,
+	password,
+	// the shop language at sign-up; emails are sent in it
+	locale: locale.optional(),
+})
 
 export const loginBody = z.strictObject({
 	// username or email

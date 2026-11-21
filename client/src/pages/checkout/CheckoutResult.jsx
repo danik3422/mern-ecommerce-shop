@@ -11,6 +11,7 @@ import { useDocumentTitle } from '../../hooks/useDocumentTitle'
 import { cx } from '../../utils/cx'
 import style from './CheckoutResult.module.css'
 import OrderReview from './OrderReview'
+import OrderProgress from '../../components/orders/OrderProgress'
 import ReturnSection from '../../components/orders/ReturnSection'
 import { useI18n } from '../../i18n/useI18n'
 import { useConfirm } from '../../components/ui/confirm/useConfirm'
@@ -194,6 +195,7 @@ const CheckoutResult = ({ result }) => {
 					onChange={(updated) => queryClient.setQueryData(orderKeys.detail(orderId), updated)}
 				/>
 			</div>
+			<OrderProgress order={data} token={token} />
 			<OrderReview order={data} />
 		</div>
 	)

@@ -5,6 +5,7 @@ import EmptyState from '../components/ui/EmptyState'
 import AdminLayout from './AdminLayout'
 import RequirePermission, { NoAccess } from './components/NoAccess'
 import Activity from './pages/Activity'
+import Analytics from './pages/Analytics'
 import CustomerDetail from './pages/CustomerDetail'
 import Customers from './pages/Customers'
 import Dashboard from './pages/Dashboard'
@@ -39,6 +40,7 @@ const AdminApp = () => (
 	<Routes>
 		<Route element={<AdminLayout />}>
 			<Route index element={<AdminHome />} />
+			<Route path='analytics' element={guard('analytics', 'analytics', <Analytics />)} />
 			<Route path='products' element={guard('products', 'products', <ProductsList />)} />
 			<Route path='products/new' element={guard('products', 'products', <NewProduct />)} />
 			<Route path='products/:id' element={guard('products', 'products', <EditProduct />)} />

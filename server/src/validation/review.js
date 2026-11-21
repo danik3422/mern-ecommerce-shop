@@ -14,4 +14,7 @@ export const createReviewBody = z.strictObject({
 	rating: z.int().min(1, 'Choose a rating from 1 to 5').max(5, 'Choose a rating from 1 to 5'),
 	title: z.string().trim().max(120).optional(),
 	body: z.string().trim().min(10, 'Please write at least 10 characters').max(2000),
+	fit: z.enum(['small', 'true', 'large']).optional(),
+	// checked against the product's sizes in the controller
+	sizeBought: z.string().trim().min(1).max(20).optional(),
 })

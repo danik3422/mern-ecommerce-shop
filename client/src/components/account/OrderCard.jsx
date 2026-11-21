@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ChevronDown } from 'lucide-react'
 import { useId, useState } from 'react'
+import { Link } from 'react-router'
 import { accountKeys } from '../../api/account'
 import { getErrorMessage } from '../../api/client'
 import { cancelOrder, payOrder } from '../../api/orders'
@@ -70,6 +71,9 @@ const OrderCard = ({ order }) => {
 					</p>
 				</div>
 				<OrderStatusBadge status={order.status} />
+				<Link to={`/account/orders/${order._id}`} className={style.track}>
+					{t('tracking.trackOrder')}
+				</Link>
 				<button
 					type='button'
 					className={style.toggle}

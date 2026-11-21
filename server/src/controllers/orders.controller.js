@@ -1,6 +1,7 @@
 import { Cart } from '../models/Cart.js'
 import { Order } from '../models/Order.js'
 import { User } from '../models/User.js'
+import { INVOICED_STATUSES, buildInvoice, issueInvoice } from '../services/invoices.js'
 import { resolveLineItems } from '../services/lineItems.js'
 import { createOrderToken, findAccessibleOrder, readOrderToken } from '../services/orderAccess.js'
 import { sendOrderEmail } from '../services/orderEmails.js'
@@ -15,7 +16,9 @@ import { calculateTotals, subtotalOf } from '../services/pricing.js'
 import { findUsablePromo, redeemPromo, releasePromo } from '../services/promoCodes.js'
 import { getShopSettings } from '../services/shopSettings.js'
 import { releaseStock, reserveStock } from '../services/stock.js'
-import { HttpError, badRequest, conflict } from '../utils/HttpError.js'
+import { estimateDelivery, toTracking } from '../services/tracking.js'
+import { HttpError, badRequest, conflict, notFound } from '../utils/HttpError.js'
+import { toLocale } from '../utils/localized.js'
 
 const paymentUnavailable = () =>
 	new HttpError(502, 'The payment provider is not available right now. Please try again.')
@@ -30,17 +33,19 @@ const startCheckout = async (order, accessToken) => {
 
 /**
  * Who the order belongs to: the signed-in customer, or a guest identified by email
- * who gets a secret token for the order.
+ * who gets a secret token for the order. `locale` is the language the order emails use:
+ * the one the shop was shown in at checkout, else the account's.
  */
 const orderCustomer = async (req) => {
+	const { locale } = req.valid.body
 	if (req.user) {
 		const user = await User.findById(req.user.id).lean()
-		return { user: req.user.id, email: user.email }
+		return { user: req.user.id, email: user.email, locale: toLocale(locale ?? user.locale) }
 	}
 	if (!req.valid.body.email) {
 		throw badRequest('Please enter your email', [{ path: 'email', message: 'Required' }])
 	}
-	return { email: req.valid.body.email, accessToken: createOrderToken() }
+	return { email: req.valid.body.email, locale: toLocale(locale), accessToken: createOrderToken() }
 }
 
 /** Order lines with a snapshot of the product as it is sold now. */
@@ -99,16 +104,37 @@ export const createOrder = async (req, res) => {
 	res.status(201).json({ order: publicOrder, checkoutUrl, ...(accessToken && { accessToken }) })
 }
 
+/** An order as customers see it: without the guest token, with the expected delivery dates. */
+const toCustomerOrder = (order, settings) => {
+	const { accessToken: _token, ...publicOrder } = order.toObject?.() ?? order
+	return { ...publicOrder, estimatedDelivery: estimateDelivery(publicOrder, settings) }
+}
+
 export const listMyOrders = async (req, res) => {
-	const orders = await Order.find({ user: req.user.id }).sort({ createdAt: -1 }).lean()
-	res.json(orders)
+	const [orders, settings] = await Promise.all([
+		Order.find({ user: req.user.id }).sort({ createdAt: -1 }).lean(),
+		getShopSettings(),
+	])
+	res.json(orders.map((order) => toCustomerOrder(order, settings)))
 }
 
 /** GET /orders/:id — the customer, an admin or a guest with the order token; others get 404. */
 export const getOrder = async (req, res) => {
 	const order = await findAccessibleOrder(req, req.valid.params.id)
-	const { accessToken: _token, ...publicOrder } = order.toObject()
-	res.json(publicOrder)
+	res.json(toCustomerOrder(order, await getShopSettings()))
+}
+
+/**
+ * GET /orders/:id/invoice — the invoice data, for the same people as the order.
+ * 404 until the order is paid; orders paid before invoices existed get their number now.
+ */
+export const getInvoice = async (req, res) => {
+	let order = await findAccessibleOrder(req, req.valid.params.id)
+	if (!order.invoice?.number) {
+		if (!INVOICED_STATUSES.includes(order.status)) throw notFound('Invoice')
+		order = await issueInvoice(order)
+	}
+	res.json(buildInvoice(order, await getShopSettings()))
 }
 
 /** POST /orders/:id/pay — a new payment page for a pending order (e.g. after cancelling payment). */
@@ -143,14 +169,29 @@ export const listOrders = async (_req, res) => {
 
 /** PATCH /orders/:id/status — admins move orders forward; cancelling returns stock. */
 export const updateOrderStatus = async (req, res) => {
-	const { status } = req.valid.body
+	const { status, tracking } = req.valid.body
 	const now = new Date()
 	const set = {
 		paid: { 'payment.paidAt': now },
-		shipped: { shippedAt: now },
+		// the parcel's tracking number can be given right away or added later
+		shipped: { shippedAt: now, ...(tracking && { tracking: toTracking(tracking, now) }) },
 		delivered: { deliveredAt: now },
 	}[status]
 	res.json(await transitionOrderOrThrow(req.valid.params.id, status, { set }))
+}
+
+/** PATCH /admin/orders/:id/tracking — adds or corrects the parcel of a shipped order. */
+export const updateTracking = async (req, res) => {
+	const order = await Order.findOneAndUpdate(
+		{ _id: req.valid.params.id, status: { $in: ['shipped', 'delivered'] } },
+		{ $set: { tracking: toTracking(req.valid.body) } },
+		{ returnDocument: 'after' },
+	).lean()
+	if (order) return res.json(order)
+
+	const current = await Order.exists({ _id: req.valid.params.id })
+	if (!current) throw notFound('Order')
+	throw conflict('Tracking can be added once the order is shipped')
 }
 
 /** GET /orders/income — revenue per month for the last 12 months (admin dashboard) */

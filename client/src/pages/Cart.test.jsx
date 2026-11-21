@@ -11,13 +11,7 @@ import { CartProvider } from '../cart/CartProvider'
 import { makeProduct } from '../test/fixtures'
 import Cart from './Cart'
 import { money } from '../test/money'
-
-// AuthProvider restores the session when its module is imported, so sign in before imports run
-const SESSION = vi.hoisted(() => {
-	const session = JSON.stringify({ user: { _id: 'u1', username: 'alice' }, accessToken: 'token' })
-	localStorage.setItem('session', session)
-	return session
-})
+import { restoreSessionAs } from '../test/session'
 
 vi.mock('../api/products', async (importOriginal) => ({
 	...(await importOriginal()),
@@ -92,7 +86,8 @@ describe('Cart checkout options', () => {
 	beforeEach(() => {
 		localStorage.clear()
 		localStorage.setItem('cart', JSON.stringify([line]))
-		localStorage.setItem('session', SESSION)
+		// AuthProvider restores this session from the (faked) refresh cookie when it mounts
+		restoreSessionAs({ _id: 'u1', username: 'alice' })
 		vi.mocked(productsApi.fetchProducts).mockResolvedValue({ items: [coat], total: 1 })
 		vi.mocked(shopApi.fetchShopConfig).mockResolvedValue(config)
 		vi.mocked(shopApi.fetchQuote).mockImplementation(fakeQuote)

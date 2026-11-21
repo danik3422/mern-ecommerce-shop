@@ -42,8 +42,14 @@ const FILTER_DEFAULTS = {
 	brand: '',
 	onSale: '',
 	stock: '',
+	translation: '',
 	sort: '',
 }
+
+const TRANSLATION_OPTIONS = [
+	{ value: '', label: 'Any translation' },
+	{ value: 'missing_pl', label: 'Missing Polish' },
+]
 
 const STATUS_OPTIONS = [
 	{ value: '', label: 'Any visibility' },
@@ -189,6 +195,12 @@ const ProductsList = () => {
 					onChange={(e) => setParam('stock', e.target.value)}
 				/>
 				<Select
+					label='Translation'
+					value={values.translation}
+					options={TRANSLATION_OPTIONS}
+					onChange={(e) => setParam('translation', e.target.value)}
+				/>
+				<Select
 					label='Visibility'
 					value={values.status}
 					options={STATUS_OPTIONS}
@@ -205,7 +217,15 @@ const ProductsList = () => {
 						variant='ghost'
 						className={style.clear}
 						onClick={() =>
-							setParams({ q: '', status: '', category: '', brand: '', onSale: '', stock: '' })
+							setParams({
+								q: '',
+								status: '',
+								category: '',
+								brand: '',
+								onSale: '',
+								stock: '',
+								translation: '',
+							})
 						}
 					>
 						Clear filters
@@ -294,7 +314,15 @@ const ProductsList = () => {
 														<Link to={`/admin/products/${product._id}`} className={style.title}>
 															{product.title}
 														</Link>
-														<div className={table.muted}>{product.brand}</div>
+														<div className={table.muted}>
+															{product.brand}
+															{!product.description?.pl && (
+																<span className={style.noPolish} title='Missing Polish description'>
+																	{' '}
+																	· no PL
+																</span>
+															)}
+														</div>
 													</td>
 													<td>
 														<StatusBadge status={product.active ? 'active' : 'hidden'} />

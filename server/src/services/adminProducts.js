@@ -28,7 +28,7 @@ const SORTS = {
 
 /** Mongo filter for the admin product list (hidden products included). */
 const productFilter = (
-	{ q, status, category, brand, onSale, stock, lowStock },
+	{ q, status, category, brand, onSale, stock, lowStock, translation },
 	lowStockThreshold,
 ) => {
 	const filter = {}
@@ -45,6 +45,8 @@ const productFilter = (
 	}
 	// sold out: no size of any color has stock left
 	if (stock === 'out') filter['variants.sizes.stock'] = { $not: { $gt: 0 } }
+	// empty, missing, or a description in the old string format (English only)
+	if (translation === 'missing_pl') filter['description.pl'] = { $in: ['', null] }
 	return filter
 }
 

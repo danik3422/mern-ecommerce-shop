@@ -4,6 +4,7 @@
  */
 export const PERMISSIONS = [
 	{ name: 'dashboard', label: 'Dashboard', hint: 'Sales, stock and best sellers' },
+	{ name: 'analytics', label: 'Analytics', hint: 'Sales reports, funnel, returns' },
 	{ name: 'products', label: 'Products', hint: 'Create, edit, prices, stock, photos' },
 	{ name: 'orders', label: 'Orders', hint: 'View, change status, internal notes' },
 	{ name: 'returns', label: 'Returns', hint: 'Approve, reject and refund' },

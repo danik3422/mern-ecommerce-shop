@@ -20,15 +20,14 @@ const stats = {
 	recentOrders: [],
 }
 
-/**
- * AuthProvider restores the session once, when its module loads, so every test
- * stores a session first and then imports a fresh copy of the app.
- */
+/** Imports a fresh copy of the app that restores a session of `user` when it mounts. */
 const renderAdminAs = async (user, path = '/admin') => {
 	localStorage.clear()
-	if (user) localStorage.setItem('session', JSON.stringify({ user, accessToken: 'token' }))
 
 	vi.resetModules()
+	// after resetModules: the helper hooks into the fresh copy of the HTTP client
+	const { restoreSessionAs } = await import('../test/session')
+	restoreSessionAs(user)
 	vi.doMock('../api/admin', async (importOriginal) => ({
 		...(await importOriginal()),
 		fetchAdminStats: vi.fn().mockResolvedValue(stats),
@@ -97,6 +96,7 @@ describe('admin panel access', () => {
 				.map((link) => link.textContent),
 		).toEqual([
 			'Dashboard',
+			'Analytics',
 			'Products',
 			expect.stringMatching(/^Orders2/),
 			expect.stringMatching(/^Returns1/),

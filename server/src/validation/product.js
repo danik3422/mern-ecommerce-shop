@@ -20,6 +20,20 @@ const variant = z.strictObject({
 		.refine((sizes) => unique(sizes, (s) => s.label), 'Size labels must be unique'),
 })
 
+export const DESCRIPTION_MAX_LENGTH = 4000
+
+/**
+ * `{ en, pl }`: English is required, Polish optional (the shop falls back to English).
+ * A plain string is still accepted as the English text, for older API clients.
+ */
+const description = z.preprocess(
+	(value) => (typeof value === 'string' ? { en: value } : value),
+	z.strictObject({
+		en: z.string().trim().min(1, 'Enter the English description').max(DESCRIPTION_MAX_LENGTH),
+		pl: z.string().trim().max(DESCRIPTION_MAX_LENGTH).default(''),
+	}),
+)
+
 const productFields = z.strictObject({
 	title: z.string().trim().min(1).max(120),
 	slug: z
@@ -28,7 +42,7 @@ const productFields = z.strictObject({
 		.toLowerCase()
 		.regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Use lowercase letters, digits and dashes'),
 	brand: z.string().trim().min(1).max(60),
-	description: z.string().trim().min(1).max(4000),
+	description,
 	categories: z.array(tag).max(20).default([]),
 	variants: z
 		.array(variant)
@@ -61,7 +75,15 @@ export const updateProductBody = productFields
 	.refine((body) => Object.keys(body).length > 0, 'Nothing to update')
 	.refine(compareAtPriceIsHigher.check, compareAtPriceIsHigher.error)
 
-export const PRODUCT_SORTS = ['newest', 'price_asc', 'price_desc', 'rating', 'discount']
+/** `relevance` orders search results by how well they match; it is the default when searching. */
+export const PRODUCT_SORTS = [
+	'relevance',
+	'newest',
+	'price_asc',
+	'price_desc',
+	'rating',
+	'discount',
+]
 
 /** "a,b,c" → ['a', 'b', 'c'] (trimmed, empty parts dropped) */
 const commaList = (item, max = 50) =>
@@ -82,8 +104,10 @@ const price = z.coerce.number().nonnegative()
 /** Filters shared by the product list and the facets endpoint. */
 const scopeFields = {
 	category: z.string().trim().toLowerCase().max(30).optional(),
-	// free-text search in title, brand and description
+	// typo-tolerant search in titles, brands, categories and descriptions
 	q: z.string().trim().max(100).optional(),
+	// true: search for exactly what was typed, without correcting typos
+	exact: booleanFlag.optional(),
 }
 
 export const listProductsQuery = z
@@ -98,7 +122,8 @@ export const listProductsQuery = z
 		inStock: booleanFlag.optional(),
 		// comma-separated product ids, used by the cart to load fresh prices
 		ids: commaList(objectId, 100).optional(),
-		sort: z.enum(PRODUCT_SORTS).default('newest'),
+		// default: relevance when searching, otherwise newest
+		sort: z.enum(PRODUCT_SORTS).optional(),
 		page: z.coerce.number().int().min(1).default(1),
 		limit: z.coerce.number().int().min(1).max(100).default(20),
 	})
@@ -114,6 +139,15 @@ export const facetsQuery = z.object(scopeFields)
 
 export const relatedQuery = z.object({
 	limit: z.coerce.number().int().min(1).max(12).default(4),
+})
+
+export const boughtTogetherQuery = z.object({
+	limit: z.coerce.number().int().min(1).max(8).default(4),
+})
+
+export const suggestionsQuery = z.object({
+	q: z.string().trim().min(1).max(100),
+	limit: z.coerce.number().int().min(1).max(10).default(5),
 })
 
 /** `:id` may be a Mongo id or a slug */

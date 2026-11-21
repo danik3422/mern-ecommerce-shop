@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { email, password, username } from './common.js'
+import { email, locale, password, username } from './common.js'
 
 export const updateMeBody = z
 	.strictObject({
@@ -8,8 +8,13 @@ export const updateMeBody = z
 		newPassword: password.optional(),
 		// required when changing email or password
 		currentPassword: z.string().max(72).optional(),
+		// sent by the client when the customer switches the shop language
+		locale: locale.optional(),
 	})
-	.refine((body) => body.username || body.email || body.newPassword, 'Nothing to update')
+	.refine(
+		(body) => body.username || body.email || body.newPassword || body.locale,
+		'Nothing to update',
+	)
 	.refine((body) => !(body.email || body.newPassword) || body.currentPassword, {
 		message: 'Current password is required to change email or password',
 		path: ['currentPassword'],

@@ -11,6 +11,8 @@ import RatingStars from '../reviews/RatingStars'
 import Alert from '../ui/Alert'
 import Button from '../ui/Button'
 import QuantityStepper from '../ui/QuantityStepper'
+import BoughtTogether from './BoughtTogether'
+import FitBar from './FitBar'
 import NotifyMe from './NotifyMe'
 import OptionPicker from './OptionPicker'
 import Price from './Price'
@@ -19,14 +21,15 @@ import ProductGallery from './ProductGallery'
 import DeliveryInfo from './DeliveryInfo'
 import SizeGuide from './SizeGuide'
 import SizePicker from './SizePicker'
+import { suggestedSize } from './sizeFit'
 import { useI18n } from '../../i18n/useI18n'
-import { categoryTitle, colorName } from '../../i18n/catalogText'
+import { categoryTitle, colorName, localizedText } from '../../i18n/catalogText'
 
 // nothing is preselected when every size is sold out
 const firstAvailableSize = (sizes) => sizes.find((s) => s.stock > 0)?.label ?? null
 
 const ProductDetails = ({ product }) => {
-	const { t } = useI18n()
+	const { t, locale } = useI18n()
 	const { addItem, quantityInBag } = useCart()
 	const [searchParams, setSearchParams] = useSearchParams()
 	// the color lives in the URL (?color=black), so a link opens the same color;
@@ -41,6 +44,8 @@ const ProductDetails = ({ product }) => {
 	const [showStickyBar, setShowStickyBar] = useState(false)
 	const purchaseRef = useRef(null)
 	const descriptionId = useId()
+	// Polish when translated, otherwise the English text
+	const description = localizedText(product.description, locale)
 
 	const category = product.categories[0]
 	const sizeStock = stockOf(variant, size)
@@ -49,6 +54,9 @@ const ProductDetails = ({ product }) => {
 	const available = Math.max(sizeStock - inBag, 0)
 	const isOneSize = variant.sizes.length === 1
 	const variantInStock = isVariantInStock(variant)
+	// reviewers say it runs small or large: suggest the neighbouring size
+	const fitVerdict = product.fit?.verdict
+	const suggested = suggestedSize(variant.sizes, size, fitVerdict)
 
 	const chooseColor = (nextColor) => {
 		const next = findVariant(product, nextColor)
@@ -147,11 +155,18 @@ const ProductDetails = ({ product }) => {
 					)}
 					{!isOneSize && (
 						<div className={style.sizes}>
-							<SizePicker sizes={variant.sizes} value={size} onChange={setSize} />
+							<SizePicker
+								sizes={variant.sizes}
+								value={size}
+								onChange={setSize}
+								suggested={suggested}
+								fitVerdict={fitVerdict}
+							/>
 							<div className={style.sizeLinks}>
 								<SizeGuide sizes={variant.sizes.map((s) => s.label)} />
 								{variantInStock && <NotifyMe product={product} variant={variant} />}
 							</div>
+							<FitBar fit={product.fit} />
 						</div>
 					)}
 
@@ -180,16 +195,25 @@ const ProductDetails = ({ product }) => {
 						<Alert>{t('product.allInBag', { count: sizeStock })}</Alert>
 					)}
 					<DeliveryInfo />
-					{product.description && (
+					{description && (
 						<section className={style.details} aria-labelledby={descriptionId}>
 							<h2 id={descriptionId} className={style.detailsTitle}>
 								{t('product.description')}
 							</h2>
-							<p className={style.description}>{product.description}</p>
+							<p className={style.description}>{description}</p>
 						</section>
 					)}
 				</div>
 			</article>
+
+			<BoughtTogether
+				product={product}
+				variant={variant}
+				size={size}
+				available={available}
+				sizeStock={sizeStock}
+			/>
+
 			{canAdd && (
 				<div className={style.stickyBar} hidden={!showStickyBar}>
 					<div className={style.stickyInfo}>

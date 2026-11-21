@@ -1,45 +1,37 @@
-import { useQuery } from '@tanstack/react-query'
-import { fetchFacets, fetchProducts, productKeys } from '../../api/products'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { fetchSearchSuggestions, productKeys } from '../../api/products'
 import { useDebouncedValue } from '../../hooks/useDebouncedValue'
 
 const MIN_LENGTH = 2
 const MAX_PRODUCTS = 5
-const MAX_BRANDS = 3
 
-/** Products and brands matching what the visitor is typing (debounced). */
+/**
+ * Products, brands and categories matching what the visitor is typing (debounced).
+ * The search is typo tolerant: `correctedQuery` is set when the matches are for a corrected
+ * spelling ("nortlin" → "northline").
+ */
 export const useSearchSuggestions = (query) => {
 	const term = useDebouncedValue(query.trim())
 	const enabled = term.length >= MIN_LENGTH
 
-	const productParams = { q: term, limit: MAX_PRODUCTS }
-	const products = useQuery({
-		queryKey: productKeys.list(productParams),
-		queryFn: ({ signal }) => fetchProducts(productParams, signal),
+	const suggestions = useQuery({
+		queryKey: productKeys.suggestions(term, MAX_PRODUCTS),
+		queryFn: ({ signal }) => fetchSearchSuggestions(term, MAX_PRODUCTS, signal),
 		enabled,
 		staleTime: 60_000,
+		// keep the previous matches on screen while the next ones load
+		placeholderData: keepPreviousData,
 	})
-
-	// brand facets of the whole catalog, filtered locally by name
-	const facets = useQuery({
-		queryKey: productKeys.facets({}),
-		queryFn: ({ signal }) => fetchFacets({}, signal),
-		enabled,
-		staleTime: 5 * 60_000,
-	})
-
-	const lower = term.toLowerCase()
-	const brands = enabled
-		? (facets.data?.brands ?? [])
-				.filter((brand) => brand.value.toLowerCase().includes(lower))
-				.slice(0, MAX_BRANDS)
-		: []
+	const data = enabled ? suggestions.data : undefined
 
 	return {
 		term,
 		isActive: enabled,
-		products: enabled ? (products.data?.items ?? []) : [],
-		total: products.data?.total ?? 0,
-		brands,
-		isLoading: enabled && products.isPending,
+		products: data?.products ?? [],
+		total: data?.total ?? 0,
+		brands: data?.brands ?? [],
+		categories: data?.categories ?? [],
+		correctedQuery: data?.correctedQuery ?? null,
+		isLoading: enabled && suggestions.isPending,
 	}
 }

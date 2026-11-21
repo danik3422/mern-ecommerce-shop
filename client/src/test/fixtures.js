@@ -21,7 +21,7 @@ export const makeProduct = ({
 		slug: 'arrow-jacket',
 		title: 'Arrow Jacket',
 		brand: 'Aster',
-		description: 'Warm jacket',
+		description: { en: 'Warm jacket', pl: 'Ciepła kurtka' },
 		categories: ['coats'],
 		price,
 		rating: { average: 0, count: 0 },

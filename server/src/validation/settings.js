@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { SHIPPING_METHOD_IDS } from '../config/shop.js'
 import { roundMoney } from '../services/pricing.js'
+import { isValidBankAccount, isValidNip, normalizeBankAccount, normalizeNip } from './taxIds.js'
 
 const money = (max) =>
 	z
@@ -18,6 +19,30 @@ const wholeNumber = (min, max) =>
 const label = z.string().trim().min(1, 'Enter a name').max(60, 'Use at most 60 characters')
 
 const announcementText = z.string().trim().max(160, 'Use at most 160 characters').default('')
+
+const companyText = (max) => z.string().trim().max(max, `Use at most ${max} characters`).default('')
+
+/** The seller on invoices. Every field may stay empty until the shop issues invoices. */
+const company = z.strictObject({
+	name: companyText(120),
+	street: companyText(120),
+	postalCode: companyText(10).refine(
+		(value) => value === '' || /^\d{2}-\d{3}$/.test(value),
+		'Use the format 00-000',
+	),
+	city: companyText(60),
+	// stored as 10 digits
+	nip: companyText(20)
+		.refine((value) => value === '' || isValidNip(value), 'Enter a valid NIP (10 digits)')
+		.transform((value) => value && normalizeNip(value)),
+	// stored as 26 digits
+	bankAccount: companyText(40)
+		.refine(
+			(value) => value === '' || isValidBankAccount(value),
+			'Enter a valid Polish account number (26 digits)',
+		)
+		.transform((value) => value && normalizeBankAccount(value)),
+})
 
 const shippingMethod = z
 	.strictObject({
@@ -55,6 +80,8 @@ export const updateSettingsBody = z.strictObject({
 	announcement: z
 		.strictObject({ en: announcementText, pl: announcementText })
 		.default({ en: '', pl: '' }),
+	// optional, so older clients that do not send it keep the saved company data
+	company: company.optional(),
 	// 0 or null: no free shipping
 	freeShippingFrom: money(100_000)
 		.nullable()

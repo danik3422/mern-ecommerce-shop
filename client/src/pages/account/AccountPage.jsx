@@ -1,11 +1,13 @@
-import { Heart, LogOut, MapPin, Package, UserRound } from 'lucide-react'
+import { Heart, LogOut, MapPin, Package, ShieldCheck, UserRound } from 'lucide-react'
 import { Navigate, NavLink, Route, Routes } from 'react-router'
 import { useAuth } from '../../auth/useAuth'
 import { cx } from '../../utils/cx'
 import style from './AccountPage.module.css'
 import AddressesPage from './AddressesPage'
+import OrderPage from './OrderPage'
 import OrdersPage from './OrdersPage'
 import ProfilePage from './ProfilePage'
+import SecurityPage from './SecurityPage'
 import WishlistPage from './WishlistPage'
 import { useI18n } from '../../i18n/useI18n'
 
@@ -14,6 +16,7 @@ const SECTIONS = [
 	{ to: '/account/wishlist', labelKey: 'account.wishlist', icon: Heart },
 	{ to: '/account/addresses', labelKey: 'account.addresses', icon: MapPin },
 	{ to: '/account/profile', labelKey: 'account.profile', icon: UserRound },
+	{ to: '/account/security', labelKey: 'account.security', icon: ShieldCheck },
 ]
 
 /** /account/* — side navigation (tabs on mobile) and the active section. */
@@ -53,9 +56,11 @@ const AccountPage = () => {
 				<div className={style.content}>
 					<Routes>
 						<Route index element={<OrdersPage />} />
+						<Route path='orders/:id' element={<OrderPage />} />
 						<Route path='wishlist' element={<WishlistPage />} />
 						<Route path='addresses' element={<AddressesPage />} />
 						<Route path='profile' element={<ProfilePage />} />
+						<Route path='security' element={<SecurityPage />} />
 						<Route path='*' element={<Navigate to='/account' replace />} />
 					</Routes>
 				</div>

@@ -6,6 +6,7 @@ import {
 	activeFilterChips,
 	clearFilterParams,
 	readFilters,
+	SEARCH_SORT,
 	toApiQuery,
 	toFacetScope,
 	updateFilterParams,
@@ -40,15 +41,18 @@ const ProductList = () => {
 
 	const filters = readFilters(searchParams)
 	const isSale = category === SALE_CATEGORY
-	const title = pageTitle(t, category, filters.q)
+	const products = useProducts(toApiQuery(filters, category, PAGE_SIZE))
+	// set when the search corrected a typo ("jaket" → "jacket")
+	const correctedQuery = filters.q ? products.data?.search?.correctedQuery : null
+	const title = pageTitle(t, category, correctedQuery ?? filters.q)
 	useDocumentTitle(title)
 
-	const products = useProducts(toApiQuery(filters, category, PAGE_SIZE))
 	const facets = useFacets(toFacetScope(filters, category))
 
 	const applyChanges = (changes) => setSearchParams(updateFilterParams(searchParams, changes))
 	const clearAll = () => setSearchParams(clearFilterParams(searchParams))
 	const closeDrawer = useCallback(() => setIsDrawerOpen(false), [])
+	const sortValues = filters.q ? [SEARCH_SORT, ...SORT_VALUES] : SORT_VALUES
 
 	const chips = activeFilterChips(isSale ? { ...filters, onSale: false } : filters)
 	const total = products.data?.total
@@ -69,6 +73,17 @@ const ProductList = () => {
 				<div>
 					{filters.q && category && <p className='eyebrow'>{categoryTitle(t, category)}</p>}
 					<h1 className={style.title}>{title}</h1>
+					{correctedQuery && (
+						<p className={style.correction}>
+							{t('list.showingResultsFor', { query: correctedQuery })}{' '}
+							<Link
+								to={{ search: `?${updateFilterParams(searchParams, { exact: true })}` }}
+								className='text-link'
+							>
+								{t('list.searchInstead', { query: filters.q })}
+							</Link>
+						</p>
+					)}
 				</div>
 				<p className={style.count} aria-live='polite'>
 					{countText}
@@ -91,7 +106,7 @@ const ProductList = () => {
 					hideLabel
 					name='sort'
 					value={filters.sort}
-					options={SORT_VALUES.map((value) => ({ value, label: t(`sort.${value}`) }))}
+					options={sortValues.map((value) => ({ value, label: t(`sort.${value}`) }))}
 					onChange={(e) => applyChanges({ sort: e.target.value })}
 					className={style.sort}
 				/>

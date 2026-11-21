@@ -1,6 +1,7 @@
 import { Clock, Search, X } from 'lucide-react'
 import { useId, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
+import { categoryTitle } from '../../i18n/catalogText'
 import { useI18n } from '../../i18n/useI18n'
 import { cx } from '../../utils/cx'
 import { addRecentSearch, clearRecentSearches, getRecentSearches } from './recentSearches'
@@ -9,7 +10,8 @@ import { useSearchSuggestions } from './useSearchSuggestions'
 
 /**
  * Header search with suggestions (ARIA combobox): recent searches while empty,
- * matching brands and products while typing. ↑/↓ move, Enter opens, Esc closes.
+ * matching brands, categories and products while typing — typos included ("nortlin" finds
+ * Northline, "plaszcz" the coats). ↑/↓ move, Enter opens, Esc closes.
  * @param onSearch called after navigating (e.g. to close the search panel)
  * @param onEscape called on Esc when no suggestions are open (e.g. to close the search panel)
  * @param autoFocus focus the field on mount (the search panel opens straight into typing)
@@ -57,6 +59,14 @@ const SearchForm = ({ onSearch, onEscape, autoFocus = false }) => {
 						items: t('common.items', { count: brand.count }),
 					}),
 				})),
+				...suggestions.categories.map((slug) => ({
+					kind: 'category',
+					group: t('search.categories'),
+					key: `category-${slug}`,
+					value: slug,
+					label: categoryTitle(t, slug),
+					ariaLabel: t('search.categoryOption', { category: categoryTitle(t, slug) }),
+				})),
 				...suggestions.products.map((product) => ({
 					kind: 'product',
 					group: t('search.products'),
@@ -91,6 +101,7 @@ const SearchForm = ({ onSearch, onEscape, autoFocus = false }) => {
 
 	const selectOption = (option) => {
 		if (option.kind === 'brand') go(`/products?brand=${encodeURIComponent(option.value)}`, trimmed)
+		if (option.kind === 'category') go(`/products/${option.value}`, trimmed)
 		if (option.kind === 'product') go(`/product/${option.value}`, trimmed)
 		if (option.kind === 'search') searchFor(option.value)
 		if (option.kind === 'recent') {
@@ -164,6 +175,11 @@ const SearchForm = ({ onSearch, onEscape, autoFocus = false }) => {
 
 			{showList && (
 				<div className={style.panel}>
+					{suggestions.isActive && suggestions.correctedQuery && (
+						<p className={style.correction} role='status'>
+							{t('search.matchesFor', { query: suggestions.correctedQuery })}
+						</p>
+					)}
 					<ul
 						id={listboxId}
 						role='listbox'

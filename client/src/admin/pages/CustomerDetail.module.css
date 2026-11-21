@@ -85,3 +85,9 @@
 		grid-template-columns: 1fr;
 	}
 }
+
+.linkButton {
+	padding: 0;
+	border: 0;
+	background: none;
+}

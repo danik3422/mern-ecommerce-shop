@@ -3,13 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as accountApi from '../../api/account'
 import * as ordersApi from '../../api/orders'
 import { renderWithProviders } from '../../components/account/test-utils'
+import RequireAuth from '../../auth/RequireAuth'
 import AccountPage from './AccountPage'
+import { restoreSessionAs } from '../../test/session'
 
-// AuthProvider reads the session once at import time, so it must be stored first
-vi.hoisted(() => {
-	const user = { _id: 'u1', username: 'alice', email: 'alice@example.com', isAdmin: false }
-	localStorage.setItem('session', JSON.stringify({ user, accessToken: 'token' }))
-})
+// AuthProvider restores this session from the (faked) refresh cookie when it mounts
+restoreSessionAs({ _id: 'u1', username: 'alice', email: 'alice@example.com', isAdmin: false })
 vi.mock('../../api/account', async (importOriginal) => ({
 	...(await importOriginal()),
 	fetchMyOrders: vi.fn(),
@@ -52,7 +51,14 @@ const pendingOrder = {
 	},
 }
 
-const renderAccount = (path) => renderWithProviders(<AccountPage />, { path, route: '/account/*' })
+// as in AppRoutes: RequireAuth waits until the session is restored
+const renderAccount = (path) =>
+	renderWithProviders(
+		<RequireAuth>
+			<AccountPage />
+		</RequireAuth>,
+		{ path, route: '/account/*' },
+	)
 
 describe('AccountPage', () => {
 	beforeEach(() => {

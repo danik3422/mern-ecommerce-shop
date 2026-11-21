@@ -3,9 +3,11 @@ import { slugify } from './format'
 import {
 	emptyProductForm,
 	formToPayload,
+	isMissingPolish,
 	moveItem,
 	newVariant,
 	productToForm,
+	validateProductForm,
 	variantErrors,
 } from './productForm'
 
@@ -13,7 +15,7 @@ const product = {
 	title: 'Coat',
 	slug: 'coat',
 	brand: 'Aster',
-	description: 'Warm',
+	description: { en: 'Warm', pl: 'Ciepły' },
 	price: 80,
 	compareAtPrice: 100,
 	categories: ['coats'],
@@ -42,6 +44,24 @@ describe('product form helpers', () => {
 			price: 19.5,
 			variants: [{ color: 'white', images: [], sizes: [{ label: 'S', stock: 0 }] }],
 		})
+	})
+
+	it('reads descriptions saved as a plain string as English', () => {
+		const form = productToForm({ ...product, description: 'Warm' })
+		expect(form.description).toEqual({ en: 'Warm', pl: '' })
+		expect(isMissingPolish(form)).toBe(true)
+		expect(isMissingPolish(productToForm(product))).toBe(false)
+	})
+
+	it('requires the English description and limits both languages', () => {
+		const form = productToForm(product)
+		expect(validateProductForm({ ...form, description: { en: ' ', pl: 'Ciepły' } })).toEqual({
+			'description.en': 'Enter the English description',
+		})
+		expect(
+			validateProductForm({ ...form, description: { en: 'Warm', pl: 'x'.repeat(4001) } }),
+		).toHaveProperty('description.pl')
+		expect(validateProductForm({ ...form, description: { en: 'Warm', pl: '' } })).toEqual({})
 	})
 
 	it('omits an empty compare-at price for new products and clears it on edit', () => {

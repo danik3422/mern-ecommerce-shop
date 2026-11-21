@@ -7,7 +7,9 @@
  * 2. Data: accounts get a role. Former admins (`isAdmin: true`) become staff owners with
  *    every permission, everyone else a customer; the stored `isAdmin` flag is removed
  *    (the API still sends `isAdmin` = "is staff" to the client).
- * 3. Indexes:
+ * 3. Data: product descriptions become translated texts: a string description is the
+ *    English text, `{ en: <string>, pl: '' }` (the Polish one is added in the admin panel).
+ * 4. Indexes:
  * Drops indexes that no schema defines any more (e.g. the unique `carts.userId_1` left
  * from the first schema version, which made every cart after the first one fail with 409)
  * and creates missing ones. Run it after deploying schema changes; it is safe to repeat.
@@ -17,6 +19,7 @@
 import mongoose from 'mongoose'
 import { connectDb, disconnectDb } from '../src/config/db.js'
 import { env } from '../src/config/env.js'
+import { migrateDescriptionsToLocalized } from '../src/services/migrations.js'
 import { PERMISSION_NAMES } from '../src/services/permissions.js'
 import '../src/models/ActivityLog.js'
 import '../src/models/Cart.js'
@@ -74,6 +77,8 @@ const main = async () => {
 	await connectDb(env.MONGO_URL)
 	await migrateProductsToVariants()
 	await migrateAdminsToStaff()
+	const descriptions = await migrateDescriptionsToLocalized()
+	console.log(`products: ${descriptions} descriptions converted to { en, pl }`)
 
 	for (const model of Object.values(mongoose.models)) {
 		const dropped = await model.syncIndexes()

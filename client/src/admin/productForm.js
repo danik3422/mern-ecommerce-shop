@@ -38,11 +38,28 @@ export const variantErrors = (errors, index) => {
 	)
 }
 
+/** Languages of the product description; English is required, Polish falls back to it. */
+export const DESCRIPTION_LANGUAGES = [
+	{ code: 'en', label: 'English' },
+	{ code: 'pl', label: 'Polish' },
+]
+
+export const DESCRIPTION_MAX_LENGTH = 4000
+
+/** `{ en, pl }` from the API; plain strings (older products) are English. */
+export const toDescriptionForm = (description) =>
+	typeof description === 'string'
+		? { en: description, pl: '' }
+		: { en: description?.en ?? '', pl: description?.pl ?? '' }
+
+/** True when the product has no Polish description yet (the shop then shows English). */
+export const isMissingPolish = (form) => !form.description.pl.trim()
+
 export const emptyProductForm = () => ({
 	title: '',
 	slug: '',
 	brand: '',
-	description: '',
+	description: { en: '', pl: '' },
 	price: '',
 	compareAtPrice: '',
 	categories: [],
@@ -55,7 +72,7 @@ export const productToForm = (product) => ({
 	title: product.title,
 	slug: product.slug,
 	brand: product.brand,
-	description: product.description,
+	description: toDescriptionForm(product.description),
 	price: String(product.price),
 	compareAtPrice: product.compareAtPrice ? String(product.compareAtPrice) : '',
 	categories: product.categories,
@@ -80,7 +97,7 @@ export const formToPayload = (form, { isNew }) => {
 		title: form.title.trim(),
 		slug: form.slug.trim(),
 		brand: form.brand.trim(),
-		description: form.description.trim(),
+		description: { en: form.description.en.trim(), pl: form.description.pl.trim() },
 		price: toNumber(form.price),
 		...(compareAtPrice !== undefined ? { compareAtPrice } : isNew ? {} : { compareAtPrice: null }),
 		categories: form.categories,
@@ -119,7 +136,13 @@ export const validateProductForm = (form) => {
 	if (form.slug.trim() && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(form.slug.trim())) {
 		errors.slug = 'Use lowercase letters, digits and dashes'
 	}
-	if (!form.description.trim()) errors.description = 'Enter a description'
+	if (!form.description.en.trim()) errors['description.en'] = 'Enter the English description'
+	for (const { code, label } of DESCRIPTION_LANGUAGES) {
+		if (form.description[code].trim().length > DESCRIPTION_MAX_LENGTH) {
+			errors[`description.${code}`] =
+				`${label} description: at most ${DESCRIPTION_MAX_LENGTH} characters`
+		}
+	}
 
 	const price = form.price === '' ? NaN : Number(form.price)
 	const compareAtPrice = form.compareAtPrice === '' ? null : Number(form.compareAtPrice)

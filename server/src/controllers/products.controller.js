@@ -1,6 +1,15 @@
 import mongoose from 'mongoose'
 import { Product } from '../models/Product.js'
 import { toProductView } from '../services/productView.js'
+import { boughtTogether } from '../services/recommendations.js'
+import {
+	getSearchIndex,
+	matchBrands,
+	matchCategories,
+	searchIndex,
+	searchProducts,
+} from '../services/search.js'
+import { getFitSummary } from '../services/sizeFit.js'
 import { notifyRestocked } from '../services/stockAlerts.js'
 import { notFound } from '../utils/HttpError.js'
 
@@ -10,35 +19,31 @@ const SORTS = {
 	price_desc: { price: -1, _id: 1 },
 	rating: { 'rating.average': -1, 'rating.count': -1, _id: 1 },
 	discount: { discount: -1, createdAt: -1, _id: 1 },
+	// position in the search results, see `relevanceOf`
+	relevance: { relevance: 1, _id: 1 },
 }
 
-const escapeRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const toObjectId = (id) => new mongoose.Types.ObjectId(String(id))
 
-/** Active products, optionally limited to a category and a free-text search. */
-const scopeFilter = ({ category, q }) => {
+/**
+ * Active products, optionally limited to a category and a search.
+ * The search is typo tolerant (see services/search.js) unless `exact` is set.
+ * @returns `{ filter, search }` — `search` is `{ ids, correctedQuery }` when searching
+ */
+const resolveScope = async ({ category, q, exact }) => {
 	const filter = { active: true }
 	if (category) filter.categories = category
-	if (q) {
-		const pattern = new RegExp(escapeRegex(q), 'i')
-		filter.$or = [{ title: pattern }, { brand: pattern }, { description: pattern }]
-	}
-	return filter
+	if (!q) return { filter, search: null }
+
+	const search = await searchProducts(q, { exact })
+	// aggregation $match does not cast strings, so ids must be ObjectIds
+	filter.$and = [{ _id: { $in: search.ids.map(toObjectId) } }]
+	return { filter, search }
 }
 
 const isOnSale = { $gt: [{ $ifNull: ['$compareAtPrice', 0] }, '$price'] }
 
-const buildFilter = ({
-	brand,
-	color,
-	size,
-	minPrice,
-	maxPrice,
-	onSale,
-	inStock,
-	ids,
-	...scope
-}) => {
-	const filter = scopeFilter(scope)
+const buildFilter = (filter, { brand, color, size, minPrice, maxPrice, onSale, inStock, ids }) => {
 	if (brand?.length) filter.brand = { $in: brand }
 	// color, size and "in stock" must hold for the same variant:
 	// "blue in M, in stock" does not match a product that has only black M in stock
@@ -60,8 +65,7 @@ const buildFilter = ({
 		if (maxPrice !== undefined) filter.price.$lte = maxPrice
 	}
 	if (onSale) filter.$expr = isOnSale
-	// aggregation $match does not cast strings, so ids must be ObjectIds
-	if (ids) filter._id = { $in: ids.map((id) => new mongoose.Types.ObjectId(id)) }
+	if (ids) filter._id = { $in: ids.map(toObjectId) }
 	return filter
 }
 
@@ -77,20 +81,41 @@ export const findActiveProduct = (idOrSlug) =>
 		...(mongoose.isValidObjectId(idOrSlug) ? { _id: idOrSlug } : { slug: idOrSlug }),
 	}).lean()
 
-/** GET /products — public, paginated: `{ items, page, pages, total }` */
+/** Position of a product in the ranked search results (for the "relevance" sort). */
+const relevanceOf = (ids) => ({ $indexOfArray: [ids.map(toObjectId), '$_id'] })
+
+/**
+ * GET /products — public, paginated: `{ items, page, pages, total, search? }`.
+ * With `q`, results are sorted by relevance unless another sort is chosen, and
+ * `search: { query, correctedQuery }` tells whether typos were corrected
+ * (e.g. "jaket" → "jacket").
+ */
 export const listProducts = async (req, res) => {
-	const { sort, page, limit, ...filters } = req.valid.query
+	const { sort: chosenSort, page, limit, category, q, exact, ...filters } = req.valid.query
+	const { filter, search } = await resolveScope({ category, q, exact })
+	// relevance needs a search; without one it falls back to the newest products
+	const sort =
+		chosenSort && (chosenSort !== 'relevance' || search)
+			? chosenSort
+			: search
+				? 'relevance'
+				: 'newest'
 
 	const [result] = await Product.aggregate([
-		{ $match: buildFilter(filters) },
-		{ $addFields: { discount: discountShare } },
+		{ $match: buildFilter(filter, filters) },
+		{
+			$addFields: {
+				discount: discountShare,
+				...(sort === 'relevance' && { relevance: relevanceOf(search.ids) }),
+			},
+		},
 		{
 			$facet: {
 				items: [
 					{ $sort: SORTS[sort] },
 					{ $skip: (page - 1) * limit },
 					{ $limit: limit },
-					{ $project: { discount: 0 } },
+					{ $project: { discount: 0, ...(sort === 'relevance' && { relevance: 0 }) } },
 				],
 				total: [{ $count: 'count' }],
 			},
@@ -98,7 +123,13 @@ export const listProducts = async (req, res) => {
 	])
 
 	const total = result.total[0]?.count ?? 0
-	res.json({ items: result.items.map(toProductView), page, pages: Math.ceil(total / limit), total })
+	res.json({
+		items: result.items.map(toProductView),
+		page,
+		pages: Math.ceil(total / limit),
+		total,
+		...(search && { search: { query: q, correctedQuery: search.correctedQuery } }),
+	})
 }
 
 const LETTER_SIZES = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL']
@@ -128,8 +159,9 @@ const countProductsBy = (field) => [
  * `{ brands, colors, sizes: [{ value, count }], price: { min, max } }`
  */
 export const productFacets = async (req, res) => {
+	const { filter } = await resolveScope(req.valid.query)
 	const [result] = await Product.aggregate([
-		{ $match: scopeFilter(req.valid.query) },
+		{ $match: filter },
 		{
 			$facet: {
 				brands: countProductsBy('$brand'),
@@ -153,11 +185,60 @@ export const productFacets = async (req, res) => {
 	})
 }
 
-/** GET /products/:id — by id or slug */
+/**
+ * GET /products/suggestions?q= — for the search box:
+ * `{ products, total, brands: [{ value, count }], categories: [slug], correctedQuery }`
+ */
+export const searchSuggestions = async (req, res) => {
+	const { q, limit } = req.valid.query
+	const index = await getSearchIndex()
+	const search = searchIndex(index, q)
+	const ranked = search.ids.slice(0, limit)
+
+	const products = await Product.find({ _id: { $in: ranked }, active: true }).lean()
+	const byId = new Map(products.map((product) => [String(product._id), product]))
+
+	const productsPerBrand = Map.groupBy(index.entries, (entry) => entry.brand)
+	const brands = matchBrands(index, q)
+		.slice(0, 3)
+		.map((brand) => ({ value: brand, count: productsPerBrand.get(brand).length }))
+	// only categories that have products
+	const categories = matchCategories(q)
+		.filter((slug) => index.entries.some((entry) => entry.categories.includes(slug)))
+		.slice(0, 2)
+
+	res.json({
+		products: ranked
+			.map((id) => byId.get(String(id)))
+			.filter(Boolean)
+			.map(toProductView),
+		total: search.ids.length,
+		brands,
+		categories,
+		correctedQuery: search.correctedQuery,
+	})
+}
+
+/** GET /products/:id — by id or slug; `fit` summarizes what reviewers say about the fit */
 export const getProduct = async (req, res) => {
 	const product = await findActiveProduct(req.valid.params.id)
 	if (!product) throw notFound('Product')
-	res.json(toProductView(product))
+	res.json({ ...toProductView(product), fit: await getFitSummary(product._id) })
+}
+
+/**
+ * GET /products/:id/bought-together — `{ source: 'orders' | 'related', items }`:
+ * products often bought in the same orders, or similar products while there is too little
+ * order data. Only available products, never the product itself.
+ */
+export const boughtTogetherProducts = async (req, res) => {
+	const product = await findActiveProduct(req.valid.params.id)
+	if (!product) throw notFound('Product')
+	const { source, items } = await boughtTogether(product, req.valid.query.limit)
+	res.json({
+		source,
+		items: items.map((item) => ({ ...toProductView(item), orders: item.orders })),
+	})
 }
 
 /** GET /products/:id/related — other products from the same categories, best rated first */

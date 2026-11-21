@@ -3,11 +3,14 @@ import { Review } from '../models/Review.js'
 import { User } from '../models/User.js'
 import { hasPermission } from '../services/permissions.js'
 import { getRatingSummary, getReviewEligibility, syncProductRating } from '../services/reviews.js'
-import { conflict, forbidden, notFound } from '../utils/HttpError.js'
+import { badRequest, conflict, forbidden, notFound } from '../utils/HttpError.js'
 
 const ensureActiveProduct = async (productId) => {
-	const exists = await Product.exists({ _id: productId, active: true })
-	if (!exists) throw notFound('Product')
+	const product = await Product.findOne({ _id: productId, active: true })
+		.select('variants.sizes.label')
+		.lean()
+	if (!product) throw notFound('Product')
+	return product
 }
 
 /** GET /products/:productId/reviews — public, newest first, with a rating summary */
@@ -38,7 +41,15 @@ export const reviewEligibility = async (req, res) => {
 /** POST /products/:productId/reviews — verified buyers only, one review per product */
 export const createReview = async (req, res) => {
 	const { productId } = req.valid.params
-	await ensureActiveProduct(productId)
+	const product = await ensureActiveProduct(productId)
+
+	const { sizeBought } = req.valid.body
+	const sizes = product.variants.flatMap((variant) => variant.sizes.map((size) => size.label))
+	if (sizeBought && !sizes.includes(sizeBought)) {
+		throw badRequest('Validation failed', [
+			{ path: 'sizeBought', message: 'Choose one of the sizes of this product' },
+		])
+	}
 
 	const { reason } = await getReviewEligibility(req.user.id, productId)
 	if (reason === 'already_reviewed') throw conflict('You have already reviewed this product')

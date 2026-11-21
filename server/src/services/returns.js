@@ -1,9 +1,10 @@
 import { Order } from '../models/Order.js'
 import { badRequest, conflict, notFound } from '../utils/HttpError.js'
 import { sendMail } from './mailer.js'
-import { orderNumber } from './orderEmails.js'
+import { emailLanguage, renderEmail } from './emails/render.js'
+import { itemLine, orderLocale, orderNumber } from './orderEmails.js'
 import { refundOrderPayment } from './orderStatus.js'
-import { formatAmount, roundMoney } from './pricing.js'
+import { roundMoney } from './pricing.js'
 import { getShopSettings } from './shopSettings.js'
 import { releaseStock } from './stock.js'
 
@@ -111,31 +112,48 @@ export const decideReturn = async (orderId, { status, note }) => {
 	return updated
 }
 
-const MESSAGES = {
-	requested: 'We received your return request and will review it shortly.',
-	approved: 'Your return was approved. Please send the items back to us.',
-	rejected: 'Unfortunately we cannot accept this return.',
-	refunded: 'We received your return and refunded',
+/**
+ * The content of a return email in the customer's language, without sending it.
+ * @param status the return status the customer is told about
+ */
+export const buildReturnEmail = (order, status, { locale, settings }) => {
+	const { m, f } = emailLanguage(locale)
+	const t = m.returns[status]
+	const request = order.returnRequest
+	const count = request.items.reduce((sum, item) => sum + item.quantity, 0)
+	const amount = f.money(request.refundAmount ?? 0)
+
+	const paragraphs = [
+		status === 'refunded'
+			? t.intro({ amount, online: Boolean(request.refundedOnline) })
+			: typeof t.intro === 'function'
+				? t.intro({ count }, f)
+				: t.intro,
+	]
+	if (request.note) paragraphs.push(`${m.returns.note}: ${request.note}`)
+
+	return renderEmail(locale, settings, {
+		subject: t.subject({ number: orderNumber(order) }),
+		heading: t.heading,
+		name: order.address?.fullName?.trim().split(/\s+/)[0],
+		paragraphs,
+		items: {
+			title: m.returns.itemsTitle,
+			lines: request.items.map((item) => ({ text: itemLine(item, m) })),
+			totals:
+				status === 'rejected'
+					? []
+					: [{ label: m.returns.refundAmount, value: amount, strong: true }],
+		},
+	})
 }
 
+/** Emails the customer about their return. Never throws. */
 const notifyCustomer = async (order, status) => {
-	const request = order.returnRequest
-	const lines = [
-		status === 'refunded'
-			? `${MESSAGES.refunded} ${formatAmount(request.refundAmount)}${request.refundedOnline ? ' to your original payment method' : ''}.`
-			: MESSAGES[status],
-		request.note ? `\nNote from the shop: ${request.note}` : '',
-		'',
-		...request.items.map(
-			(item) => `${item.quantity} × ${item.title} (${item.color}, ${item.size})`,
-		),
-	]
 	try {
-		await sendMail({
-			to: order.email,
-			subject: `Return for order ${orderNumber(order)}: ${status}`,
-			text: lines.join('\n'),
-		})
+		const data = typeof order.toObject === 'function' ? order.toObject() : order
+		const [locale, settings] = await Promise.all([orderLocale(data), getShopSettings()])
+		await sendMail({ to: data.email, ...buildReturnEmail(data, status, { locale, settings }) })
 	} catch (err) {
 		console.error('Could not send the return email:', err)
 	}

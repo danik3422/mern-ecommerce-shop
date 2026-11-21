@@ -1,6 +1,7 @@
 import { Cart } from '../models/Cart.js'
 import { User } from '../models/User.js'
 import { hashPassword, verifyPassword } from '../services/password.js'
+import { revokeUserSessions } from '../services/sessions.js'
 import { forbidden, notFound } from '../utils/HttpError.js'
 
 /** Shared demo accounts stay usable for everyone: their profile cannot change. */
@@ -19,7 +20,7 @@ const deleteAccount = async (userId) => {
 		if (await User.exists({ _id: userId })) throw forbidden('Staff accounts are managed in Team')
 		throw notFound('User')
 	}
-	await Cart.deleteOne({ user: userId })
+	await Promise.all([Cart.deleteOne({ user: userId }), revokeUserSessions(userId, 'removed')])
 }
 
 export const getMe = async (req, res) => {
@@ -27,9 +28,10 @@ export const getMe = async (req, res) => {
 }
 
 export const updateMe = async (req, res) => {
-	const { username, email, newPassword, currentPassword } = req.valid.body
+	const { username, email, newPassword, currentPassword, locale } = req.valid.body
 	const user = await User.findById(req.user.id).select('+passwordHash')
-	if (user.isDemo) throw forbidden(DEMO_LOCKED)
+	// the language is a preference, not part of the profile: demo accounts may switch it too
+	if (user.isDemo && (username || email || newPassword)) throw forbidden(DEMO_LOCKED)
 
 	if (email || newPassword) {
 		const confirmed = await verifyPassword(currentPassword, user.passwordHash)
@@ -39,8 +41,13 @@ export const updateMe = async (req, res) => {
 	if (username) user.username = username
 	if (email) user.email = email
 	if (newPassword) user.passwordHash = await hashPassword(newPassword)
+	if (locale) user.locale = locale
 
 	await user.save() // a taken username/email results in 409 via the unique index
+	// whoever knew the old password may be signed in elsewhere: only this device stays
+	if (newPassword) {
+		await revokeUserSessions(user._id, 'password', { exceptSessionId: req.user.sessionId })
+	}
 	res.json(user)
 }
 

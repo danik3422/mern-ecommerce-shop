@@ -17,6 +17,7 @@ describe('catalog filters in the URL', () => {
 	it('reads filters with defaults and ignores invalid values', () => {
 		expect(readFilters(params(''))).toEqual({
 			q: '',
+			exact: false,
 			brand: [],
 			color: [],
 			size: [],
@@ -62,6 +63,30 @@ describe('catalog filters in the URL', () => {
 
 	it('clears filters but keeps the search', () => {
 		expect(clearFilterParams(params('q=coat&brand=A&inStock=true')).toString()).toBe('q=coat')
+		expect(clearFilterParams(params('q=jaket&exact=true&brand=A')).toString()).toBe(
+			'q=jaket&exact=true',
+		)
+	})
+
+	it('sorts a search by relevance unless another sort is chosen', () => {
+		expect(readFilters(params('q=coat')).sort).toBe('relevance')
+		expect(readFilters(params('q=coat&sort=newest')).sort).toBe('newest')
+		// relevance without a search falls back to the newest products
+		expect(readFilters(params('sort=relevance')).sort).toBe('newest')
+		// the default of each case is kept out of the URL
+		expect(updateFilterParams(params('q=coat'), { sort: 'relevance' }).toString()).toBe('q=coat')
+		expect(updateFilterParams(params('q=coat'), { sort: 'newest' }).toString()).toBe(
+			'q=coat&sort=newest',
+		)
+	})
+
+	it('passes an exact search to the API and the facets', () => {
+		const filters = readFilters(params('q=jaket&exact=true'))
+		expect(filters.exact).toBe(true)
+		expect(toApiQuery(filters, undefined, 24)).toMatchObject({ q: 'jaket', exact: 'true' })
+		expect(toFacetScope(filters)).toEqual({ q: 'jaket', exact: 'true' })
+		// "exact" means nothing without a search
+		expect(readFilters(params('exact=true')).exact).toBe(false)
 	})
 
 	it('toggles list values', () => {

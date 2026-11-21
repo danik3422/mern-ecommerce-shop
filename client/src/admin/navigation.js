@@ -1,4 +1,5 @@
 import {
+	ChartNoAxesCombined,
 	History,
 	LayoutDashboard,
 	MessageSquare,
@@ -18,6 +19,12 @@ import { can } from './permissions'
  */
 export const NAV = [
 	{ to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true, permission: 'dashboard' },
+	{
+		to: '/admin/analytics',
+		label: 'Analytics',
+		icon: ChartNoAxesCombined,
+		permission: 'analytics',
+	},
 	{ to: '/admin/products', label: 'Products', icon: Package, permission: 'products' },
 	{
 		to: '/admin/orders',

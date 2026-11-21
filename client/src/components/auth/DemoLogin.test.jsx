@@ -31,7 +31,11 @@ const renderDemo = () =>
 		</QueryClientProvider>,
 	)
 
-const session = (username) => ({ user: { _id: 'u1', username }, accessToken: 'token' })
+const session = (username) => ({
+	user: { _id: 'u1', username },
+	accessToken: 'token',
+	expiresIn: 900,
+})
 
 describe('DemoLogin', () => {
 	beforeEach(() => localStorage.clear())
@@ -51,7 +55,9 @@ describe('DemoLogin', () => {
 		fireEvent.click(await screen.findByRole('button', { name: /demo admin/i }))
 		expect(await screen.findByRole('heading', { name: 'Admin panel' })).toBeInTheDocument()
 		expect(authApi.loginAsDemo).toHaveBeenCalledWith('admin')
-		expect(JSON.parse(localStorage.getItem('session')).user.username).toBe('demo-admin')
+		// the token stays in memory: only a non-secret "signed in" hint is stored
+		expect(localStorage.getItem('signedIn')).toBe('true')
+		expect(JSON.stringify({ ...localStorage })).not.toContain('token')
 	})
 
 	it('sends the demo customer back to the page they came from', async () => {

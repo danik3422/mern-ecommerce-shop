@@ -6,6 +6,8 @@ export const DELIVERY_METHOD_NAMES = {
 	express: 'Express',
 }
 
+const COMPANY_FIELDS = ['name', 'street', 'postalCode', 'city', 'nip', 'bankAccount']
+
 const text = (value) => (value === null || value === undefined ? '' : String(value))
 
 /** Settings from GET /admin/settings → form values. */
@@ -14,6 +16,8 @@ export const settingsToForm = (settings) => ({
 	contactEmail: settings.contactEmail,
 	contactPhone: settings.contactPhone,
 	announcement: { en: settings.announcement.en, pl: settings.announcement.pl },
+	// the seller on invoices; missing in settings saved before invoices existed
+	company: Object.fromEntries(COMPANY_FIELDS.map((key) => [key, text(settings.company?.[key])])),
 	freeShippingFrom: text(settings.freeShippingFrom),
 	returnWindowDays: text(settings.returnWindowDays),
 	lowStockThreshold: text(settings.lowStockThreshold),
@@ -36,6 +40,7 @@ export const formToSettings = (form) => ({
 	contactEmail: form.contactEmail.trim(),
 	contactPhone: form.contactPhone.trim(),
 	announcement: { en: form.announcement.en.trim(), pl: form.announcement.pl.trim() },
+	company: Object.fromEntries(COMPANY_FIELDS.map((key) => [key, form.company[key].trim()])),
 	freeShippingFrom: numberOrNull(form.freeShippingFrom),
 	returnWindowDays: numberOrNull(form.returnWindowDays),
 	lowStockThreshold: numberOrNull(form.lowStockThreshold),

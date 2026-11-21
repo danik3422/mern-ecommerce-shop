@@ -29,6 +29,8 @@ export const adminProductsQuery = z.object({
 	stock: z.enum(['low', 'out']).optional(),
 	// older name of stock=low, kept for existing links
 	lowStock: booleanFlag.optional(),
+	// missing_pl: the Polish description is still empty
+	translation: z.enum(['missing_pl']).optional(),
 	sort: z.enum(ADMIN_PRODUCT_SORTS).default('newest'),
 	page,
 	limit,

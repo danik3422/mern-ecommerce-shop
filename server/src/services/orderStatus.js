@@ -1,5 +1,6 @@
 import { Order } from '../models/Order.js'
 import { HttpError, notFound } from '../utils/HttpError.js'
+import { INVOICED_STATUSES, issueInvoice } from './invoices.js'
 import { expireCheckoutSession, refundPayment } from './payments.js'
 import { sendOrderEmail } from './orderEmails.js'
 import { releasePromo } from './promoCodes.js'
@@ -48,7 +49,7 @@ export const refundOrderPayment = async (order, amount, reason) => {
  */
 export const transitionOrder = async (orderId, status, { from, filter = {}, set = {} } = {}) => {
 	const allowedFrom = previousStatuses(status).filter((current) => !from || from.includes(current))
-	const order = await Order.findOneAndUpdate(
+	let order = await Order.findOneAndUpdate(
 		{ _id: orderId, ...filter, status: { $in: allowedFrom } },
 		{ $set: { status, ...set }, $push: { statusHistory: { status, at: new Date() } } },
 		{ returnDocument: 'after' },
@@ -60,6 +61,15 @@ export const transitionOrder = async (orderId, status, { from, filter = {}, set 
 		await expireCheckoutSession(order.payment?.sessionId)
 		// a paid order that is cancelled gets its money back
 		if (order.payment?.paidAt) await refundOrderPayment(order, order.amount, 'order cancelled')
+	}
+	// a paid order (or one paid on delivery) gets its invoice number before the email goes out
+	if (order && INVOICED_STATUSES.includes(status)) {
+		try {
+			order = await issueInvoice(order)
+		} catch (err) {
+			// the invoice is issued on first request instead (GET /orders/:id/invoice)
+			console.error(`Could not issue an invoice for order ${order._id}:`, err)
+		}
 	}
 	if (order) await sendOrderEmail(order._id, status)
 	return order

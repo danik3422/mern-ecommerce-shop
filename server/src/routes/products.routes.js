@@ -5,11 +5,13 @@ import { validate } from '../middleware/validate.js'
 import { audit } from '../services/activity.js'
 import { idParams } from '../validation/common.js'
 import {
+	boughtTogetherQuery,
 	createProductBody,
 	facetsQuery,
 	listProductsQuery,
 	productRefParams,
 	relatedQuery,
+	suggestionsQuery,
 	updateProductBody,
 } from '../validation/product.js'
 
@@ -18,6 +20,12 @@ export const productRoutes = Router()
 // public — static paths first, so "facets" is never taken for a product slug
 productRoutes.get('/', validate({ query: listProductsQuery }), products.listProducts)
 productRoutes.get('/facets', validate({ query: facetsQuery }), products.productFacets)
+productRoutes.get('/suggestions', validate({ query: suggestionsQuery }), products.searchSuggestions)
+productRoutes.get(
+	'/:id/bought-together',
+	validate({ params: productRefParams, query: boughtTogetherQuery }),
+	products.boughtTogetherProducts,
+)
 productRoutes.get(
 	'/:id/related',
 	validate({ params: productRefParams, query: relatedQuery }),

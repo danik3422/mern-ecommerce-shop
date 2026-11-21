@@ -1,4 +1,5 @@
 import mongoose from 'mongoose'
+import { LOCALES } from '../utils/localized.js'
 import { addressFields } from './address.js'
 import { lineItemFields } from './lineItem.js'
 
@@ -81,12 +82,41 @@ const returnRequestSchema = new mongoose.Schema(
 	{ _id: false },
 )
 
+/** Parcel carriers the shop ships with; tracking links are built for all but "other". */
+export const CARRIERS = ['inpost', 'dpd', 'dhl', 'poczta', 'gls', 'other']
+
+/** The parcel of a shipped order (see services/tracking.js). */
+const trackingSchema = new mongoose.Schema(
+	{
+		carrier: { type: String, enum: CARRIERS, required: true },
+		number: { type: String, required: true, trim: true },
+		// the carrier's tracking page; generated for known carriers, may be edited
+		url: String,
+		updatedAt: Date,
+	},
+	{ _id: false },
+)
+
+/** A VAT invoice, issued once the order is paid (see services/invoices.js). */
+const invoiceSchema = new mongoose.Schema(
+	{
+		// FV/YYYY/MM/NNNN, sequential within the month
+		number: { type: String, required: true },
+		issuedAt: { type: Date, required: true },
+		// date of the sale: when the order was paid (or delivered, when paid on delivery)
+		saleDate: { type: Date, required: true },
+	},
+	{ _id: false },
+)
+
 const orderSchema = new mongoose.Schema(
 	{
 		// empty for guest orders
 		user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
 		// where order emails go: the account email or the one a guest entered
 		email: { type: String, required: true, lowercase: true, trim: true, index: true },
+		// language of the shop when the order was placed: order emails are sent in it
+		locale: { type: String, enum: LOCALES },
 		// lets a guest open, pay or cancel the order (see services/orderAccess.js)
 		accessToken: { type: String, select: false },
 		items: { type: [orderItemSchema], required: true },
@@ -104,6 +134,8 @@ const orderSchema = new mongoose.Schema(
 		payment: { type: paymentSchema, default: () => ({}) },
 		shippedAt: Date,
 		deliveredAt: Date,
+		tracking: trackingSchema,
+		invoice: invoiceSchema,
 		returnRequest: returnRequestSchema,
 		// every status change from now on (older orders only have paidAt/shippedAt/deliveredAt)
 		statusHistory: {
@@ -119,6 +151,14 @@ const orderSchema = new mongoose.Schema(
 		adminNote: { type: String, trim: true, maxlength: 2000, select: false },
 	},
 	{ timestamps: true, versionKey: false },
+)
+
+// reports and the admin list filter orders by the date they were placed
+orderSchema.index({ createdAt: -1 })
+// an invoice number is never given to two orders
+orderSchema.index(
+	{ 'invoice.number': 1 },
+	{ unique: true, partialFilterExpression: { 'invoice.number': { $type: 'string' } } },
 )
 
 export const Order = mongoose.model('Order', orderSchema)

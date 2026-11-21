@@ -3,6 +3,7 @@ import { Order } from '../models/Order.js'
 import { Review } from '../models/Review.js'
 import { User } from '../models/User.js'
 import { notFound } from '../utils/HttpError.js'
+import { countActiveSessions, revokeUserSessions } from './sessions.js'
 
 const roundMoney = (value) => Math.round(value * 100) / 100
 const escapeRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -104,7 +105,7 @@ export const getCustomer = async (id) => {
 	if (!user) throw notFound('Customer')
 
 	const userId = new mongoose.Types.ObjectId(id)
-	const [orders, [stats], reviews] = await Promise.all([
+	const [orders, [stats], reviews, activeSessions] = await Promise.all([
 		Order.find({ user: userId })
 			.sort({ createdAt: -1, _id: -1 })
 			.limit(RECENT_ORDERS)
@@ -112,6 +113,7 @@ export const getCustomer = async (id) => {
 			.lean(),
 		Order.aggregate([{ $match: { user: userId } }, { $group: { _id: null, ...orderTotals } }]),
 		Review.countDocuments({ user: userId }),
+		countActiveSessions(userId),
 	])
 
 	const { wishlist, passwordHash: _hash, ...profile } = user
@@ -119,6 +121,7 @@ export const getCustomer = async (id) => {
 		...profile,
 		wishlistCount: wishlist?.length ?? 0,
 		reviews,
+		activeSessions,
 		orders: orders.map(({ items, ...order }) => ({
 			...order,
 			itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
@@ -139,5 +142,15 @@ export const updateCustomer = async (id, { blocked }) => {
 		{ returnDocument: 'after' },
 	)
 	if (!user) throw notFound('Customer')
+	if (blocked) await revokeUserSessions(user._id, 'blocked')
 	return user
+}
+
+/** "Sign out everywhere" for a customer, e.g. when their account may be compromised. */
+export const revokeCustomerSessions = async (id) => {
+	const user = await User.findOne({ _id: id, ...CUSTOMER })
+		.select('username')
+		.lean()
+	if (!user) throw notFound('Customer')
+	return { username: user.username, revoked: await revokeUserSessions(id, 'revoked') }
 }

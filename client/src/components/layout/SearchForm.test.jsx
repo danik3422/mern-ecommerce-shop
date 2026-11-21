@@ -8,8 +8,7 @@ import { formatMoney } from '../../utils/money'
 
 vi.mock('../../api/products', async (importOriginal) => ({
 	...(await importOriginal()),
-	fetchProducts: vi.fn(),
-	fetchFacets: vi.fn(),
+	fetchSearchSuggestions: vi.fn(),
 }))
 
 const tee = {
@@ -46,13 +45,14 @@ const location = () => screen.getByLabelText('location')
 describe('SearchForm', () => {
 	beforeEach(() => {
 		localStorage.clear()
-		vi.mocked(productsApi.fetchProducts).mockResolvedValue({ items: [tee], total: 7 })
-		vi.mocked(productsApi.fetchFacets).mockResolvedValue({
-			brands: [
-				{ value: 'Kiiki', count: 2 },
-				{ value: 'Maris', count: 3 },
-			],
-		})
+		// the server matches brands and categories, typos included
+		vi.mocked(productsApi.fetchSearchSuggestions).mockImplementation(async (q) => ({
+			products: [tee],
+			total: 7,
+			brands: ['ki', 'kikki'].includes(q) ? [{ value: 'Kiiki', count: 2 }] : [],
+			categories: q === 'kikki' ? ['tshirts'] : [],
+			correctedQuery: q === 'kikki' ? 'kiiki' : null,
+		}))
 	})
 
 	it('suggests matching brands and products while typing', async () => {
@@ -65,6 +65,17 @@ describe('SearchForm', () => {
 		expect(screen.getByRole('option', { name: 'Brand Kiiki, 2 items' })).toBeInTheDocument()
 		expect(screen.queryByRole('option', { name: /Maris/ })).not.toBeInTheDocument()
 		expect(screen.getByRole('option', { name: 'Search for “ki”, 7 results' })).toBeInTheDocument()
+		expect(screen.queryByText(/Showing matches/)).not.toBeInTheDocument()
+	})
+
+	it('says when suggestions are for a corrected spelling and offers matching categories', async () => {
+		renderSearch()
+		fireEvent.change(input(), { target: { value: 'kikki' } })
+
+		expect(await screen.findByText('Showing matches for “kiiki”')).toBeInTheDocument()
+		expect(screen.getByRole('option', { name: 'Brand Kiiki, 2 items' })).toBeInTheDocument()
+		fireEvent.click(screen.getByRole('option', { name: 'Category T-shirts' }))
+		expect(location()).toHaveTextContent('/products/tshirts')
 	})
 
 	it('moves through suggestions with the keyboard and opens the chosen product', async () => {

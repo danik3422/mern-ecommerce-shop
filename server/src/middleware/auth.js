@@ -1,5 +1,6 @@
 import { User } from '../models/User.js'
 import { PERMISSIONS, hasPermission, isStaff } from '../services/permissions.js'
+import { isSessionActive } from '../services/sessions.js'
 import { verifyAccessToken } from '../services/token.js'
 import { forbidden, unauthorized } from '../utils/HttpError.js'
 
@@ -9,30 +10,39 @@ const readBearerToken = (req) => {
 }
 
 /**
- * Requires a valid access token of an existing user.
- * The user is loaded from the database on every request, so deleted or blocked users
- * and changed permissions take effect immediately, not when the token expires.
+ * Requires a valid access token of an existing user with a live session.
+ * The user and the session are loaded from the database on every request (two indexed
+ * lookups, run in parallel), so deleted or blocked users, revoked sessions ("sign out this
+ * device") and changed permissions take effect immediately, not when the token expires.
  * Runs once per request: later guards reuse `req.user`.
  *
- * `req.user`: `{ id, role, isOwner, permissions, isAdmin }` — isAdmin = any staff account
+ * `req.user`: `{ id, sessionId, role, isOwner, permissions, isAdmin, isDemo }`
+ * — isAdmin = any staff account
  */
 export const requireAuth = async (req, _res, next) => {
 	if (req.user) return next()
 	const token = readBearerToken(req)
 	if (!token) throw unauthorized()
 
-	const userId = verifyAccessToken(token)
-	const user = userId && (await User.findById(userId).lean())
-	if (!user) throw unauthorized('Session expired, please sign in again')
+	const claims = verifyAccessToken(token)
+	const [user, session] = claims
+		? await Promise.all([
+				User.findById(claims.userId).lean(),
+				isSessionActive(claims.sessionId, claims.userId),
+			])
+		: []
+	if (!user || !session) throw unauthorized('Session expired, please sign in again')
 	// 401, so the client ends the session
 	if (user.blocked) throw unauthorized('This account is blocked')
 
 	req.user = {
 		id: user._id.toString(),
+		sessionId: claims.sessionId,
 		role: user.role,
 		isOwner: Boolean(user.isOwner),
 		permissions: user.permissions ?? [],
 		isAdmin: isStaff(user),
+		isDemo: Boolean(user.isDemo),
 	}
 	next()
 }

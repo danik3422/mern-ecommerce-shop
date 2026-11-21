@@ -4,7 +4,9 @@ import { http } from './client'
 export const fetchReviews = (productId, params, signal) =>
 	http.get(`/products/${productId}/reviews`, { params, signal }).then((r) => r.data)
 
-/** @param review `{ rating: 1..5, title?, body }` */
+/**
+ * @param review `{ rating: 1..5, title?, body, fit?: 'small' | 'true' | 'large', sizeBought? }`
+ */
 export const createReview = (productId, review) =>
 	http.post(`/products/${productId}/reviews`, review).then((r) => r.data)
 

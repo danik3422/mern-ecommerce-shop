@@ -82,6 +82,9 @@ export default {
 		searchFor: 'Search for “{query}”',
 		results: { one: '{count} result', other: '{count} results' },
 		brandOption: 'Brand {brand}, {items}',
+		categories: 'Categories',
+		categoryOption: 'Category {category}',
+		matchesFor: 'Showing matches for “{query}”',
 	},
 	shipping: {
 		freeFrom: 'Free shipping on orders over {amount}',

@@ -48,8 +48,12 @@ export const fetchAdminOrders = (params, signal) =>
 	http.get('/admin/orders', { params, signal }).then(data)
 export const fetchAdminOrder = (id, signal) =>
 	http.get(`/admin/orders/${id}`, { signal }).then(data)
-export const updateOrderStatus = (id, status) =>
-	http.patch(`/orders/${id}/status`, { status }).then(data)
+/** `tracking: { carrier, number, url? }` may be sent with the status "shipped". */
+export const updateOrderStatus = (id, status, tracking) =>
+	http.patch(`/orders/${id}/status`, { status, ...(tracking && { tracking }) }).then(data)
+/** Adds or corrects the parcel of a shipped order. */
+export const updateOrderTracking = (id, tracking) =>
+	http.patch(`/admin/orders/${id}/tracking`, tracking).then(data)
 /** Internal note, never shown to the customer; '' removes it. */
 export const updateOrderNote = (id, adminNote) =>
 	http.patch(`/admin/orders/${id}/note`, { adminNote }).then(data)
@@ -68,6 +72,9 @@ export const fetchCustomer = (id, signal) =>
 /** `{ blocked }` — shoppers only; staff accounts are managed under Team */
 export const updateCustomer = (id, changes) =>
 	http.patch(`/admin/customers/${id}`, changes).then(data)
+/** Ends every session of the customer ("sign out everywhere"). `{ revoked }` */
+export const revokeCustomerSessions = (id) =>
+	http.post(`/admin/customers/${id}/sessions/revoke`).then(data)
 
 // Reviews (deletion uses the public reviews endpoint, allowed for admins)
 /** @param params `{ page?, limit? }` */
@@ -130,3 +137,14 @@ export const deleteStaff = (id) => http.delete(`/admin/team/${id}`)
 /** Owners only: `{ items: [{ actorName, action, target, details, createdAt }], page, pages, total }` */
 export const fetchActivity = (params, signal) =>
 	http.get('/admin/activity', { params, signal }).then(data)
+
+// Analytics — needs the "analytics" permission
+export const analyticsKey = (params) => ['admin', 'analytics', params]
+/**
+ * Sales report for a period of calendar days in the shop time zone.
+ * @param params `{ from?: 'YYYY-MM-DD', to?: 'YYYY-MM-DD', compare?: 'previous'|'none' }`
+ * @returns `{ period, kpis, funnel, series, products, returns, delivery, promoCodes, statuses }`
+ *   (see server/src/services/analytics.js)
+ */
+export const fetchAnalytics = (params, signal) =>
+	http.get('/admin/analytics', { params, signal }).then(data)

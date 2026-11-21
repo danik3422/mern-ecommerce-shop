@@ -53,6 +53,7 @@ describe('NotifyMe', () => {
 			color: 'black',
 			size: 'L',
 			email: 'anna@example.com',
+			locale: 'en',
 		})
 	})
 

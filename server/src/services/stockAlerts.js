@@ -2,14 +2,17 @@ import { env } from '../config/env.js'
 import { Product } from '../models/Product.js'
 import { StockAlert } from '../models/StockAlert.js'
 import { badRequest, conflict, notFound } from '../utils/HttpError.js'
+import { toLocale } from '../utils/localized.js'
+import { emailLanguage, renderEmail } from './emails/render.js'
 import { sendMail } from './mailer.js'
 import { findVariant } from './productView.js'
+import { getShopSettings } from './shopSettings.js'
 
 // a guard against filling someone else's inbox through the public form
 const MAX_ACTIVE_ALERTS_PER_EMAIL = 20
 
 /** Subscribes an email to a sold-out color and size of an active product. Idempotent. */
-export const subscribeToRestock = async ({ productId, color, size, email }) => {
+export const subscribeToRestock = async ({ productId, color, size, email, locale }) => {
 	const product = await Product.findOne({ _id: productId, active: true }).lean()
 	if (!product) throw notFound('Product')
 
@@ -26,12 +29,33 @@ export const subscribeToRestock = async ({ productId, color, size, email }) => {
 
 	await StockAlert.updateOne(
 		{ product: productId, color: variant.color, size, email },
-		{ $set: { notifiedAt: null } },
+		{ $set: { notifiedAt: null, locale: toLocale(locale) } },
 		{ upsert: true },
 	)
 }
 
 const productUrl = (product) => `${env.CLIENT_ORIGINS[0]}/product/${product.slug}`
+
+/**
+ * The back-in-stock email in the subscriber's language, without sending it.
+ * @param alert `{ color, size }` of the stock alert
+ */
+export const buildBackInStockEmail = (product, alert, { locale, settings }) => {
+	const { m } = emailLanguage(locale)
+	const t = m.backInStock
+	const vars = {
+		product: `${product.brand} ${product.title}`,
+		color: m.common.color(alert.color),
+		size: m.common.size(alert.size),
+	}
+	return renderEmail(locale, settings, {
+		subject: t.subject(vars),
+		heading: t.heading,
+		paragraphs: [t.intro(vars)],
+		buttons: [{ label: t.button, url: productUrl(product) }],
+		footnote: t.footnote,
+	})
+}
 
 /**
  * Emails everyone waiting for a size of these products that has stock again.
@@ -43,6 +67,7 @@ export const notifyRestocked = async (productIds) => {
 	try {
 		const ids = [...new Set(productIds.map(String))]
 		const products = await Product.find({ _id: { $in: ids }, active: true }).lean()
+		const settings = products.length ? await getShopSettings() : null
 
 		for (const product of products) {
 			const inStock = product.variants.flatMap((variant) =>
@@ -67,14 +92,7 @@ export const notifyRestocked = async (productIds) => {
 
 				await sendMail({
 					to: alert.email,
-					subject: `Back in stock: ${product.brand} ${product.title} (${alert.color}, ${alert.size})`,
-					text: [
-						`Good news — ${product.brand} ${product.title} in ${alert.color}, size ${alert.size} is available again.`,
-						'',
-						`Order it here: ${productUrl(product)}`,
-						'',
-						'You received this email because you asked to be notified. This was a one-time alert.',
-					].join('\n'),
+					...buildBackInStockEmail(product, alert, { locale: alert.locale, settings }),
 				})
 			}
 		}

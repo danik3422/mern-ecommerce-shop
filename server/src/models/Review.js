@@ -9,6 +9,10 @@ const reviewSchema = new mongoose.Schema(
 		rating: { type: Number, required: true, min: 1, max: 5 },
 		title: { type: String, trim: true, maxlength: 120 },
 		body: { type: String, required: true, trim: true, maxlength: 2000 },
+		// optional fit feedback: runs small, true to size or runs large
+		fit: { type: String, enum: ['small', 'true', 'large'] },
+		// the size the reviewer bought, one of the product's sizes
+		sizeBought: { type: String, trim: true, maxlength: 20 },
 	},
 	{ timestamps: true, versionKey: false },
 )

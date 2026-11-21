@@ -1,4 +1,8 @@
 import { z } from 'zod'
+import { LOCALES } from '../utils/localized.js'
+
+/** Language of the shop: 'en' | 'pl' (emails are sent in it). */
+export const locale = z.enum(LOCALES)
 
 export const objectId = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid id')
 

@@ -3,6 +3,7 @@ import AppRoutes from './AppRoutes'
 import { AuthProvider } from './auth/AuthProvider'
 import { CartProvider } from './cart/CartProvider'
 import DemoNotice from './components/layout/DemoNotice'
+import AccountLocaleSync from './i18n/AccountLocaleSync'
 import { I18nProvider } from './i18n/I18nProvider'
 import { ConfirmProvider } from './components/ui/confirm/ConfirmProvider'
 import { ToastProvider } from './components/ui/toast/ToastProvider'
@@ -11,6 +12,8 @@ import './styles/global.css'
 const App = () => (
 	<I18nProvider>
 		<AuthProvider>
+			{/* the account language follows the shop language (emails use it) */}
+			<AccountLocaleSync />
 			<CartProvider>
 				<BrowserRouter>
 					<ToastProvider>

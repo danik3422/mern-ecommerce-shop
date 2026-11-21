@@ -6,6 +6,7 @@ import { SHOP_SETTINGS_ID, ShopSettings } from '../models/ShopSettings.js'
  *
  * Shape (also what GET /api/admin/settings returns):
  * `{ currency, shopName, contactEmail, contactPhone, announcement: { en, pl },
+ *    company: { name, street, postalCode, city, nip, bankAccount },
  *    freeShippingFrom (number | null), returnWindowDays, lowStockThreshold,
  *    shippingMethods: [{ id, label: { en, pl }, price, freeShipping, days: [min, max], enabled }] }`
  */
@@ -24,6 +25,7 @@ const withDefaults = (stored = {}) => {
 		contactEmail: stored.contactEmail ?? SHOP_DEFAULTS.contactEmail,
 		contactPhone: stored.contactPhone ?? SHOP_DEFAULTS.contactPhone,
 		announcement: { ...SHOP_DEFAULTS.announcement, ...stored.announcement },
+		company: { ...SHOP_DEFAULTS.company, ...stored.company },
 		freeShippingFrom:
 			stored.freeShippingFrom === undefined
 				? SHOP_DEFAULTS.freeShippingFrom

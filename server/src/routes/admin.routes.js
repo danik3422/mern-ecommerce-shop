@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import * as admin from '../controllers/admin.controller.js'
-import { updateReturn } from '../controllers/orders.controller.js'
+import { updateReturn, updateTracking } from '../controllers/orders.controller.js'
 import * as promoCodes from '../controllers/promoCodes.controller.js'
 import * as team from '../controllers/team.controller.js'
 import { requireAdmin, requireOwner, requirePermission } from '../middleware/auth.js'
@@ -17,7 +17,7 @@ import {
 	updateCustomerBody,
 } from '../validation/admin.js'
 import { idParams } from '../validation/common.js'
-import { returnDecisionBody } from '../validation/order.js'
+import { returnDecisionBody, trackingBody } from '../validation/order.js'
 import { createPromoCodeBody, updatePromoCodeBody } from '../validation/promoCode.js'
 import { createStaffBody, resetPasswordBody, updateStaffBody } from '../validation/team.js'
 
@@ -90,6 +90,18 @@ adminRoutes.patch(
 	admin.updateOrderNote,
 )
 adminRoutes.patch(
+	'/orders/:id/tracking',
+	can('orders'),
+	validate({ params: idParams, body: trackingBody }),
+	audit('order.tracking', (req) => ({
+		kind: 'order',
+		id: req.valid.params.id,
+		label: orderLabel(req.valid.params.id),
+		details: `${req.valid.body.carrier} ${req.valid.body.number}`,
+	})),
+	updateTracking,
+)
+adminRoutes.patch(
 	'/orders/:id/return',
 	can('returns'),
 	validate({ params: idParams, body: returnDecisionBody }),
@@ -126,6 +138,18 @@ adminRoutes.patch(
 		details: req.valid.body.blocked ? 'blocked' : 'unblocked',
 	})),
 	admin.updateCustomer,
+)
+adminRoutes.post(
+	'/customers/:id/sessions/revoke',
+	can('customers'),
+	validate({ params: idParams }),
+	audit('customer.signOut', (req, body) => ({
+		kind: 'customer',
+		id: req.valid.params.id,
+		label: body.username,
+		details: `${body.revoked} sessions ended`,
+	})),
+	admin.revokeCustomerSessions,
 )
 
 adminRoutes.get(

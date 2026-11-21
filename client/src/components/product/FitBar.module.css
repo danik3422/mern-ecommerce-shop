@@ -1,0 +1,65 @@
+.fit {
+	align-self: stretch;
+	display: grid;
+	gap: var(--space-2);
+	padding: var(--space-3) var(--space-4);
+	border: 1px solid var(--color-border);
+	background: var(--color-surface);
+	font-size: var(--text-sm);
+}
+
+.label {
+	color: var(--color-text-muted);
+}
+
+.heading strong {
+	font-weight: var(--weight-medium);
+}
+
+.count {
+	color: var(--color-text-muted);
+	font-size: var(--text-xs);
+}
+
+.scale {
+	display: grid;
+	gap: var(--space-1);
+}
+
+/* a thin line with ticks at both ends and the middle (true to size) */
+.track {
+	position: relative;
+	display: block;
+	height: 4px;
+	margin-block: var(--space-1);
+	background:
+		linear-gradient(var(--color-border), var(--color-border)) left / 1px 100% no-repeat,
+		linear-gradient(var(--color-border), var(--color-border)) center / 1px 100% no-repeat,
+		linear-gradient(var(--color-border), var(--color-border)) right / 1px 100% no-repeat,
+		var(--color-subtle);
+}
+
+.marker {
+	position: absolute;
+	top: 50%;
+	left: var(--fit-position, 50%);
+	width: 0.75rem;
+	height: 0.75rem;
+	border: 2px solid var(--color-surface);
+	border-radius: 50%;
+	background: var(--color-text);
+	box-shadow: 0 0 0 1px var(--color-text);
+	transform: translate(-50%, -50%);
+}
+
+.legend {
+	display: flex;
+	justify-content: space-between;
+	color: var(--color-text-muted);
+	font-size: var(--text-xs);
+}
+
+.detail {
+	color: var(--color-text-muted);
+	font-size: var(--text-xs);
+}

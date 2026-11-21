@@ -1,0 +1,416 @@
+/* The invoice: an A4 sheet on screen, the whole page when printed ("Save as PDF"). */
+
+@page {
+	size: A4;
+	margin: 14mm 12mm;
+}
+
+.page {
+	min-height: 100vh;
+	padding: var(--space-5) var(--space-4) var(--space-8);
+	background: var(--color-subtle);
+}
+
+/* back link, language and the print button (never printed) */
+.toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3);
+	max-width: 210mm;
+	margin: 0 auto var(--space-4);
+}
+
+.back {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-1);
+	font-size: var(--text-sm);
+}
+
+.back:hover {
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
+.tools {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-3);
+}
+
+.tools button svg {
+	display: inline;
+	margin-right: var(--space-1);
+	vertical-align: -3px;
+}
+
+.printHint {
+	font-size: var(--text-xs);
+	color: var(--color-text-muted);
+}
+
+.languages {
+	display: flex;
+	border: 1px solid var(--color-border);
+	background: var(--color-surface);
+}
+
+.language {
+	padding: var(--space-1) var(--space-3);
+	border: 0;
+	background: none;
+	font-size: var(--text-xs);
+	font-weight: var(--weight-medium);
+	color: var(--color-text-muted);
+}
+
+.activeLanguage {
+	background: var(--color-text);
+	color: var(--color-inverse);
+}
+
+.message {
+	display: grid;
+	justify-items: center;
+	gap: var(--space-4);
+	max-width: 210mm;
+	margin: 0 auto;
+	padding: var(--space-8) var(--space-5);
+	background: var(--color-surface);
+	text-align: center;
+	color: var(--color-text-muted);
+}
+
+.messageTitle {
+	font-size: var(--text-lg);
+	color: var(--color-text);
+}
+
+/* the sheet */
+
+.sheet {
+	display: flex;
+	flex-direction: column;
+	gap: 7mm;
+	max-width: 210mm;
+	min-height: 297mm;
+	margin: 0 auto;
+	padding: 16mm 14mm;
+	background: #fff;
+	color: #111;
+	box-shadow: 0 2px 16px rgb(0 0 0 / 0.08);
+	font-size: 9.5pt;
+	line-height: 1.45;
+}
+
+/* digits line up in the amount columns */
+.lines,
+.vatTable,
+.totals {
+	font-variant-numeric: tabular-nums;
+}
+
+.head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: var(--space-4);
+	padding-bottom: 5mm;
+	border-bottom: 2px solid #111;
+}
+
+.brand {
+	font-size: 14pt;
+	font-weight: var(--weight-semibold);
+	letter-spacing: -0.01em;
+}
+
+.titleBlock {
+	text-align: right;
+}
+
+.title {
+	display: flex;
+	flex-direction: column;
+	font-size: 18pt;
+	font-weight: var(--weight-semibold);
+	line-height: 1.15;
+}
+
+.titleNative {
+	font-size: 9pt;
+	font-weight: var(--weight-regular);
+	letter-spacing: var(--tracking-wide);
+	text-transform: uppercase;
+	color: #555;
+}
+
+.number {
+	margin-top: 2mm;
+	font-size: 11pt;
+}
+
+/* label/value grids */
+
+.dates,
+.payment {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(32mm, 1fr));
+	gap: 3mm 6mm;
+}
+
+.dates dt,
+.payment dt,
+.partyTitle {
+	font-size: 7.5pt;
+	font-weight: var(--weight-medium);
+	letter-spacing: var(--tracking-wide);
+	text-transform: uppercase;
+	color: #666;
+}
+
+.dates dd,
+.payment dd {
+	font-weight: var(--weight-medium);
+}
+
+.payment {
+	grid-template-columns: repeat(auto-fit, minmax(40mm, 1fr));
+	padding: 3mm 4mm;
+	background: #f5f4f1;
+}
+
+/* the 26-digit account number needs the most room */
+.payment > div:nth-child(3) {
+	grid-column: span 2;
+}
+
+.nowrap {
+	white-space: nowrap;
+}
+
+.parties {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 8mm;
+}
+
+.partyTitle {
+	margin-bottom: 1.5mm;
+	padding-bottom: 1.5mm;
+	border-bottom: 1px solid #ddd;
+}
+
+.address {
+	display: flex;
+	flex-direction: column;
+	font-style: normal;
+}
+
+/* line items */
+
+.tableWrap {
+	overflow-x: auto;
+}
+
+.lines,
+.vatTable {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.lines th,
+.lines td,
+.vatTable th,
+.vatTable td {
+	padding: 1.8mm 1.5mm;
+	border-bottom: 1px solid #ddd;
+	text-align: right;
+	vertical-align: top;
+}
+
+.lines thead th,
+.vatTable thead th {
+	border-bottom: 1.5px solid #111;
+	font-size: 7.5pt;
+	font-weight: var(--weight-medium);
+	line-height: 1.25;
+	color: #444;
+}
+
+.lines th:first-child,
+.lines td:first-child {
+	text-align: left;
+	width: 6mm;
+}
+
+.lines .nameColumn {
+	min-width: 45mm;
+	text-align: left;
+}
+
+.details {
+	display: block;
+	font-size: 8pt;
+	color: #666;
+}
+
+.strong {
+	font-weight: var(--weight-semibold);
+}
+
+/* VAT summary and totals */
+
+.summaryRow {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	align-items: start;
+	gap: 8mm;
+}
+
+.vatTable caption {
+	margin-bottom: 1.5mm;
+	font-size: 7.5pt;
+	font-weight: var(--weight-medium);
+	letter-spacing: var(--tracking-wide);
+	text-align: left;
+	text-transform: uppercase;
+	color: #666;
+}
+
+.vatTable tfoot th,
+.vatTable tfoot td {
+	border-bottom: 0;
+	font-weight: var(--weight-semibold);
+}
+
+.vatTable tfoot th {
+	text-align: left;
+}
+
+.totals {
+	display: grid;
+	gap: 1.5mm;
+}
+
+.totals div {
+	display: flex;
+	justify-content: space-between;
+	gap: 4mm;
+}
+
+.totals dt {
+	color: #444;
+}
+
+.grandTotal {
+	padding: 3mm 4mm;
+	background: #111;
+	color: #fff;
+	font-size: 12pt;
+	font-weight: var(--weight-semibold);
+}
+
+.grandTotal dt {
+	color: inherit;
+}
+
+.totals div:not(.grandTotal) {
+	padding-inline: 4mm;
+}
+
+.footer {
+	display: grid;
+	gap: 1mm;
+	margin-top: auto;
+	padding-top: 4mm;
+	border-top: 1px solid #ddd;
+	font-size: 7.5pt;
+	color: #666;
+}
+
+@media (max-width: 40rem) {
+	.page {
+		padding-inline: 0;
+	}
+
+	.toolbar {
+		padding-inline: var(--space-4);
+	}
+
+	.sheet {
+		min-height: 0;
+		padding: var(--space-5) var(--space-4);
+		box-shadow: none;
+	}
+
+	.parties,
+	.summaryRow {
+		grid-template-columns: 1fr;
+	}
+
+	.titleBlock {
+		text-align: left;
+	}
+
+	.payment {
+		grid-template-columns: 1fr;
+	}
+
+	.payment > div:nth-child(3) {
+		grid-column: auto;
+	}
+}
+
+/* printing: only the sheet, filling the A4 page inside the @page margins */
+@media print {
+	:global(body) {
+		background: #fff;
+	}
+
+	:global(body) * {
+		visibility: hidden;
+	}
+
+	.sheet,
+	.sheet * {
+		visibility: visible;
+	}
+
+	.toolbar {
+		display: none;
+	}
+
+	.page {
+		padding: 0;
+		background: none;
+	}
+
+	.sheet {
+		position: absolute;
+		inset: 0 0 auto;
+		max-width: none;
+		min-height: 0;
+		padding: 0;
+		box-shadow: none;
+		-webkit-print-color-adjust: exact;
+		print-color-adjust: exact;
+	}
+
+	.tableWrap {
+		overflow: visible;
+	}
+
+	.lines tr {
+		break-inside: avoid;
+	}
+
+	.summaryRow,
+	.footer {
+		break-inside: avoid;
+	}
+}

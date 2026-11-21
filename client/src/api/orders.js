@@ -23,10 +23,23 @@ export const payOrder = (id, token) =>
 export const cancelOrder = (id, token) =>
 	http.post(`/orders/${id}/cancel`, null, tokenHeaders(token)).then((r) => r.data)
 
+/**
+ * The VAT invoice of a paid order (404 before that): number, dates, seller, buyer, payment,
+ * `lines: [{ kind, name, color?, size?, quantity, unitPrice, discount, net, vat, gross, vatRate }]`
+ * and `totals: { net, vat, gross, byRate }` — amounts in PLN.
+ */
+export const fetchInvoice = (id, signal, token) =>
+	http.get(`/orders/${id}/invoice`, { signal, ...tokenHeaders(token) }).then((r) => r.data)
+
 export const orderKeys = {
 	detail: (id) => ['orders', id],
+	invoice: (id) => ['orders', id, 'invoice'],
 	mine: ['orders', 'mine'],
 }
+
+/** The printable invoice page of an order; guests keep their token in the link. */
+export const invoicePath = (orderId, token) =>
+	`/orders/${orderId}/invoice${token ? `?token=${encodeURIComponent(token)}` : ''}`
 
 /**
  * Requests a return for delivered items (customers, or guests with their token).

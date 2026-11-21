@@ -1,0 +1,103 @@
+.intro {
+	margin-top: var(--space-2);
+	max-width: 38rem;
+}
+
+.list {
+	display: flex;
+	flex-direction: column;
+	border: 1px solid var(--color-border);
+	background: var(--color-surface);
+}
+
+.session {
+	display: flex;
+	align-items: center;
+	gap: var(--space-4);
+	padding: var(--space-4) var(--space-5);
+}
+
+.session + .session {
+	border-top: 1px solid var(--color-border);
+}
+
+.icon {
+	display: grid;
+	flex: none;
+	place-items: center;
+	width: 2.5rem;
+	height: 2.5rem;
+	background: var(--color-subtle);
+	color: var(--color-text);
+}
+
+.details {
+	flex: 1;
+	min-width: 0;
+}
+
+.name {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-2);
+	font-weight: var(--weight-medium);
+}
+
+.current {
+	background: var(--color-success-bg);
+	color: var(--color-success);
+}
+
+.meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-1) var(--space-3);
+	margin-top: var(--space-1);
+	font-size: var(--text-sm);
+	color: var(--color-text-muted);
+}
+
+/* "·" between the parts, only where they sit on one line */
+.meta > span + span::before {
+	content: '·';
+	margin-right: var(--space-3);
+}
+
+.action {
+	flex: none;
+}
+
+.footer {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: var(--space-3);
+}
+
+@media (max-width: 40rem) {
+	.session {
+		flex-wrap: wrap;
+		align-items: flex-start;
+		gap: var(--space-3);
+		padding: var(--space-4);
+	}
+
+	.meta {
+		flex-direction: column;
+	}
+
+	.meta > span + span::before {
+		content: none;
+	}
+
+	/* the button goes below the details, aligned with the text */
+	.details {
+		flex-basis: calc(100% - 2.5rem - var(--space-3));
+	}
+
+	.action {
+		margin-left: calc(2.5rem + var(--space-3) - var(--space-4));
+		margin-top: calc(var(--space-2) * -1);
+	}
+}

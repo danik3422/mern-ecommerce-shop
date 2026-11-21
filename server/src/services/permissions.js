@@ -8,6 +8,7 @@
  */
 export const PERMISSIONS = {
 	dashboard: 'Dashboard: sales, stock and best sellers',
+	analytics: 'Analytics: sales reports, funnel, top products and returns',
 	products: 'Products: create, edit, hide, delete, prices and stock, image uploads',
 	orders: 'Orders: view, change status, internal notes',
 	returns: 'Returns: approve, reject and refund',

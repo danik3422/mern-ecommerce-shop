@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router'
 import { adminKeys, fetchAdminStats } from '../../api/admin'
+import { useAuth } from '../../auth/useAuth'
 import { formatMoney } from '../../utils/money'
 import PageHeader from '../components/PageHeader'
 import QueryState from '../components/QueryState'
@@ -8,6 +9,7 @@ import RevenueChart from '../components/RevenueChart'
 import StatusBadge from '../components/StatusBadge'
 import table from '../components/Table.module.css'
 import { formatDateTime, orderNumber } from '../format'
+import { can } from '../permissions'
 import style from './Dashboard.module.css'
 
 const Kpi = ({ label, value, hint }) => (
@@ -31,6 +33,7 @@ const Panel = ({ title, action, wide = false, children }) => (
 
 const Dashboard = () => {
 	const stats = useQuery({ queryKey: adminKeys.stats, queryFn: fetchAdminStats })
+	const { user } = useAuth()
 
 	return (
 		<>
@@ -57,7 +60,16 @@ const Dashboard = () => {
 							/>
 						</div>
 
-						<Panel title='Revenue'>
+						<Panel
+							title='Revenue'
+							action={
+								can(user, 'analytics') && (
+									<Link to='/admin/analytics' className='text-link'>
+										View analytics
+									</Link>
+								)
+							}
+						>
 							<RevenueChart days={data.revenuePerDay} />
 						</Panel>
 

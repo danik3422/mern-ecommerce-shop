@@ -70,7 +70,7 @@ describe('CheckoutForm', () => {
 
 		await waitFor(() => expect(onOrderPlaced).toHaveBeenCalledWith(placed))
 		const { _id, isDefault, ...address } = office
-		expect(ordersApi.createOrder).toHaveBeenCalledWith({ items: lines, address })
+		expect(ordersApi.createOrder).toHaveBeenCalledWith({ items: lines, address, locale: 'en' })
 		expect(accountApi.createAddress).not.toHaveBeenCalled()
 	})
 

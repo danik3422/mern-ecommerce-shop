@@ -282,6 +282,11 @@ export const updateCustomer = async (req, res) => {
 	res.json(await customers.updateCustomer(req.valid.params.id, req.valid.body))
 }
 
+/** POST /admin/customers/:id/sessions/revoke — signs the customer out on every device */
+export const revokeCustomerSessions = async (req, res) => {
+	res.json(await customers.revokeCustomerSessions(req.valid.params.id))
+}
+
 /** GET /admin/reviews — newest first, with the product they belong to. */
 export const listReviews = async (req, res) => {
 	const { page, limit } = req.valid.query

@@ -1,4 +1,5 @@
 import mongoose from 'mongoose'
+import { LOCALES } from '../utils/localized.js'
 
 /** "Tell me when this size is back" — one alert per product, color, size and email. */
 const stockAlertSchema = new mongoose.Schema(
@@ -7,6 +8,8 @@ const stockAlertSchema = new mongoose.Schema(
 		color: { type: String, required: true },
 		size: { type: String, required: true },
 		email: { type: String, required: true, lowercase: true, trim: true },
+		// language of the back-in-stock email
+		locale: { type: String, enum: LOCALES, default: 'en' },
 		// set once the email has been sent; subscribing again resets it
 		notifiedAt: { type: Date, default: null },
 	},

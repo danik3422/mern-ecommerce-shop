@@ -24,6 +24,8 @@ export const SHOP_DEFAULTS = deepFreeze({
 	contactPhone: '',
 	// optional message for the storefront top bar
 	announcement: { en: '', pl: '' },
+	// the seller printed on invoices (empty name: the shop name is used)
+	company: { name: '', street: '', postalCode: '', city: '', nip: '', bankAccount: '' },
 	// orders from this subtotal (after discounts) ship for free with methods that allow it;
 	// null = no free shipping
 	freeShippingFrom: 200,

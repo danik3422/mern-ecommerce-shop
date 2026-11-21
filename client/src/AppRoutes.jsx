@@ -15,6 +15,8 @@ import { useI18n } from './i18n/useI18n'
 
 // The admin panel is only needed by staff, so it is loaded on demand in its own chunk
 const AdminApp = lazy(() => import('./admin/AdminApp'))
+// the printable invoice is opened rarely, so it is loaded on demand too
+const InvoicePage = lazy(() => import('./pages/invoice/InvoicePage'))
 
 const AdminFallback = () => {
 	const { t } = useI18n()
@@ -43,6 +45,15 @@ const AppRoutes = () => (
 			/>
 			<Route path='*' element={<NotFound />} />
 		</Route>
+		{/* outside the shop layout: an A4 page without header and footer, ready to print */}
+		<Route
+			path='orders/:id/invoice'
+			element={
+				<Suspense fallback={null}>
+					<InvoicePage />
+				</Suspense>
+			}
+		/>
 		<Route
 			path='admin/*'
 			element={

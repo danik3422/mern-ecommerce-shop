@@ -1,9 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, ExternalLink, FileText } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { adminKeys, fetchAdminOrder, updateOrderNote, updateOrderStatus } from '../../api/admin'
-import { getErrorMessage } from '../../api/client'
+import {
+	adminKeys,
+	fetchAdminOrder,
+	updateOrderNote,
+	updateOrderStatus,
+	updateOrderTracking,
+} from '../../api/admin'
+import { getErrorMessage, getFieldErrors } from '../../api/client'
 import { useAuth } from '../../auth/useAuth'
 import Button from '../../components/ui/Button'
 import Select from '../../components/ui/Select'
@@ -17,6 +23,8 @@ import StatusBadge from '../components/StatusBadge'
 import table from '../components/Table.module.css'
 import { ORDER_STATUSES, formatDateTime, orderNumber } from '../format'
 import TextArea from '../components/TextArea'
+import TrackingFields from '../components/TrackingFields'
+import { CARRIER_NAMES, trackingBody, trackingToForm } from '../tracking'
 import { can } from '../permissions'
 import { useAdminConfirm } from '../useAdminConfirm'
 import style from './OrderDetail.module.css'
@@ -31,8 +39,16 @@ const StatusForm = ({ order }) => {
 	const toast = useToast()
 	const confirm = useAdminConfirm()
 	const [status, setStatus] = useState(order.status)
+	// the parcel can be entered together with "shipped" (or later in the Shipment panel)
+	const [tracking, setTracking] = useState(trackingToForm())
+	const addsTracking = status === 'shipped' && order.status !== 'shipped'
 	const save = useMutation({
-		mutationFn: () => updateOrderStatus(order._id, status),
+		mutationFn: () =>
+			updateOrderStatus(
+				order._id,
+				status,
+				addsTracking && tracking.number.trim() ? trackingBody(tracking) : undefined,
+			),
 		onSuccess: async (updated) => {
 			await queryClient.invalidateQueries({ queryKey: adminKeys.all })
 			toast.show({
@@ -72,11 +88,114 @@ const StatusForm = ({ order }) => {
 				options={STATUS_OPTIONS}
 				onChange={(e) => setStatus(e.target.value)}
 			/>
+			{addsTracking && (
+				<fieldset className={style.parcelFields}>
+					<legend className={style.parcelLegend}>Parcel (optional)</legend>
+					<TrackingFields
+						value={tracking}
+						onChange={setTracking}
+						errors={getFieldErrors(save.error)}
+						prefix='tracking.'
+					/>
+					<p className={style.hint}>
+						The customer sees the tracking link on their order page. You can also add it later.
+					</p>
+				</fieldset>
+			)}
 			<Button type='submit' disabled={status === order.status || save.isPending}>
 				{save.isPending ? 'Saving…' : 'Update status'}
 			</Button>
 			<p className={style.hint}>The customer gets an email about each change.</p>
 		</form>
+	)
+}
+
+/** The parcel of a shipped order: shown with its tracking link, and editable. */
+const ShipmentPanel = ({ order }) => {
+	const queryClient = useQueryClient()
+	const toast = useToast()
+	const [isEditing, setIsEditing] = useState(false)
+	const [form, setForm] = useState(() => trackingToForm(order.tracking))
+	const save = useMutation({
+		mutationFn: () => updateOrderTracking(order._id, trackingBody(form, order.tracking)),
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({ queryKey: adminKeys.order(order._id) })
+			setIsEditing(false)
+			toast.show({ tone: 'success', message: 'Tracking saved' })
+		},
+	})
+	const tracking = order.tracking
+
+	if (isEditing) {
+		return (
+			<form
+				className={style.statusForm}
+				onSubmit={(e) => {
+					e.preventDefault()
+					save.mutate()
+				}}
+			>
+				<TrackingFields value={form} onChange={setForm} errors={getFieldErrors(save.error)} />
+				{save.isError && !Object.keys(getFieldErrors(save.error)).length && (
+					<p className={style.error} role='alert'>
+						{getErrorMessage(save.error)}
+					</p>
+				)}
+				<div className={style.buttons}>
+					<Button type='submit' disabled={!form.number.trim() || save.isPending}>
+						{save.isPending ? 'Saving…' : 'Save tracking'}
+					</Button>
+					<Button
+						variant='ghost'
+						onClick={() => {
+							save.reset()
+							setForm(trackingToForm(tracking))
+							setIsEditing(false)
+						}}
+					>
+						Cancel
+					</Button>
+				</div>
+			</form>
+		)
+	}
+
+	return (
+		<>
+			{tracking ? (
+				<dl className={style.facts}>
+					<dt>Carrier</dt>
+					<dd>{CARRIER_NAMES[tracking.carrier] ?? tracking.carrier}</dd>
+					<dt>Number</dt>
+					<dd className={style.mono}>{tracking.number}</dd>
+					{tracking.url && (
+						<>
+							<dt>Link</dt>
+							<dd>
+								<a
+									href={tracking.url}
+									target='_blank'
+									rel='noopener noreferrer'
+									className='text-link'
+								>
+									Track parcel <ExternalLink size={12} aria-hidden style={{ display: 'inline' }} />
+								</a>
+							</dd>
+						</>
+					)}
+				</dl>
+			) : (
+				<p className={style.hint}>No tracking number yet.</p>
+			)}
+			<Button
+				variant='secondary'
+				size='sm'
+				className={style.alignStart}
+				onClick={() => setIsEditing(true)}
+			>
+				{tracking ? 'Edit tracking' : 'Add tracking'}
+			</Button>
+		</>
 	)
 }
 
@@ -240,6 +359,14 @@ const OrderDetail = () => {
 										</th>
 										<td className={table.numeric}>{formatMoney(data.subtotal)}</td>
 									</tr>
+									{data.discount > 0 && (
+										<tr>
+											<th scope='row' colSpan={4}>
+												Discount{data.promoCode && ` (${data.promoCode})`}
+											</th>
+											<td className={table.numeric}>−{formatMoney(data.discount)}</td>
+										</tr>
+									)}
 									<tr>
 										<th scope='row' colSpan={4}>
 											Shipping
@@ -266,6 +393,21 @@ const OrderDetail = () => {
 								</h2>
 								<StatusForm order={data} key={data.status} />
 							</section>
+
+							{['shipped', 'delivered'].includes(data.status) && (
+								<section
+									className={`${table.panel} ${style.card}`}
+									aria-labelledby='shipment-title'
+								>
+									<h2 id='shipment-title' className={style.cardTitle}>
+										Shipment
+									</h2>
+									<ShipmentPanel
+										order={data}
+										key={`${data.tracking?.number}-${data.tracking?.url}`}
+									/>
+								</section>
+							)}
 
 							<section className={`${table.panel} ${style.card}`} aria-labelledby='timeline-title'>
 								<h2 id='timeline-title' className={style.cardTitle}>
@@ -334,6 +476,21 @@ const OrderDetail = () => {
 									<dd>{data.payment?.provider === 'stripe' ? 'Stripe' : 'Not paid online'}</dd>
 									<dt>Paid</dt>
 									<dd>{data.payment?.paidAt ? formatDateTime(data.payment.paidAt) : 'Not yet'}</dd>
+									{data.invoice?.number && (
+										<>
+											<dt>Invoice</dt>
+											<dd>
+												<Link
+													to={`/orders/${data._id}/invoice`}
+													state={{ from: `/admin/orders/${data._id}` }}
+													className='text-link'
+												>
+													<FileText size={12} aria-hidden style={{ display: 'inline' }} />{' '}
+													{data.invoice.number}
+												</Link>
+											</dd>
+										</>
+									)}
 									{data.payment?.sessionId && (
 										<>
 											<dt>Session</dt>

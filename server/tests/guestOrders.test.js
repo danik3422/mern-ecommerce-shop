@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Order } from '../src/models/Order.js'
 import { sendMail } from '../src/services/mailer.js'
 import { api, createProduct, createUser, validAddress } from './helpers.js'
-import { formatAmount } from '../src/services/pricing.js'
+import { formatters } from '../src/services/emails/format.js'
 
 vi.mock('../src/services/mailer.js', () => ({ sendMail: vi.fn() }))
 
@@ -93,9 +93,10 @@ describe('order emails', () => {
 		const placed = sendMail.mock.calls[0][0]
 		expect(placed).toMatchObject({
 			to: 'guest@example.com',
-			subject: expect.stringMatching(/^We received your order — order #[0-9A-F]{8}$/),
+			subject: expect.stringMatching(/^We received your order #[0-9A-F]{8}$/),
 		})
-		expect(placed.text).toContain(`1 × Brand Coat (black, M) — ${formatAmount(30)}`)
+		expect(placed.text).toContain(`1 × Brand Coat (black, M) — ${formatters('en').money(30)}`)
+		expect(placed.html).toContain('Brand Coat')
 		expect(placed.text).toContain(`token=${body.accessToken}`)
 
 		await api()
@@ -107,11 +108,11 @@ describe('order emails', () => {
 			.set(admin.auth)
 			.send({ status: 'shipped' })
 
-		const subjects = sendMail.mock.calls.map(([mail]) => mail.subject.split(' — ')[0])
+		const subjects = sendMail.mock.calls.map(([mail]) => mail.subject.replace(/#\w+/, '#N'))
 		expect(subjects).toEqual([
-			'We received your order',
-			'Payment received',
-			'Your order is on its way',
+			'We received your order #N',
+			'Payment received for order #N',
+			'Your order #N is on its way',
 		])
 	})
 })

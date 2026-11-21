@@ -147,6 +147,64 @@ const SettingsForm = ({ settings, mutation }) => {
 			</Section>
 
 			<Section
+				id='company'
+				title='Company'
+				description='The seller printed on VAT invoices. Invoices are numbered automatically (FV/YYYY/MM/NNNN) when an order is paid.'
+			>
+				<div className={style.grid}>
+					<TextField
+						label='Company name'
+						autoComplete='off'
+						placeholder='Clothe Shop sp. z o.o.'
+						maxLength={120}
+						className={style.wide}
+						{...bind('company.name')}
+						hint='Leave empty to use the shop name.'
+					/>
+					<TextField
+						label='Street and number'
+						autoComplete='off'
+						placeholder='ul. Prosta 20'
+						maxLength={120}
+						className={style.wide}
+						{...bind('company.street')}
+					/>
+					<TextField
+						label='Postal code'
+						autoComplete='off'
+						placeholder='00-850'
+						maxLength={6}
+						inputMode='numeric'
+						{...bind('company.postalCode')}
+					/>
+					<TextField
+						label='City'
+						autoComplete='off'
+						placeholder='Warszawa'
+						maxLength={60}
+						{...bind('company.city')}
+					/>
+					<TextField
+						label='NIP (tax ID)'
+						autoComplete='off'
+						placeholder='123-456-32-18'
+						maxLength={20}
+						inputMode='numeric'
+						{...bind('company.nip')}
+						hint='10 digits; the check digit is verified.'
+					/>
+					<TextField
+						label='Bank account (optional)'
+						autoComplete='off'
+						placeholder='PL61 1090 1014 0000 0712 1981 2874'
+						maxLength={40}
+						{...bind('company.bankAccount')}
+						hint='Polish account number (26 digits), shown on invoices.'
+					/>
+				</div>
+			</Section>
+
+			<Section
 				id='delivery'
 				title='Delivery'
 				description='Prices are in PLN, the shop’s fixed currency. Disabled methods are hidden in the shop and cannot be chosen at checkout.'

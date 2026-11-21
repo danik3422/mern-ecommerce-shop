@@ -101,6 +101,9 @@ export default {
 			other: '{count} wyniku',
 		},
 		brandOption: 'Marka {brand}, {items}',
+		categories: 'Kategorie',
+		categoryOption: 'Kategoria {category}',
+		matchesFor: 'Pokazujemy dopasowania do „{query}”',
 	},
 	shipping: {
 		freeFrom: 'Darmowa dostawa od {amount}',

@@ -1,0 +1,32 @@
+# Render Blueprint: one web service serves the API and the built storefront.
+# Render dashboard → New → Blueprint → pick this repository. Values marked `sync: false`
+# are asked for during setup (MongoDB Atlas connection string, owner password).
+services:
+  - type: web
+    name: cloth-shop
+    runtime: node
+    plan: free
+    region: frankfurt
+    # dev dependencies (Vite) are needed for the build even though NODE_ENV=production
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22.12.0
+      - key: NODE_ENV
+        value: production
+      # Render runs the app behind one proxy: needed for client IPs and rate limits
+      - key: TRUST_PROXY
+        value: 1
+      # one-click demo accounts and the nightly reset of all shop data
+      - key: DEMO_MODE
+        value: 'true'
+      - key: JWT_SECRET
+        generateValue: true
+      # mongodb+srv://USER:PASSWORD@CLUSTER.mongodb.net/shop?retryWrites=true&w=majority
+      - key: MONGO_URL
+        sync: false
+      # password of the owner account "admin", created on the first start
+      - key: SEED_ADMIN_PASSWORD
+        sync: false

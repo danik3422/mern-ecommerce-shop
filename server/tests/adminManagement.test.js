@@ -325,11 +325,16 @@ describe('blocked accounts', () => {
 		await api().get('/api/users/me').set(alice.auth).expect(401)
 
 		await User.updateOne({ _id: alice.user._id }, { blocked: false })
-		await api()
+		const again = await api()
 			.post('/api/auth/login')
 			.send({ login: 'alice', password: DEFAULT_PASSWORD })
 			.expect(200)
-		await api().get('/api/users/me').set(alice.auth).expect(200)
+		await api()
+			.get('/api/users/me')
+			.set({ Authorization: `Bearer ${again.body.accessToken}` })
+			.expect(200)
+		// blocking revoked the old sessions: unblocking does not bring them back
+		await api().get('/api/users/me').set(alice.auth).expect(401)
 	})
 })
 
