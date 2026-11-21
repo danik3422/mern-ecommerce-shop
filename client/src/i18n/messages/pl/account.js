@@ -100,6 +100,9 @@ export default {
 		currentPasswordHint: 'Wymagane do zmiany e-maila lub hasła',
 		updated: 'Profil został zaktualizowany.',
 		deleted: 'Twoje konto zostało usunięte',
+		demoTitle: 'To wspólne konto demo',
+		demoText:
+			'Korzystają z niego wszyscy, dlatego nie można zmienić nazwy, e-maila ani hasła ani usunąć konta. Wszystko inne działa.',
 		save: 'Zapisz zmiany',
 		deleteTitle: 'Usuń konto',
 		deleteText:

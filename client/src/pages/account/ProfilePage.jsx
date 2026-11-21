@@ -97,71 +97,82 @@ const ProfilePage = () => {
 				<h1 id='profile-title' className={shared.title}>
 					{t('profile.title')}
 				</h1>
+				{user.isDemo && <Alert title={t('profile.demoTitle')}>{t('profile.demoText')}</Alert>}
 				<form className={shared.form} onSubmit={handleSubmit}>
-					<TextField
-						label={t('auth.username')}
-						name='username'
-						autoComplete='username'
-						minLength={3}
-						value={form.username}
-						onChange={handleChange}
-						error={fieldErrors.username}
-						required
-					/>
-					<TextField
-						label={t('auth.email')}
-						name='email'
-						type='email'
-						autoComplete='email'
-						value={form.email}
-						onChange={handleChange}
-						error={fieldErrors.email}
-						required
-					/>
-					<TextField
-						label={t('profile.newPassword')}
-						name='newPassword'
-						type='password'
-						autoComplete='new-password'
-						minLength={8}
-						hint={t('profile.newPasswordHint')}
-						value={form.newPassword}
-						onChange={handleChange}
-						error={fieldErrors.newPassword}
-					/>
-					{needsCurrentPassword && (
+					{/* shared demo accounts cannot be changed: the whole form is disabled */}
+					<fieldset className={style.fields} disabled={user.isDemo}>
 						<TextField
-							label={t('profile.currentPassword')}
-							name='currentPassword'
-							type='password'
-							autoComplete='current-password'
-							hint={t('profile.currentPasswordHint')}
-							value={form.currentPassword}
+							label={t('auth.username')}
+							name='username'
+							autoComplete='username'
+							minLength={3}
+							value={form.username}
 							onChange={handleChange}
-							error={currentPasswordError}
+							error={fieldErrors.username}
 							required
 						/>
-					)}
-					{generalError && <Alert tone='error'>{getErrorMessage(profile.error)}</Alert>}
-					<div className={shared.actions}>
-						<Button type='submit' disabled={!hasChanges || profile.isPending}>
-							{profile.isPending ? t('common.saving') : t('profile.save')}
-						</Button>
-					</div>
+						<TextField
+							label={t('auth.email')}
+							name='email'
+							type='email'
+							autoComplete='email'
+							value={form.email}
+							onChange={handleChange}
+							error={fieldErrors.email}
+							required
+						/>
+						<TextField
+							label={t('profile.newPassword')}
+							name='newPassword'
+							type='password'
+							autoComplete='new-password'
+							minLength={8}
+							hint={t('profile.newPasswordHint')}
+							value={form.newPassword}
+							onChange={handleChange}
+							error={fieldErrors.newPassword}
+						/>
+						{needsCurrentPassword && (
+							<TextField
+								label={t('profile.currentPassword')}
+								name='currentPassword'
+								type='password'
+								autoComplete='current-password'
+								hint={t('profile.currentPasswordHint')}
+								value={form.currentPassword}
+								onChange={handleChange}
+								error={currentPasswordError}
+								required
+							/>
+						)}
+						{generalError && <Alert tone='error'>{getErrorMessage(profile.error)}</Alert>}
+						<div className={shared.actions}>
+							<Button type='submit' disabled={!hasChanges || profile.isPending}>
+								{profile.isPending ? t('common.saving') : t('profile.save')}
+							</Button>
+						</div>
+					</fieldset>
 				</form>
 			</section>
 
-			<section className={`${shared.card} ${style.danger}`} aria-labelledby='delete-title'>
-				<h2 id='delete-title' className={style.dangerTitle}>
-					{t('profile.deleteTitle')}
-				</h2>
-				<p className={shared.muted}>{t('profile.deleteText')}</p>
-				<div>
-					<Button variant='secondary' size='sm' onClick={handleDelete} disabled={removal.isPending}>
-						{removal.isPending ? t('profile.deleting') : t('profile.deleteButton')}
-					</Button>
-				</div>
-			</section>
+			{!user.isDemo && (
+				<section className={`${shared.card} ${style.danger}`} aria-labelledby='delete-title'>
+					<h2 id='delete-title' className={style.dangerTitle}>
+						{t('profile.deleteTitle')}
+					</h2>
+					<p className={shared.muted}>{t('profile.deleteText')}</p>
+					<div>
+						<Button
+							variant='secondary'
+							size='sm'
+							onClick={handleDelete}
+							disabled={removal.isPending}
+						>
+							{removal.isPending ? t('profile.deleting') : t('profile.deleteButton')}
+						</Button>
+					</div>
+				</section>
+			)}
 		</div>
 	)
 }

@@ -15,6 +15,7 @@
 		"build": "npm run build -w client",
 		"start": "npm start -w server",
 		"seed": "npm run seed -w server",
+		"seed:demo": "npm run seed:demo -w server",
 		"test": "npm test --workspaces",
 		"lint": "eslint .",
 		"format": "prettier --write .",

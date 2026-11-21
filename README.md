@@ -84,6 +84,20 @@ server set `CLIENT_URL` (CORS and Stripe redirect URLs) and `TRUST_PROXY` behind
 **After pulling schema changes** run `npm run migrate`: it syncs database indexes with the
 models (for example, it removes indexes left by older versions).
 
+### Public demo (optional)
+
+For a public deployment set `DEMO_MODE=true` in `server/.env`:
+
+- the sign-in page offers one-click **demo customer** (orders, addresses and a wishlist
+  already there) and **demo admin** (staff with access to the dashboard, products, orders,
+  returns and reviews only — no team, settings, customers or promo codes);
+- demo accounts cannot change their username, email or password, or be deleted;
+- every night at `DEMO_RESET_HOUR` (default 3:00, `DEMO_TIMEZONE` Europe/Warsaw) all shop data
+  is reset to the demo state: catalog, reviews, orders, promo codes and settings; accounts
+  created by visitors are removed, the owner `admin` stays.
+
+The demo data is created on the first start in demo mode, or any time with `npm run seed:demo`.
+
 ### Email (optional)
 
 Back-in-stock alerts are sent by email. Set `SMTP_URL` (for example
@@ -106,17 +120,18 @@ In production create a webhook endpoint `https://<api-host>/api/payments/webhook
 
 ## Scripts (run from the repository root)
 
-| Command           | What it does                                   |
-| ----------------- | ---------------------------------------------- |
-| `npm run dev`     | API and client with hot reload                 |
-| `npm test`        | all tests (server + client)                    |
-| `npm run lint`    | ESLint                                         |
-| `npm run format`  | Prettier                                       |
-| `npm run check`   | lint + format check + tests + build (as in CI) |
-| `npm run build`   | production build of the client → `client/dist` |
-| `npm start`       | API in production mode                         |
-| `npm run seed`    | demo catalog, reviews and the admin user       |
-| `npm run migrate` | sync database indexes with the models          |
+| Command             | What it does                                                                |
+| ------------------- | --------------------------------------------------------------------------- |
+| `npm run dev`       | API and client with hot reload                                              |
+| `npm test`          | all tests (server + client)                                                 |
+| `npm run lint`      | ESLint                                                                      |
+| `npm run format`    | Prettier                                                                    |
+| `npm run check`     | lint + format check + tests + build (as in CI)                              |
+| `npm run build`     | production build of the client → `client/dist`                              |
+| `npm start`         | API in production mode                                                      |
+| `npm run seed`      | demo catalog, reviews and the admin user                                    |
+| `npm run seed:demo` | the full public demo: demo accounts, orders, promo codes (resets all data!) |
+| `npm run migrate`   | sync database indexes with the models                                       |
 
 ## API
 

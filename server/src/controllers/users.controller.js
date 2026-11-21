@@ -3,6 +3,9 @@ import { User } from '../models/User.js'
 import { hashPassword, verifyPassword } from '../services/password.js'
 import { forbidden, notFound } from '../utils/HttpError.js'
 
+/** Shared demo accounts stay usable for everyone: their profile cannot change. */
+const DEMO_LOCKED = 'Demo accounts cannot change the profile, password or delete the account'
+
 /**
  * Deletes the account — with its wishlist and address book, which live on the user
  * document — and its cart. Kept on purpose:
@@ -26,6 +29,7 @@ export const getMe = async (req, res) => {
 export const updateMe = async (req, res) => {
 	const { username, email, newPassword, currentPassword } = req.valid.body
 	const user = await User.findById(req.user.id).select('+passwordHash')
+	if (user.isDemo) throw forbidden(DEMO_LOCKED)
 
 	if (email || newPassword) {
 		const confirmed = await verifyPassword(currentPassword, user.passwordHash)
@@ -41,6 +45,7 @@ export const updateMe = async (req, res) => {
 }
 
 export const deleteMe = async (req, res) => {
+	if (await User.exists({ _id: req.user.id, isDemo: true })) throw forbidden(DEMO_LOCKED)
 	await deleteAccount(req.user.id)
 	res.status(204).end()
 }

@@ -20,6 +20,14 @@ const envSchema = z.object({
 	// Outgoing email (optional): smtp://user:pass@host:587. Without it emails are logged.
 	SMTP_URL: z.string().optional(),
 	MAIL_FROM: z.string().default('Clothe Shop <no-reply@example.com>'),
+	// Public demo: one-click demo accounts and a nightly reset of all shop data
+	DEMO_MODE: z
+		.enum(['true', 'false', '1', '0'])
+		.default('false')
+		.transform((value) => value === 'true' || value === '1'),
+	// hour (0–23) of the nightly reset, in DEMO_TIMEZONE
+	DEMO_RESET_HOUR: z.coerce.number().int().min(0).max(23).default(3),
+	DEMO_TIMEZONE: z.string().default('Europe/Warsaw'),
 })
 
 const parsed = envSchema.safeParse(process.env)

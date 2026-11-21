@@ -99,6 +99,9 @@ export default {
 		currentPasswordHint: 'Required to change your email or password',
 		updated: 'Your profile has been updated.',
 		deleted: 'Your account was deleted',
+		demoTitle: 'This is a shared demo account',
+		demoText:
+			'Everyone uses it, so its username, email and password cannot be changed and it cannot be deleted. Everything else works.',
 		save: 'Save changes',
 		deleteTitle: 'Delete account',
 		deleteText:

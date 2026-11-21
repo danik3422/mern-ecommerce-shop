@@ -21,6 +21,8 @@ const userSchema = new mongoose.Schema(
 		// blocked (deactivated) accounts cannot sign in, and their existing sessions stop working
 		blocked: { type: Boolean, default: false },
 		lastLoginAt: Date,
+		// shared demo accounts (seed/demo.js): no password, email or account changes
+		isDemo: { type: Boolean, default: undefined },
 		addresses: { type: [savedAddressSchema], default: [] },
 		wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
 	},

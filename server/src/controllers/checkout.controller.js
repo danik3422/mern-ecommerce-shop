@@ -1,3 +1,4 @@
+import { env } from '../config/env.js'
 import { resolveLineItems } from '../services/lineItems.js'
 import { calculateTotals, subtotalOf } from '../services/pricing.js'
 import { findUsablePromo } from '../services/promoCodes.js'
@@ -9,7 +10,13 @@ import { toOrderItems } from './orders.controller.js'
  * return window, shop name, contact details and the announcement
  */
 export const getShopConfig = async (_req, res) => {
-	res.json(toPublicShopConfig(await getShopSettings()))
+	res.json({
+		...toPublicShopConfig(await getShopSettings()),
+		// the client shows one-click demo sign-in only in demo mode
+		demo: env.DEMO_MODE
+			? { enabled: true, resetHour: env.DEMO_RESET_HOUR, timeZone: env.DEMO_TIMEZONE }
+			: { enabled: false },
+	})
 }
 
 /**
