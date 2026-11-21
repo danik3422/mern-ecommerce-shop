@@ -41,8 +41,7 @@ export const NAV = [
 		permission: 'returns',
 		count: 'openReturns',
 		countLabel: 'open returns',
-		// a filtered view of Orders, never highlighted on its own
-		plain: true,
+		// a filtered view of Orders: highlighted instead of Orders while the filter is on
 	},
 	{ to: '/admin/customers', label: 'Customers', icon: Users, permission: 'customers' },
 	{ to: '/admin/reviews', label: 'Reviews', icon: MessageSquare, permission: 'reviews' },
@@ -55,3 +54,26 @@ export const NAV = [
 /** The sections `user` may open, in sidebar order. */
 export const allowedNav = (user) =>
 	NAV.filter((item) => (item.owner ? user?.isAdmin && user.isOwner : can(user, item.permission)))
+
+/** Whether `item` matches the current address: its path and, if it has one, its query. */
+const matches = (item, { pathname, search }) => {
+	const [path, query = ''] = item.to.split('?')
+	const pathMatches = item.end
+		? pathname === path
+		: pathname === path || pathname.startsWith(`${path}/`)
+	if (!pathMatches) return false
+	const current = new URLSearchParams(search)
+	return [...new URLSearchParams(query)].every(([key, value]) => current.get(key) === value)
+}
+
+/**
+ * The one sidebar item to highlight: the most specific match, so the Returns view
+ * (/admin/orders?returnStatus=requested) highlights Returns and not Orders as well.
+ * @returns the item's `to`, or null
+ */
+export const activeNavTo = (items, location) => {
+	const candidates = items.filter((item) => matches(item, location))
+	// longer `to` = more specific (a query or a deeper path)
+	candidates.sort((a, b) => b.to.length - a.to.length)
+	return candidates[0]?.to ?? null
+}

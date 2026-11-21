@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { ExternalLink, LogOut, Menu, X } from 'lucide-react'
 import { useState } from 'react'
-import { Link, NavLink, Outlet, useLocation } from 'react-router'
+import { Link, Outlet, useLocation } from 'react-router'
 import { adminKeys, fetchAdminCounts, fetchMe } from '../api/admin'
 import { useAuth } from '../auth/useAuth'
 import { cx } from '../utils/cx'
-import { allowedNav } from './navigation'
+import { activeNavTo, allowedNav } from './navigation'
 import style from './AdminLayout.module.css'
 
 const COUNTS_REFRESH_MS = 60_000
@@ -13,7 +13,10 @@ const COUNTS_REFRESH_MS = 60_000
 /** Admin frame: sidebar on wide screens, top bar with a menu on small ones. */
 const AdminLayout = () => {
 	const { user, logout, updateUser } = useAuth()
-	const { pathname } = useLocation()
+	const location = useLocation()
+	const { pathname } = location
+	const navItems = allowedNav(user)
+	const activeTo = activeNavTo(navItems, location)
 
 	// permissions may have changed since signing in: refresh the stored user once per visit
 	useQuery({
@@ -65,7 +68,7 @@ const AdminLayout = () => {
 				<div id='admin-navigation' className={cx(style.navPanel, isMenuOpen && style.navPanelOpen)}>
 					<nav aria-label='Admin'>
 						<ul role='list' className={style.navList}>
-							{allowedNav(user).map(({ to, label, icon: Icon, end, plain, count, countLabel }) => {
+							{navItems.map(({ to, label, icon: Icon, count, countLabel }) => {
 								const number = count && counts?.[count]
 								const content = (
 									<>
@@ -81,19 +84,13 @@ const AdminLayout = () => {
 								)
 								return (
 									<li key={to}>
-										{plain ? (
-											<Link to={to} className={style.navLink}>
-												{content}
-											</Link>
-										) : (
-											<NavLink
-												to={to}
-												end={end}
-												className={({ isActive }) => cx(style.navLink, isActive && style.active)}
-											>
-												{content}
-											</NavLink>
-										)}
+										<Link
+											to={to}
+											className={cx(style.navLink, to === activeTo && style.active)}
+											aria-current={to === activeTo ? 'page' : undefined}
+										>
+											{content}
+										</Link>
 									</li>
 								)
 							})}

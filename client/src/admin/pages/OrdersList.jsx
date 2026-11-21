@@ -37,6 +37,7 @@ const FILTERS = { q: '', status: '', returnStatus: '', from: '', to: '' }
 const OrdersList = () => {
 	const navigate = useNavigate()
 	const { values, params, setParam, setParams, setPage } = useListParams(FILTERS)
+	const isReturnsView = values.returnStatus === 'requested'
 	const hasFilters = Object.values(values).some(Boolean)
 	const query = { ...params, limit: PAGE_SIZE }
 
@@ -49,8 +50,13 @@ const OrdersList = () => {
 	return (
 		<>
 			<PageHeader
-				title='Orders'
-				description='Follow up payments, shipping and returns. Click an order to open it.'
+				// the sidebar's Returns item opens this list filtered to open return requests
+				title={isReturnsView ? 'Returns' : 'Orders'}
+				description={
+					isReturnsView
+						? 'Return requests waiting for a decision. Open an order to approve, reject or refund.'
+						: 'Follow up payments, shipping and returns. Click an order to open it.'
+				}
 			/>
 
 			<div className={table.toolbar}>
